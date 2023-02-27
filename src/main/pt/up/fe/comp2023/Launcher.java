@@ -7,6 +7,8 @@ import java.util.Map;
 
 import pt.up.fe.comp.TestUtils;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
+import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
@@ -36,6 +38,28 @@ public class Launcher {
 
         // Parse stage
         JmmParserResult parserResult = parser.parse(code, config);
+
+        if(parserResult.getReports().size() > 0) {
+            for(Report report : parserResult.getReports()) {
+                if(report.getType() == ReportType.ERROR || report.getType() == ReportType.WARNING) {
+                    System.out.println("Error: " + report.getMessage());
+                    System.out.println("Line: " + report.getLine());
+                    System.out.println("Column: " + report.getColumn());
+                    System.out.println("Stage: " + report.getStage());
+                    System.out.println("Type: " + report.getType());
+                }
+            }
+        }else{
+            System.out.println("No errors found!\n\n");
+        }
+
+        if(parserResult.getRootNode() == null) {
+            System.out.println("Parser result is null!");
+            return;
+        }
+
+        // Print full AST
+        System.out.println(parserResult.getRootNode().toTree());
 
         // Check if there are parsing errors
         TestUtils.noErrors(parserResult.getReports());
