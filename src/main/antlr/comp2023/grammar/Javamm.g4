@@ -18,6 +18,7 @@ MethodVisibility
     | 'protected'
     ;
 
+fragment
 BOOL
     : 'true'
     | 'false'
@@ -85,16 +86,16 @@ importDeclaration
     ;
 
 classDeclaration
-    : 'class' name=ID ('extends' superName=ID)? '{' varDeclaration*  methodDeclaration* '}' #ClassDecl
+    : 'class' name=ID ('extends' superName=ID)? '{' (varDeclaration | methodDeclaration )* '}' #ClassDecl
     ;
 // AQUI ACONTECE O MESMO QUE O QUE DISSE NO COMENTARIO DO input.txt ... de propósito? ... existe uma solução obvia (st1| st2)
 
 varDeclaration
-    : type=TYPE (arrayCall)? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
+    : type=TYPE ('[' ']')? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
     ;
 
 methodDeclaration
-    : 'public' 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' methodBody '}' #MainMethodDecl
+    : 'public'? 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' methodBody? '}' #MainMethodDecl
     | visibility=MethodVisibility (isStatic='static')? returnType=( TYPE | 'void') name=ID '(' methodParams? ')' '{' methodBody '}' #MethodDecl
     ;
 
@@ -119,6 +120,9 @@ statement
 
     | type=TYPE arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
     | type=TYPE arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
+    /// | type=TYPE var=ID arrayCall '=' array_struct ';' #ArrayDeclAssign
+    // | type=TYPE var=ID  arrayCall?';' #VarDecl
+
     | type=TYPE var=ID '=' expression ';' #VarDeclAssign
     | var=ID arrayCall? '=' expression ';' #VarAssign
 
