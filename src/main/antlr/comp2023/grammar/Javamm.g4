@@ -4,12 +4,12 @@ grammar Javamm;
     package pt.up.fe.comp2023;
 }
 
-TYPE
+
+type
    : 'bool'
    | 'int'
-   | 'char'
-   | 'string'
-   | 'float'
+   | 'int' '[' ']'
+   | ID
    ;
 
 
@@ -91,7 +91,7 @@ classDeclaration
     ;
 
 varDeclaration
-    : type=TYPE ('[' ']')? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
+    : type ('[' ']')? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
     ;
 
 methodDeclaration
@@ -100,7 +100,7 @@ methodDeclaration
     ;
 
 methodParams
-    : argType=TYPE arg=ID (',' argType=TYPE arg=ID)* #MethodParamsDecl
+    : argType=type arg=ID (',' argType=type arg=ID)* #MethodParamsDecl
     ;
 
 methodArgs
@@ -116,14 +116,11 @@ statement
     | 'System.out.println' '(' expression ')' ';' #PrintStmt
     | 'if' '(' expression ')' statement elseIfStmt* elseStmt? #IfStmt
     | 'while' '(' expression ')' statement #WhileStmt
-    | 'for' '(' ( (var=ID '=' expression) | (type=TYPE var=ID '=' expression) )  ';' expression ';' expression ')' statement #ForStmt
+    | 'for' '(' ( (var=ID '=' expression) | (type var=ID '=' expression) )  ';' expression ';' expression ')' statement #ForStmt
     | expression ';' #ExprStmt
-    | type=TYPE arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
-    | type=TYPE arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
-    /// | type=TYPE var=ID arrayCall '=' array_struct ';' #ArrayDeclAssign
-    // | type=TYPE var=ID  arrayCall?';' #VarDecl
-
-    | type=TYPE var=ID '=' expression ';' #VarDeclAssign
+    | type arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
+    | type arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
+    | type var=ID '=' expression ';' #VarDeclAssign
     | var=ID arrayCall? '=' expression ';' #VarAssign
 
 
