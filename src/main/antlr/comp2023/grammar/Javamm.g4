@@ -4,15 +4,12 @@ grammar Javamm;
     package pt.up.fe.comp2023;
 }
 
-
 type
    : 'bool'
    | 'int'
    | 'int' '[' ']'
    | ID
    ;
-
-
 
 fragment
 BOOL
@@ -28,36 +25,6 @@ LITERAL
     | CHAR
     | 'null'
     ;
-
-// operators
-ASSIGN: '=';
-GT: '>';
-LT: '<';
-GE: '>=';
-LE: '<=';
-EQ: '==';
-NE: '!=';
-AND: '&&';
-OR: '||';
-PLUS: '+';
-MINUS: '-';
-TIMES: '*';
-DIV: '/';
-NOT: '!';
-INC: '++';
-DEC: '--';
-
-// separators
-LPAREN: '(';
-RPAREN: ')';
-LBRACE: '{';
-RBRACE: '}';
-LBRACK: '[';
-RBRACK: ']';
-COMMA: ',';
-SEMI: ';';
-DOT: '.';
-
 
 
 INTEGER: ('-')? [0-9]+;
@@ -82,7 +49,7 @@ importDeclaration
     ;
 
 classDeclaration
-    : 'class' name=ID ('extends' superName=ID)? '{' (varDeclaration  | methodDeclaration)* '}' #ClassDecl
+    : 'class' name=ID ('extends' superName=ID)? '{' (varDeclaration | methodDeclaration )* '}' #ClassDecl
     ;
 
 varDeclaration
