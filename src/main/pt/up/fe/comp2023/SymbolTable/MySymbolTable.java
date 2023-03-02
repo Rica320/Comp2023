@@ -1,4 +1,4 @@
-package pt.up.fe.comp2023;
+package pt.up.fe.comp2023.SymbolTable;
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -39,7 +39,7 @@ public class MySymbolTable implements SymbolTable {
 
     private Set<String> imports = new HashSet<>();
     private String className = "", superClass = "";
-    private HashMap<String, MyMethodSymbolTable> methods = new HashMap<>();
+    private HashMap<String, MethodScope> methods = new HashMap<>();
     private HashMap<String, MySymbol> fields = new HashMap<>();
 
     // ========================== IMPORTS ==========================
@@ -120,7 +120,7 @@ public class MySymbolTable implements SymbolTable {
         return new ArrayList<>(methods.keySet());
     }
 
-    public MyMethodSymbolTable getMethod(String label) {
+    public MethodScope getMethod(String label) {
         return methods.get(label);
     }
 
@@ -139,8 +139,8 @@ public class MySymbolTable implements SymbolTable {
         return methods.containsKey(label);
     }
 
-    public void addMethod(String methodLabel, MyMethodSymbolTable myMethodSymbolTable) {
-        this.methods.put(methodLabel, myMethodSymbolTable);
+    public void addMethod(String methodLabel, MethodScope methodScope) {
+        this.methods.put(methodLabel, methodScope);
     }
 
     public boolean isMethod(String methodLabel) {
