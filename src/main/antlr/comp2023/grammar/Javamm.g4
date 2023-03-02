@@ -13,11 +13,6 @@ type
    ;
 
 
-MethodVisibility
-    : 'public'
-    | 'private'
-    | 'protected'
-    ;
 
 fragment
 BOOL
@@ -96,7 +91,7 @@ varDeclaration
 
 methodDeclaration
     : 'public' 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' methodBody '}' #MainMethodDecl
-    | visibility=MethodVisibility (isStatic='static')? ( type | 'void') name=ID '(' methodParams? ')' '{' methodBody '}' #MethodDecl
+    | ('public')? (isStatic='static')? ( type | 'void') name=ID '(' methodParams? ')' '{' methodBody '}' #MethodDecl
     ;
 
 methodParams
