@@ -19,7 +19,7 @@ public class GrammarTest {
 
 
     private static final String IMPORT = "importDeclaration";
-    private static final String MAIN_METHOD = "";
+    private static final String MAIN_METHOD = "MainMethodDecl";
     private static final String INSTANCE_METHOD = "";
     private static final String STATEMENT = "statement";
     private static final String EXPRESSION = "expression";
@@ -104,6 +104,11 @@ public class GrammarTest {
     @Test
     public void testStmtArrayAssign() {
         TestUtils.parseVerbose("anArray[a]=b;", STATEMENT);
+    }
+
+    @Test
+    public void testStmtArrayAcess() {
+        TestUtils.parseVerbose("anArray[a];", STATEMENT);
     }
 
     @Test
