@@ -107,6 +107,11 @@ public class GrammarTest {
     }
 
     @Test
+    public void testStmtArrayAcess() {
+        TestUtils.parseVerbose("anArray[a];", STATEMENT);
+    }
+
+    @Test
     public void testExprTrue() {
         TestUtils.parseVerbose("true", EXPRESSION);
     }

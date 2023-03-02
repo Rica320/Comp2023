@@ -12,6 +12,7 @@ TYPE
    | 'float'
    ;
 
+
 MethodVisibility
     : 'public'
     | 'private'
@@ -88,7 +89,6 @@ importDeclaration
 classDeclaration
     : 'class' name=ID ('extends' superName=ID)? '{' (varDeclaration | methodDeclaration )* '}' #ClassDecl
     ;
-// AQUI ACONTECE O MESMO QUE O QUE DISSE NO COMENTARIO DO input.txt ... de propósito? ... existe uma solução obvia (st1| st2)
 
 varDeclaration
     : type=TYPE ('[' ']')? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
@@ -117,7 +117,7 @@ statement
     | 'if' '(' expression ')' statement elseIfStmt* elseStmt? #IfStmt
     | 'while' '(' expression ')' statement #WhileStmt
     | 'for' '(' ( (var=ID '=' expression) | (type=TYPE var=ID '=' expression) )  ';' expression ';' expression ')' statement #ForStmt
-
+    | expression ';' #ExprStmt
     | type=TYPE arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
     | type=TYPE arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
     /// | type=TYPE var=ID arrayCall '=' array_struct ';' #ArrayDeclAssign
@@ -133,7 +133,7 @@ statement
     | 'break' ';' #BreakStmt
     | 'continue' ';' #ContinueStmt
     | 'return' expression? ';' #ReturnStmt
-    | expression op=('++' | '--') ';' #UnaryOpStmt
+    // | expression op=('++' | '--') ';' #UnaryOpStmt
     ;
 
 arrayCall:('['expression?']')+;
@@ -151,11 +151,10 @@ expression
     : var=ID ('.' methodCall=ID )* #ObjectVar
     | '(' expression ')' #ParenExpr
     | '!' expression #UnaryNegation
-    | expression op=('++' | '--') #UnaryOp
     | expression op=('*'| '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
-    | expression op=('&&' | '||') expression #BinaryBool
-    | expression op=('==' | '!=' | '<' | '<=' | '>' | '>=') expression #BinaryComp
+    | expression '&&' expression #BinaryBool
+    | expression '<' expression #BinaryComp
     | value=LITERAL #LiteralExpr
     | var=ID '[' expression ']' #ArrayAccess
     | var=ID #VarExpr
