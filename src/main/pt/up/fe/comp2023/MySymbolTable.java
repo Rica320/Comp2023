@@ -35,41 +35,12 @@ pattern (e.g. extend AJmmVisitor ). Since the language is relatively simple, the
 need to go very deep in the AST, and both approaches are viable.
 */
 
-/* BUILT IN
-public Symbol(Type type, String name) {
-    this.type = type;
-    this.name = name;
-}
-*/
-
 public class MySymbolTable implements SymbolTable {
 
     private Set<String> imports = new HashSet<>();
     private String className = "", superClass = "";
-    private HashMap<String, MethodTable> methods = new HashMap<>();
+    private HashMap<String, MyMethodSymbolTable> methods = new HashMap<>();
     private HashMap<String, MySymbol> fields = new HashMap<>();
-
-    private MySymbolTable parent;
-
-    // ========================== CONSTRUCTORS ==========================
-
-    public MySymbolTable() {
-        this.parent = null;
-    }
-
-    public MySymbolTable(MySymbolTable parent) {
-        this.parent = parent;
-    }
-
-    // ========================== PARENT ==========================
-
-    public MySymbolTable getParent() {
-        return parent;
-    }
-
-    public void setParent(MySymbolTable parent) {
-        this.parent = parent;
-    }
 
     // ========================== IMPORTS ==========================
 
@@ -149,7 +120,7 @@ public class MySymbolTable implements SymbolTable {
         return new ArrayList<>(methods.keySet());
     }
 
-    public MethodTable getMethod(String label) {
+    public MyMethodSymbolTable getMethod(String label) {
         return methods.get(label);
     }
 
@@ -160,21 +131,16 @@ public class MySymbolTable implements SymbolTable {
 
     @Override
     public List<Symbol> getParameters(String label) {
-        List<Parameter> parameters = methods.get(label).getParameters();
-        List<Symbol> symbolsPar = new ArrayList<>();
-
-        for (Parameter p : parameters) {
-            symbolsPar.add(p.getSymbol());
-        }
-        return symbolsPar;
+        List<MySymbol> parameters = methods.get(label).getParameters();
+        return new ArrayList<>(parameters);
     }
 
     public boolean hasMethod(String label) {
         return methods.containsKey(label);
     }
 
-    public void addMethod(String methodLabel, MethodTable methodTable) {
-        this.methods.put(methodLabel, methodTable);
+    public void addMethod(String methodLabel, MyMethodSymbolTable myMethodSymbolTable) {
+        this.methods.put(methodLabel, myMethodSymbolTable);
     }
 
     public boolean isMethod(String methodLabel) {
@@ -184,8 +150,8 @@ public class MySymbolTable implements SymbolTable {
     // ========================== METHOD VARIABLES ==========================
 
     @Override
-    public List<Symbol> getLocalVariables(String label) {
-        return new ArrayList<>(methods.get(label).getLocalVariables().keySet());
+    public List<Symbol> getLocalVariables(String methodLabel) {
+        return new ArrayList<>(methods.get(methodLabel).getLocalVariables());
     }
 
     // ========================== OTHERS ==========================
@@ -194,9 +160,8 @@ public class MySymbolTable implements SymbolTable {
         return isField(variableLabel) || isMethod(variableLabel);
     }
 
-    public void assignMethodVariable(String methodLabel, String var) {
-        // shouldn't it be a MySymbol instead?
-        methods.get(methodLabel).assignVariable(var);
+    public void assignMethodVariable(String methodLabel, MySymbol symbol) {
+        methods.get(methodLabel).assignVariable(symbol);
     }
 
     // ========================== PRINT ==========================
