@@ -5,7 +5,7 @@ grammar Javamm;
 }
 
 type
-   : 'bool'
+   : 'boolean'
    | 'int'
    | 'int' '[' ']'
    | ID
@@ -20,20 +20,13 @@ BOOL
 LITERAL
     : BOOL
     | INTEGER
-    | FLOAT
-    | STRING
-    | CHAR
     | 'null'
     ;
 
 
 INTEGER: ('-')? [0-9]+;
-FLOAT: INTEGER '.' [0-9]+;
 
 ID : [a-zA-Z_$][a-zA-Z_$0-9]* ;
-CHAR : '\'' [a-zA-Z] '\'' ;
-STRING : '"' ('\\' ["\\] | ~["\\\r\n])* '"' ;
-
 
 WS : [ \t\n\r\f]+ -> skip ;
 COMMENT: '/*' .*? '*/'    -> skip;
@@ -57,8 +50,8 @@ varDeclaration
     ;
 
 methodDeclaration
-    : 'public' 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' methodBody '}' #MainMethodDecl
-    | ('public')? (isStatic='static')? ( type | 'void') name=ID '(' methodParams? ')' '{' methodBody '}' #MethodDecl
+    : ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' methodBody '}' #MainMethodDecl
+    | ('public')?  ( type | 'void') name=ID '(' methodParams? ')' '{' methodBody '}' #MethodDecl
     ;
 
 methodParams
@@ -78,20 +71,21 @@ statement
     | 'System.out.println' '(' expression ')' ';' #PrintStmt
     | 'if' '(' expression ')' statement elseIfStmt* elseStmt? #IfStmt
     | 'while' '(' expression ')' statement #WhileStmt
-    | 'for' '(' ( (var=ID '=' expression) | (type var=ID '=' expression) )  ';' expression ';' expression ')' statement #ForStmt
     | expression ';' #ExprStmt
+
+    // VER DPS
     | type arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
     | type arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
     | type var=ID '=' expression ';' #VarDeclAssign
     | var=ID arrayCall? '=' expression ';' #VarAssign
 
 
-    | var=ID '.' methodCall=ID '(' methodArgs* ')' ';' #MethodCall
-    | functionCall=ID '(' methodArgs* ')' ';' #FunctionCall
+    // | var=ID '.' methodCall=ID '(' methodArgs* ')' ';' #MethodCall
+    // | functionCall=ID '(' methodArgs* ')' ';' #FunctionCall
 
-    | 'break' ';' #BreakStmt
-    | 'continue' ';' #ContinueStmt
-    | 'return' expression? ';' #ReturnStmt
+    // | 'break' ';' #BreakStmt
+    // | 'continue' ';' #ContinueStmt
+    // | 'return' expression? ';' #ReturnStmt
     // | expression op=('++' | '--') ';' #UnaryOpStmt
     ;
 
@@ -116,6 +110,9 @@ expression
     | expression '<' expression #BinaryComp
     | value=LITERAL #LiteralExpr
     | var=ID '[' expression ']' #ArrayAccess
+    | 'new' 'int' arrayCall #NewArrayExpr
+    | 'new' ID '(' ')' #NewObjectExpr
+    | 'this' #ThisExpr
     | var=ID #VarExpr
     // | array_struct #ArrayStructExpr // // adding this makes h = {1,5,6}; possible but allows for other weird stuff
     ;
