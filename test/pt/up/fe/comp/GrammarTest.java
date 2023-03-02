@@ -18,7 +18,7 @@ import org.junit.Test;
 public class GrammarTest {
 
 
-    private static final String IMPORT = "";
+    private static final String IMPORT = "importDeclaration";
     private static final String MAIN_METHOD = "";
     private static final String INSTANCE_METHOD = "";
     private static final String STATEMENT = "statement";
@@ -38,6 +38,12 @@ public class GrammarTest {
     public void testClass() {
         TestUtils.parseVerbose("class Foo extends Bar {}");
     }
+
+    @Test
+    public void testExprArr() {
+        TestUtils.parseVerbose("int[] x;", "varDeclaration");
+    }
+
 
     @Test
     public void testVarDecls() {

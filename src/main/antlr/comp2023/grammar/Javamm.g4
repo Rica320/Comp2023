@@ -32,6 +32,36 @@ LITERAL
     | 'null'
     ;
 
+// operators
+ASSIGN: '=';
+GT: '>';
+LT: '<';
+GE: '>=';
+LE: '<=';
+EQ: '==';
+NE: '!=';
+AND: '&&';
+OR: '||';
+PLUS: '+';
+MINUS: '-';
+TIMES: '*';
+DIV: '/';
+NOT: '!';
+INC: '++';
+DEC: '--';
+
+// separators
+LPAREN: '(';
+RPAREN: ')';
+LBRACE: '{';
+RBRACE: '}';
+LBRACK: '[';
+RBRACK: ']';
+COMMA: ',';
+SEMI: ';';
+DOT: '.';
+
+
 
 INTEGER: ('-')? [0-9]+;
 FLOAT: INTEGER '.' [0-9]+;
@@ -51,15 +81,16 @@ program
     ;
 
 importDeclaration
-    : 'import' classID=ID ('.' methodID=ID)+ ';' #ImportDecl // doesnt support *
+    : 'import' classID=ID ('.' methodID=ID)* ';' #ImportDecl // doesnt support *
     ;
 
 classDeclaration
     : 'class' name=ID ('extends' superName=ID)? '{' varDeclaration*  methodDeclaration* '}' #ClassDecl
     ;
+// AQUI ACONTECE O MESMO QUE O QUE DISSE NO COMENTARIO DO input.txt ... de propósito? ... existe uma solução obvia (st1| st2)
 
 varDeclaration
-    : type=TYPE var=ID ('=' expression)? ';'
+    : type=TYPE (arrayCall)? var=ID ('=' expression)? ';' // TODO ... ver este com mais cuidado, o input.txt n dá mas está a reconhecer no teste que criei
     ;
 
 methodDeclaration
@@ -78,7 +109,7 @@ methodArgs
 methodBody
     : varDeclaration* statement*
     ;
-
+// O NOME DE CLASS é sempre com maiuscula ???
 statement
     : '{' (statement)* '}' #BlockStmt
     | 'System.out.println' '(' expression ')' ';' #PrintStmt
@@ -86,11 +117,10 @@ statement
     | 'while' '(' expression ')' statement #WhileStmt
     | 'for' '(' ( (var=ID '=' expression) | (type=TYPE var=ID '=' expression) )  ';' expression ';' expression ')' statement #ForStmt
 
-    | type=TYPE var=ID arrayCall '=' array_struct ';' #ArrayDeclAssign
-    | type=TYPE var=ID arrayCall? ';' #VarDecl
+    | type=TYPE arrayCall var=ID '=' array_struct ';' #ArrayDeclAssign
+    | type=TYPE arrayCall? var=ID ';' #VarDecl // TODO: ESTE PEDAÇO ESTA REPETIDO ... o [] estava no sitio errado ... embora dei nos dois em java (os testes falhavam) ... perguntar ao professor
     | type=TYPE var=ID '=' expression ';' #VarDeclAssign
     | var=ID arrayCall? '=' expression ';' #VarAssign
-
 
 
     | var=ID '.' methodCall=ID '(' methodArgs* ')' ';' #MethodCall
@@ -114,15 +144,16 @@ elseStmt:('else' statement);
 
 
 expression
-    : '(' expression ')' #ParenExpr
+    : var=ID ('.' methodCall=ID )* #ObjectVar
+    | '(' expression ')' #ParenExpr
     | '!' expression #UnaryNegation
     | expression op=('++' | '--') #UnaryOp
     | expression op=('*'| '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | expression op=('&&' | '||') expression #BinaryBool
     | expression op=('==' | '!=' | '<' | '<=' | '>' | '>=') expression #BinaryComp
-    | var=ID '[' expression ']' #ArrayAccess
     | value=LITERAL #LiteralExpr
+    | var=ID '[' expression ']' #ArrayAccess
     | var=ID #VarExpr
     // | array_struct #ArrayStructExpr // // adding this makes h = {1,5,6}; possible but allows for other weird stuff
     ;
