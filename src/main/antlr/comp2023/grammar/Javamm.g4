@@ -85,7 +85,7 @@ statement
 
     // | 'break' ';' #BreakStmt
     // | 'continue' ';' #ContinueStmt
-    // | 'return' expression? ';' #ReturnStmt
+      | 'return' expression? ';' #ReturnStmt
     // | expression op=('++' | '--') ';' #UnaryOpStmt
     ;
 
