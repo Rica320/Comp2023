@@ -3,6 +3,7 @@ package pt.up.fe.comp2023.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
 import java.util.List;
+import java.util.Objects;
 
 public class MethodScope {
     String methodName;
@@ -16,7 +17,7 @@ public class MethodScope {
     public MethodScope(Type returnT, String name, List<MySymbol> MethodParameters) {
         methodName = name;
         returnType = returnT;
-        parameters = MethodParameters;
+        parameters = Objects.requireNonNullElseGet(MethodParameters, List::of);
     }
 
     // ========================== GETTERS ==========================
@@ -86,14 +87,28 @@ public class MethodScope {
         return currentScope.hasLocalVariable(variableLabel);
     }
 
-    public boolean isLocalVariableInScope(String variableLabel) {
+    public MySymbol isLocalVariableInScope(String variableLabel) {
         Scope scope = currentScope;
         while (scope != null) {
             if (scope.hasLocalVariable(variableLabel))
-                return true;
+                return scope.getLocalVariable(variableLabel);
             scope = scope.parentScope;
         }
-        return false;
+        return null;
+    }
+
+    // ========================== PRINT ==========================
+
+    @Override
+    public String toString() {
+        StringBuilder s = new StringBuilder("Method: " + methodName + " (");
+        for (MySymbol p : parameters)
+            s.append(p.toString()).append(", ");
+        s.append(") -> ").append(returnType.toString()).append(" {");
+        for (MySymbol v : currentScope.getLocalVariables())
+            s.append(v.toString()).append(", ");
+        s.append("}");
+        return s.toString() + "\n\n";
     }
 
 }

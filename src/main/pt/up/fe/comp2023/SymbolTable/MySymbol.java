@@ -26,6 +26,11 @@ public class MySymbol extends Symbol {
         isAssigned = true;
     }
 
+    public MySymbol(Type type, String name, boolean isParameter, int order) {
+        super(type, name);
+        isAssigned = true;
+    }
+
     // ========================== GETTERS / SETTERS ==========================
 
     public boolean isAssigned() {

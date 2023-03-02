@@ -42,6 +42,17 @@ public class MySymbolTable implements SymbolTable {
     private HashMap<String, MethodScope> methods = new HashMap<>();
     private HashMap<String, MySymbol> fields = new HashMap<>();
 
+    // ========================== CONSTRUCTOR ==========================
+
+    public MySymbolTable() {
+    }
+
+    public MySymbolTable(String className, String superClass) {
+        this.className = className;
+        this.superClass = superClass;
+    }
+
+
     // ========================== IMPORTS ==========================
 
     @Override
@@ -102,10 +113,10 @@ public class MySymbolTable implements SymbolTable {
         return fields.containsKey(name);
     }
 
-    public Boolean addField(Symbol symbol, String value) {
+    public Boolean addField(MySymbol symbol) {
         if (hasField(symbol.getName()))
             return false; // already exists
-        fields.put(symbol.getName(), new MySymbol(symbol, value));
+        fields.put(symbol.getName(), symbol);
         return true;
     }
 
@@ -169,11 +180,13 @@ public class MySymbolTable implements SymbolTable {
     @Override
     public String toString() {
 
-        return "Imports: " + imports + "\n" +
+        return "\n\n========== Table ===============\n" +
+                "Imports: " + imports + "\n" +
                 "Class: " + className + "\n" +
                 "Super: " + superClass + "\n" +
                 "Fields: " + fields + "\n" +
-                "Methods: " + methods + "\n";
+                "Methods: \n\n" + methods + "\n"
+                + "===============================\n\n";
 
     }
 }
