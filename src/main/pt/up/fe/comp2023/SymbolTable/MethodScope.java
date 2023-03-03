@@ -2,6 +2,7 @@ package pt.up.fe.comp2023.SymbolTable;
 
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -95,6 +96,16 @@ public class MethodScope {
             scope = scope.parentScope;
         }
         return null;
+    }
+
+    public List<MySymbol> getAllScopeVars() {
+        Scope scope = currentScope;
+        List<MySymbol> vars = new ArrayList<>();
+        while (scope != null) {
+            vars.addAll(scope.getLocalVariables());
+            scope = scope.parentScope;
+        }
+        return vars;
     }
 
     // ========================== PRINT ==========================

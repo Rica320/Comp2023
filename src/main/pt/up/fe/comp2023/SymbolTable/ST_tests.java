@@ -44,6 +44,10 @@ public class ST_tests {
         st.getMethod("main").newScope();
         st.getMethod("main").currentScope.addLocalVariable(var2);
 
+        System.out.println("\n=============== All scope vars =============== ");
+        System.out.println(st.getMethod("main").getAllScopeVars()); // gets all vars in all scopes (from current to global)
+        System.out.println("=============== End of scope vars ===============\n\n");
+
         System.out.println(st.getMethod("main").getLocalVariables()); // Shows top scope
         System.out.println(st.getMethod("main").currentScope.getLocalVariables()); // Shows current scope
 
