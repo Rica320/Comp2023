@@ -17,6 +17,7 @@ grammar Javamm;
 // no if else n sei se valerá a pena
 
 
+// se x.length(y.length()); então o que considerá-mos .... a função length ou a var length
 // ou deixar como está e perguntar ao professor o que acha
 
 program
@@ -24,7 +25,11 @@ program
     ;
 
 importDeclaration
-    : 'import' packageID=ID ('.' packageID=ID)* ';' #ImportDecl
+    : 'import' importPackage ('.' importPackage)* ';' #ImportDecl
+    ;
+
+importPackage
+    : packageID=ID
     ;
 
 classDeclaration
@@ -86,12 +91,11 @@ expression
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup
     | expression '.' 'length' #ArrayLength
-    | expression '.' 'this' '(' (expression (',' expression)*)? ')' #MethodCall // TODO... é para tirar ?
-    | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto?
+    | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto...queremos ?
     | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
     | expression op=('+' | '-') expression #BinaryOp
-    | expression op='&&' expression #BinaryBool
     | expression op='<' expression #BinaryComp
+    | expression op='&&' expression #BinaryBool
     | 'this' #This
     | var=ID #Var
     | var=ID '[' expression ']' #ArrayLookup

@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 class QuickSort {
     public static void main(String[] a) {
         int[] L;
@@ -73,6 +75,12 @@ class QuickSort {
         tmp = L[i];
         L[i] = L[hi];
         L[hi] = tmp;
+
+        x = !x + 2;
+
+        x.length4(y.length4());
+
+        a = b * this.m(10,20);
 
         return i;
 
