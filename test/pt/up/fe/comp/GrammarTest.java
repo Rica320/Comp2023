@@ -20,7 +20,7 @@ public class GrammarTest {
 
     private static final String IMPORT = "importDeclaration";
     private static final String MAIN_METHOD = "methodDeclaration";
-    private static final String INSTANCE_METHOD = "";
+    private static final String INSTANCE_METHOD = "methodDeclaration";
     private static final String STATEMENT = "statement";
     private static final String EXPRESSION = "expression";
 
@@ -52,7 +52,7 @@ public class GrammarTest {
 
    @Test
     public void testVarDeclString() {
-        TestUtils.parseVerbose("String aString;", "VarDecl");
+        TestUtils.parseVerbose("String aString;", "varDeclaration");
     }
 
     @Test
@@ -62,8 +62,18 @@ public class GrammarTest {
 
     @Test
     public void testInstanceMethodEmpty() {
-        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {return a;}",
+        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {int[] a; return a;}",
                 INSTANCE_METHOD);
+    }
+
+    @Test
+    public void testInstanceMethod() {
+        TestUtils.parseVerbose("class QuickSort {\n" +
+                "    public static void main(String[] a) {\n" +
+                "        int[] l;\n" +
+                "\n" +
+                "    }\n" +
+                "}");
     }
 
     @Test

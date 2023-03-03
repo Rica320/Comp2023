@@ -13,7 +13,7 @@ import java.util.*;
 • Methods inside the declared class
 • Parameters and return type for each method
 • Local variables for each method
-• Include type in each symbol (e.g. a local variable “a” is of type X. Also, is “a” array?)
+• Include type in each symbol (e.g. a local variable "a" is of type X. Also, is "a" array?)
 • Print Symbol Table
 • Used interfaces: SymbolTable, AJmmVisitor (the latter is optional)
 */
