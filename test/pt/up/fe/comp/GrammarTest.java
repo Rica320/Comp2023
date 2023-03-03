@@ -1,11 +1,11 @@
 /**
  * Copyright 2022 SPeCS.
- * 
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * 
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License. under the License.
@@ -50,7 +50,7 @@ public class GrammarTest {
         TestUtils.parseVerbose("class Foo {int a; int[] b; int c; boolean d; Bar e;}");
     }
 
-   @Test
+    @Test
     public void testVarDeclString() {
         TestUtils.parseVerbose("String aString;", "varDeclaration");
     }
@@ -62,18 +62,12 @@ public class GrammarTest {
 
     @Test
     public void testInstanceMethodEmpty() {
-        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {int[] a; return a;}",
-                INSTANCE_METHOD);
+        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {int[] a; return a;}", INSTANCE_METHOD);
     }
 
     @Test
     public void testInstanceMethod() {
-        TestUtils.parseVerbose("class QuickSort {\n" +
-                "    public static void main(String[] a) {\n" +
-                "        int[] l;\n" +
-                "\n" +
-                "    }\n" +
-                "}");
+        TestUtils.parseVerbose("class QuickSort {\n" + "    public static void main(String[] a) {\n" + "        int[] l;\n" + "\n" + "    }\n" + "}");
     }
 
     @Test

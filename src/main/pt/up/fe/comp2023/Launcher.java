@@ -39,9 +39,9 @@ public class Launcher {
         // Parse stage
         JmmParserResult parserResult = parser.parse(code, config);
 
-        if(parserResult.getReports().size() > 0) {
-            for(Report report : parserResult.getReports()) {
-                if(report.getType() == ReportType.ERROR || report.getType() == ReportType.WARNING) {
+        if (parserResult.getReports().size() > 0) {
+            for (Report report : parserResult.getReports()) {
+                if (report.getType() == ReportType.ERROR || report.getType() == ReportType.WARNING) {
                     System.out.println("Error: " + report.getMessage());
                     System.out.println("Line: " + report.getLine());
                     System.out.println("Column: " + report.getColumn());
@@ -49,11 +49,11 @@ public class Launcher {
                     System.out.println("Type: " + report.getType());
                 }
             }
-        }else{
+        } else {
             System.out.println("No errors found!\n\n");
         }
 
-        if(parserResult.getRootNode() == null) {
+        if (parserResult.getRootNode() == null) {
             System.out.println("Parser result is null!");
             return;
         }

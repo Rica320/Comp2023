@@ -2,6 +2,7 @@ package pt.up.fe.comp2023.SymbolTable;
 
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,8 +39,7 @@ public class MethodScope {
 
 
         for (MySymbol p : parameters)
-            if (p.getName().equals(name))
-                return p;
+            if (p.getName().equals(name)) return p;
         return null;
     }
 
@@ -78,8 +78,7 @@ public class MethodScope {
 
     public boolean isParameter(String parameterLabel) {
         for (MySymbol p : parameters)
-            if (p.getName().equals(parameterLabel))
-                return true;
+            if (p.getName().equals(parameterLabel)) return true;
         return false;
     }
 
@@ -90,11 +89,20 @@ public class MethodScope {
     public MySymbol isLocalVariableInScope(String variableLabel) {
         Scope scope = currentScope;
         while (scope != null) {
-            if (scope.hasLocalVariable(variableLabel))
-                return scope.getLocalVariable(variableLabel);
+            if (scope.hasLocalVariable(variableLabel)) return scope.getLocalVariable(variableLabel);
             scope = scope.parentScope;
         }
         return null;
+    }
+
+    public List<MySymbol> getAllScopeVars() {
+        Scope scope = currentScope;
+        List<MySymbol> vars = new ArrayList<>();
+        while (scope != null) {
+            vars.addAll(scope.getLocalVariables());
+            scope = scope.parentScope;
+        }
+        return vars;
     }
 
     // ========================== PRINT ==========================

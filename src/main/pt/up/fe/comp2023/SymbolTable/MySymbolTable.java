@@ -114,8 +114,7 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public Boolean addField(MySymbol symbol) {
-        if (hasField(symbol.getName()))
-            return false; // already exists
+        if (hasField(symbol.getName())) return false; // already exists
         fields.put(symbol.getName(), symbol);
         return true;
     }
@@ -180,13 +179,7 @@ public class MySymbolTable implements SymbolTable {
     @Override
     public String toString() {
 
-        return "\n\n========== Table ===============\n" +
-                "Imports: " + imports + "\n" +
-                "Class: " + className + "\n" +
-                "Super: " + superClass + "\n" +
-                "Fields: " + fields + "\n" +
-                "Methods: \n\n" + methods + "\n"
-                + "===============================\n\n";
+        return "\n\n========== Table ===============\n" + "Imports: " + imports + "\n" + "Class: " + className + "\n" + "Super: " + superClass + "\n" + "Fields: " + fields + "\n" + "Methods: \n\n" + methods + "\n" + "===============================\n\n";
 
     }
 }

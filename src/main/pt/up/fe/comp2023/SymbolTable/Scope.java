@@ -29,8 +29,7 @@ public class Scope {
     // ========================== SETTERS ==========================
 
     public Boolean addLocalVariable(MySymbol var) {
-        if (localVariables.containsKey(var.getName()))
-            return false; // already exists
+        if (localVariables.containsKey(var.getName())) return false; // already exists
         localVariables.put(var.getName(), var);
         return true;
     }
@@ -40,8 +39,7 @@ public class Scope {
     }
 
     public boolean assignVariable(MySymbol var) {
-        if (localVariables.containsKey(var.getName()))
-            return false; // already exists
+        if (localVariables.containsKey(var.getName())) return false; // already exists
         localVariables.put(var.getName(), var);
         return true;
     }
