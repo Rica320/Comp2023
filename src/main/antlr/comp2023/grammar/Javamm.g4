@@ -6,6 +6,9 @@ grammar Javamm;
 
 // PARSER
 
+//
+// Notas: queria dar um nome ao returno da função
+//
 
 program
     : (importDeclaration)* classDeclaration EOF #ProgramRoot
@@ -20,14 +23,31 @@ classDeclaration
     ;
 
 varDeclaration
-    : type ('[' ']')? var=ID';'
+    : type var=ID';'
     ;
 
 
-methodDeclaration // aqui acontece a questão da 'String', isto resolve e acho que tinha sido o que o stor disse ao joão
-    : ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}' #MainMethodDecl
-    | ('public')?  type name=ID '(' (type arg=ID (',' type arg=ID)*)?')' '{' (varDeclaration)* (statement)* 'return' expression ';' '}' #MethodDecl // se não me engano o retorno n pode ser void
+methodDeclaration returns [String returnType, String methodName]:
+    ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}'
+    {
+        $returnType = "void";
+        $methodName = "main";
+    }
+    | ('public')? type name=ID '(' methodParams? ')' '{' (varDeclaration)* (statement)*  returnStatement '}'
+    {
+        $returnType = $type.text;
+        $methodName = $name.text;
+    }
+    ; // TODO: ver se funcionou
+
+methodParams
+    : type var=ID (',' type var=ID)*
     ;
+
+ returnStatement
+    : 'return' expression ';' #ReturnStmt
+    ;
+
 
 type
     : 'int' '[' ']' #IntArrayType
@@ -37,7 +57,7 @@ type
     ;
 
 statement
-    : '{' (statement)* '}' #Block
+    : '{' (statement)* '}' #Scope
     | 'if' '(' expression ')' statement ('else' statement)? #If
     | 'while' '(' expression ')' statement #While
     | expression ';' #ExpressionStmt
@@ -49,20 +69,20 @@ expression
     : '(' expression ')' #Paren
     | BooleanLiteral #Boolean
     | 'new' 'int' '[' expression ']' #NewIntArray
-    | 'new' ID '(' ')' #NewObject
+    | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup
     | expression '.' 'length' #ArrayLength
-    | expression '.' 'this' '(' (expression (',' expression)*)? ')' #MethodCall
-    | expression '.' ID '(' (expression (',' expression)*)? ')' #MethodCall
-    | expression op=('*'| '/') expression #BinaryOp
+    | expression '.' 'this' '(' (expression (',' expression)*)? ')' #MethodCall // TODO... é para tirar ?
+    | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto?
+    | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
     | expression op=('+' | '-') expression #BinaryOp
     | expression '&&' expression #BinaryBool
     | expression '<' expression #BinaryComp
     | 'this' #This
     | var=ID #Var
     | var=ID '[' expression ']' #ArrayLookup
-    | INTEGER #Int
+    | val=INTEGER #Int
     ;
 
 // LEXER

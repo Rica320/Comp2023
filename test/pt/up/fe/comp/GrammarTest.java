@@ -62,8 +62,18 @@ public class GrammarTest {
 
     @Test
     public void testInstanceMethodEmpty() {
-        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {return a;}",
+        TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {int[] a; return a;}",
                 INSTANCE_METHOD);
+    }
+
+    @Test
+    public void testInstanceMethod() {
+        TestUtils.parseVerbose("class QuickSort {\n" +
+                "    public static void main(String[] a) {\n" +
+                "        int[] l;\n" +
+                "\n" +
+                "    }\n" +
+                "}");
     }
 
     @Test
