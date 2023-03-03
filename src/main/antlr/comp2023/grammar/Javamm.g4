@@ -10,6 +10,15 @@ grammar Javamm;
 // Notas: queria dar um nome ao returno da função
 //
 
+// A melhorar:
+// 1. Ver o tipo de retorno identificado .. [0]
+// melhor nome aos objetos nos em method calls
+// talvez o mesmo de cima mas para argumentos
+// no if else n sei se valerá a pena
+
+
+// ou deixar como está e perguntar ao professor o que acha
+
 program
     : (importDeclaration)* classDeclaration EOF #ProgramRoot
     ;
@@ -38,10 +47,14 @@ methodDeclaration returns [String returnType, String methodName]:
         $returnType = $type.text;
         $methodName = $name.text;
     }
-    ; // TODO: ver se funcionou
+    ; // TODO: ver se funcionou o tipo de retorno
 
 methodParams
-    : type var=ID (',' type var=ID)*
+    : paramDeclaration (',' paramDeclaration)* #MethodArgs
+    ;
+
+paramDeclaration
+    : type var=ID #ParamDecl
     ;
 
  returnStatement
@@ -67,7 +80,7 @@ statement
 
 expression
     : '(' expression ')' #Paren
-    | BooleanLiteral #Boolean
+    | value=BooleanLiteral #Boolean
     | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
@@ -77,8 +90,8 @@ expression
     | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto?
     | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
     | expression op=('+' | '-') expression #BinaryOp
-    | expression '&&' expression #BinaryBool
-    | expression '<' expression #BinaryComp
+    | expression op='&&' expression #BinaryBool
+    | expression op='<' expression #BinaryComp
     | 'this' #This
     | var=ID #Var
     | var=ID '[' expression ']' #ArrayLookup
