@@ -86,7 +86,7 @@ expression
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup
     | expression '.' 'length' #ArrayLength
-    | expression '.' 'this' '(' (expression (',' expression)*)? ')' #MethodCall // TODO... é para tirar ?
+ //   | expression '.' 'this' '(' (expression (',' expression)*)? ')' #MethodCall // TODO... é para tirar ?
     | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto?
     | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
     | expression op=('+' | '-') expression #BinaryOp

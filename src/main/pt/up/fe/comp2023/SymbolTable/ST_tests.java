@@ -19,8 +19,8 @@ public class ST_tests {
         MySymbol var1 = new MySymbol(new Type("int", false), "var1", "1");
         MySymbol var2 = new MySymbol(new Type("int", false), "var2", "2");
 
-        MySymbol param1 = new MySymbol(new Type("int", false), "param1", true, 1);
-        MySymbol param2 = new MySymbol(new Type("int", false), "param2", true, 2);
+        MySymbol param1 = new MySymbol(new Type("int", false), "param1", 1);
+        MySymbol param2 = new MySymbol(new Type("int", false), "param2", 2);
 
         List<MySymbol> paramList = new ArrayList<MySymbol>();
         paramList.add(param1);

@@ -26,9 +26,10 @@ public class MySymbol extends Symbol {
         isAssigned = true;
     }
 
-    public MySymbol(Type type, String name, boolean isParameter, int order) {
+    public MySymbol(Type type, String name,  int ParamOrder) {
         super(type, name);
         isAssigned = true;
+        this.order = ParamOrder;
     }
 
     // ========================== GETTERS / SETTERS ==========================
