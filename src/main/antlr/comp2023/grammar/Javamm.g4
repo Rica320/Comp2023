@@ -85,7 +85,6 @@ statement
 
 expression
     : '(' expression ')' #Paren
-    | value=BooleanLiteral #Boolean
     | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
@@ -99,6 +98,7 @@ expression
     | 'this' #This
     | var=ID #Var
     | var=ID '[' expression ']' #ArrayLookup
+    | val=BooleanLiteral #Boolean
     | val=INTEGER #Int
     ;
 

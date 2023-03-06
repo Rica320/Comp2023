@@ -37,7 +37,7 @@ need to go very deep in the AST, and both approaches are viable.
 
 public class MySymbolTable implements SymbolTable {
 
-    public String currentMethod = null;
+    private String currentMethod = null;
     private Set<String> imports = new HashSet<>();
     private String className = "", superClass = "";
     private HashMap<String, MethodScope> methods = new HashMap<>();
@@ -53,6 +53,17 @@ public class MySymbolTable implements SymbolTable {
         this.superClass = superClass;
     }
 
+    public MethodScope getCurrentMethodScope() {
+        return this.getMethod(this.currentMethod);
+    }
+
+    public void setCurrentMethod(String methodLabel) {
+        this.currentMethod = methodLabel;
+    }
+
+    public String getCurrentMethod() {
+        return this.currentMethod;
+    }
 
     // ========================== IMPORTS ==========================
 

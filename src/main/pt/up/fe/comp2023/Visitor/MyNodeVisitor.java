@@ -51,7 +51,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         addVisit("BooleanType", this::dealWithBooleanType);
         addVisit("IntType", this::dealWithIntType);
         addVisit("IdType", this::dealWithIdType);
-      /*
+
         // Statement
         addVisit("Scope", this::dealWithScope);
         addVisit("If", this::dealWithIf);
@@ -76,8 +76,6 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         addVisit("Var", this::dealWithVar);
         addVisit("ArrayLookup", this::dealWithArrayLookup);
         addVisit("Int", this::dealWithInt);
-
-        */
 
 
         setDefaultVisit(this::defaultVisit);
@@ -130,10 +128,10 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
         // System.out.println("Adding field: " + new_symbol.getName() + " in method " + st.currentMethod);
 
-        if (st.currentMethod == null) {
+        if (st.getCurrentMethodScope() == null) {
             st.addField(new_symbol);
         } else {
-            st.getMethod(st.currentMethod).addLocalVariable(new_symbol);
+            st.getCurrentMethodScope().addLocalVariable(new_symbol);
         }
 
         return "";
@@ -143,11 +141,11 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         MethodScope main = new MethodScope(new Type("void", false), "main", null);
         st.addMethod("main", main);
 
-        st.currentMethod = "main";
+        st.setCurrentMethod("main");
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
-        st.currentMethod = null;
+        st.setCurrentMethod(null);
 
         return "";
     }
@@ -160,18 +158,18 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         MethodScope method = new MethodScope(new Type(type, isArr), jmmNode.get("name"), null);
         st.addMethod(jmmNode.get("name"), method);
 
-        st.currentMethod = jmmNode.get("name");
+        st.setCurrentMethod(jmmNode.get("name"));
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
-        st.currentMethod = null;
+        st.setCurrentMethod(null);
 
         return "";
     }
 
     private String dealWithMethodArgs(JmmNode jmmNode, String s) {
         List<MySymbol> list = new ArrayList<MySymbol>();
-        st.getMethod(st.currentMethod).setParameters(list);
+        st.getCurrentMethodScope().setParameters(list);
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
@@ -186,7 +184,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
         MySymbol param = new MySymbol(new Type(type, isArr), "param", null);
 
-        st.getMethod(st.currentMethod).addParameter(param);
+        st.getCurrentMethodScope().addParameter(param);
         return "";
     }
 
@@ -194,7 +192,6 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         this.visit(jmmNode.getChildren().get(0), s); // Expression
         return "";
     }
-
 
     // ============================================ Type ============================================
 
@@ -214,15 +211,16 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         return jmmNode.get("name");
     }
 
-    /*
+
     // ============================================ Statement ============================================
 
     private String dealWithScope(JmmNode jmmNode, String s) {
-        st.addScope();
+        // TODO: Ask prof if we need to create a new scope
+        //st.getCurrentMethodScope().newScope();
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
-        st.removeScope();
+        //st.getCurrentMethodScope().endScope();
         return "";
     }
 
@@ -248,15 +246,18 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
         String var = jmmNode.get("var");
-        String type = this.visit(jmmNode.getChildren().get(0), s);
-        st.addVar(var, type);
+        // String type = this.visit(jmmNode.getChildren().get(0), s);
+        String value = jmmNode.getJmmChild(0).get("val");
+
+        // TODO: we still need to check if the variable is a field or a local variable and if scope matters
+        st.getCurrentMethodScope().setLocalVariableValue(var, value);
         return "";
     }
 
     private String dealWithArrayAssign(JmmNode jmmNode, String s) {
         String var = jmmNode.get("var");
         String type = this.visit(jmmNode.getChildren().get(0), s);
-        st.addVar(var, type);
+        // TODO: same problem as above
         return "";
     }
 
@@ -268,58 +269,63 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithBoolean(JmmNode jmmNode, String s) {
-        return "boolean";
+        return this.visit(jmmNode.getChildren().get(0), s);
     }
 
     private String dealWithNewIntArray(JmmNode jmmNode, String s) {
-        return "int[]";
+        return "int[]"; // TODO
     }
 
     private String dealWithNewObject(JmmNode jmmNode, String s) {
-        return jmmNode.get("classID");
+        return jmmNode.get("classID"); // TODO
     }
 
     private String dealWithNot(JmmNode jmmNode, String s) {
-        return "boolean";
+        return "boolean"; // TODO
     }
 
     private String dealWithArrayLookup(JmmNode jmmNode, String s) {
-        return "int";
+        return "int"; // TODO
     }
 
     private String dealWithArrayLength(JmmNode jmmNode, String s) {
-        return "int";
+        return "int"; // TODO
     }
 
     private String dealWithMethodCall(JmmNode jmmNode, String s) {
-        return st.getMethodType(jmmNode.get("methodID"), jmmNode.get("classID"));
+        // TODO
+        return "";
     }
 
     private String dealWithBinaryOp(JmmNode jmmNode, String s) {
+        // TODO
         return "int";
     }
 
     private String dealWithBinaryComp(JmmNode jmmNode, String s) {
+        // TODO
         return "boolean";
     }
 
     private String dealWithBinaryBool(JmmNode jmmNode, String s) {
+        // TODO
         return "boolean";
     }
 
     private String dealWithThis(JmmNode jmmNode, String s) {
-        return st.getClassID();
+        // TODO how does this work?
+        return "";
     }
 
     private String dealWithVar(JmmNode jmmNode, String s) {
-        return st.getVarType(jmmNode.get("varID"));
+        // TODO
+        return "";
     }
 
     private String dealWithInt(JmmNode jmmNode, String s) {
+        // TODO
         return "int";
     }
-
-    */
 
 
 }
