@@ -10,6 +10,7 @@ class QuickSort extends GeneralSort {
     }
 
     public int quicksort(int a, boolean b, int[] c) {
+        int y;
         return this.quicksort(L, 0, L.length - 1);
     }
 

@@ -108,7 +108,12 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithClassDecl(JmmNode jmmNode, String s) {
         st.setClassName(jmmNode.get("name"));
-        st.setSuperClass(jmmNode.get("superName"));
+
+        try {
+            st.setSuperClass(jmmNode.get("extends"));
+        } catch (Exception e) {
+            st.setSuperClass("");
+        }
 
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
