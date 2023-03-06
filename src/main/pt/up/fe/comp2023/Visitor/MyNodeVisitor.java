@@ -1,14 +1,21 @@
 package pt.up.fe.comp2023.Visitor;
 
+import pt.up.fe.comp.jmm.analysis.table.Type;
+import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2023.SymbolTable.MethodScope;
+import pt.up.fe.comp2023.SymbolTable.MySymbol;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
-public class MyNodeVisitor extends AJmmVisitor <String,String> {
+import java.util.ArrayList;
+import java.util.List;
+
+public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
     private MySymbolTable st;
 
-    public MyNodeVisitor (MySymbolTable st) {
-        this.st = st ;
+    public MyNodeVisitor(MySymbolTable st) {
+        this.st = st;
     }
 
     @Override
@@ -17,20 +24,24 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
     }
 
 
-    public MySymbolTable getSymbolTable(){
+    public MySymbolTable getSymbolTable() {
         return this.st;
     }
 
     @Override
     protected void buildVisitor() {
         // Add visit methods
-        addVisit ("ProgramRoot", this::dealWithProgram);
+        addVisit("ProgramRoot", this::dealWithProgram);
         addVisit("ImportDecl", this::dealWithImports);
+
 
         // Class
         addVisit("ClassDecl", this::dealWithClassDecl);
+        addVisit("VarDcl", this::dealWithVarDcl);
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
+
+
         addVisit("MethodArgs", this::dealWithMethodArgs);
         addVisit("ParamDecl", this::dealWithParamDecl);
         addVisit("ReturnStmt", this::dealWithReturnStmt);
@@ -40,7 +51,7 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
         addVisit("BooleanType", this::dealWithBooleanType);
         addVisit("IntType", this::dealWithIntType);
         addVisit("IdType", this::dealWithIdType);
-
+      /*
         // Statement
         addVisit("Scope", this::dealWithScope);
         addVisit("If", this::dealWithIf);
@@ -66,15 +77,23 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
         addVisit("ArrayLookup", this::dealWithArrayLookup);
         addVisit("Int", this::dealWithInt);
 
+        */
+
 
         setDefaultVisit(this::defaultVisit);
+
     }
 
-    private String dealWithProgram (JmmNode jmmNode , String s) {
 
-        this.visit(jmmNode.getChildren().get(0), s); // Imports
-        this.visit(jmmNode.getChildren().get(1), s); // Class
-        // EOF
+    private String defaultVisit(JmmNode jmmNode, String s) {
+        return "DEFAULT_VISIT";
+    }
+
+
+    private String dealWithProgram(JmmNode jmmNode, String s) {
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s); // Imports + Class
+        }
         return "";
     }
 
@@ -88,28 +107,66 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
     }
 
     private String dealWithClassDecl(JmmNode jmmNode, String s) {
-        st.addClass(jmmNode.get("classID"));
-        this.visit(jmmNode.getChildren().get(0), s); // Main
-        this.visit(jmmNode.getChildren().get(1), s); // Methods
+        st.setClassName(jmmNode.get("name"));
+        st.setSuperClass(jmmNode.get("superName"));
+
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
         return "";
     }
-    
-    
+
+    private String dealWithVarDcl(JmmNode jmmNode, String s) {
+        JmmNode type_node = jmmNode.getChildren().get(0);
+        String type = this.visit(type_node, s);
+        boolean isArr = type.charAt(type.length() - 1) == ']';
+
+        MySymbol new_symbol = new MySymbol(new Type(type, isArr), jmmNode.get("var"));
+
+        // System.out.println("Adding field: " + new_symbol.getName() + " in method " + st.currentMethod);
+
+        if (st.currentMethod == null) {
+            st.addField(new_symbol);
+        } else {
+            st.getMethod(st.currentMethod).addLocalVariable(new_symbol);
+        }
+
+        return "";
+    }
+
     private String dealWithMain(JmmNode jmmNode, String s) {
-        st.addMethod("main", "void", jmmNode.get("classID"));
-        this.visit(jmmNode.getChildren().get(0), s); // MethodArgs
-        this.visit(jmmNode.getChildren().get(1), s); // Scope
+        MethodScope main = new MethodScope(new Type("void", false), "main", null);
+        st.addMethod("main", main);
+
+        st.currentMethod = "main";
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
+        st.currentMethod = null;
+
         return "";
     }
 
     private String dealWithMethod(JmmNode jmmNode, String s) {
-        st.addMethod(jmmNode.get("methodID"), jmmNode.get("returnType"), jmmNode.get("classID"));
-        this.visit(jmmNode.getChildren().get(0), s); // MethodArgs
-        this.visit(jmmNode.getChildren().get(1), s); // Scope
+        JmmNode type_node = jmmNode.getChildren().get(0);
+        String type = this.visit(type_node, s);
+        boolean isArr = type.charAt(type.length() - 1) == ']';
+
+        MethodScope method = new MethodScope(new Type(type, isArr), jmmNode.get("name"), null);
+        st.addMethod(jmmNode.get("name"), method);
+
+        st.currentMethod = jmmNode.get("name");
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
+        st.currentMethod = null;
+
         return "";
     }
 
     private String dealWithMethodArgs(JmmNode jmmNode, String s) {
+        List<MySymbol> list = new ArrayList<MySymbol>();
+        st.getMethod(st.currentMethod).setParameters(list);
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
@@ -117,7 +174,14 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
     }
 
     private String dealWithParamDecl(JmmNode jmmNode, String s) {
-        st.addParam(jmmNode.get("id"), jmmNode.get("type"));
+
+        JmmNode type_node = jmmNode.getChildren().get(0);
+        String type = this.visit(type_node, s);
+        boolean isArr = type.charAt(type.length() - 1) == ']';
+
+        MySymbol param = new MySymbol(new Type(type, isArr), "param", null);
+
+        st.getMethod(st.currentMethod).addParameter(param);
         return "";
     }
 
@@ -125,6 +189,7 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
         this.visit(jmmNode.getChildren().get(0), s); // Expression
         return "";
     }
+
 
     // ============================================ Type ============================================
 
@@ -141,9 +206,10 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
     }
 
     private String dealWithIdType(JmmNode jmmNode, String s) {
-        return jmmNode.get("id");
+        return jmmNode.get("name");
     }
 
+    /*
     // ============================================ Statement ============================================
 
     private String dealWithScope(JmmNode jmmNode, String s) {
@@ -247,6 +313,8 @@ public class MyNodeVisitor extends AJmmVisitor <String,String> {
     private String dealWithInt(JmmNode jmmNode, String s) {
         return "int";
     }
+
+    */
 
 
 }

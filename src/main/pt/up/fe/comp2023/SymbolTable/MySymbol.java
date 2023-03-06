@@ -24,6 +24,7 @@ public class MySymbol extends Symbol {
     public MySymbol(Type type, String name, String value) {
         super(type, name);
         isAssigned = true;
+        this.value = value;
     }
 
     public MySymbol(Type type, String name,  int ParamOrder) {

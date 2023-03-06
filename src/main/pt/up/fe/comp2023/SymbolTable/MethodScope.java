@@ -35,6 +35,15 @@ public class MethodScope {
         return parameters;
     }
 
+    public void setParameters(List<MySymbol> parameters) {
+        this.parameters = parameters;
+    }
+
+    public void addParameter(MySymbol parameter) {
+        parameter.setOrder(parameters.size());
+        this.parameters.add(parameter);
+    }
+
     public MySymbol getParameter(String name) {
 
         for (MySymbol p : parameters)
