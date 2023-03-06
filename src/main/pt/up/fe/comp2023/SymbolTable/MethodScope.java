@@ -37,7 +37,6 @@ public class MethodScope {
 
     public MySymbol getParameter(String name) {
 
-
         for (MySymbol p : parameters)
             if (p.getName().equals(name)) return p;
         return null;

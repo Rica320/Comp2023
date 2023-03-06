@@ -67,7 +67,13 @@ public class GrammarTest {
 
     @Test
     public void testInstanceMethod() {
-        TestUtils.parseVerbose("class QuickSort {\n" + "    public static void main(String[] a) {\n" + "        int[] l;\n" + "\n" + "    }\n" + "}");
+        TestUtils.parseVerbose("""
+                class QuickSort {
+                    public static void main(String[] a) {
+                        int l;
+
+                    }
+                }""");
     }
 
     @Test

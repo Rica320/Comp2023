@@ -10,6 +10,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Test variable lookup.
  */
+
+
 public class SymbolTableTest {
 
     static JmmSemanticsResult getSemanticsResult(String filename) {
@@ -20,7 +22,7 @@ public class SymbolTableTest {
     	var semantics = getSemanticsResult(filename);
     	if(fail) {
     		TestUtils.mustFail(semantics.getReports());
-    	}else 	{
+    	}else {
        	 	TestUtils.noErrors(semantics.getReports());
     	}
     	return semantics;
@@ -41,7 +43,6 @@ public class SymbolTableTest {
     	var semantics = test("symboltable/Super.jmm",false);
     	assertEquals("Super", semantics.getSymbolTable().getClassName());
     	assertEquals("UltraSuper", semantics.getSymbolTable().getSuper());
-    	
     }
     
     @Test
@@ -113,6 +114,7 @@ public class SymbolTableTest {
     public void Parameters() {		
     	var semantics = test("symboltable/Parameters.jmm",false);
     	var st = semantics.getSymbolTable();
+		System.out.println(st);
     	var methods = st.getMethods();
     	assertEquals(1, methods.size());
     	
