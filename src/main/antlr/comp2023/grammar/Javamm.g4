@@ -41,17 +41,17 @@ varDeclaration
     ;
 
 
-methodDeclaration returns [String returnType, String methodName]:
-    ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}'
+methodDeclaration returns [String returnType, String methodName]
+    : ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}'
     {
         $returnType = "void";
         $methodName = "main";
-    }
+    }  #MainMethod
     | ('public')? type name=ID '(' methodParams? ')' '{' (varDeclaration)* (statement)*  returnStatement '}'
     {
         $returnType = $type.text;
         $methodName = $name.text;
-    }
+    } #MethodDecl
     ; // TODO: ver se funcionou o tipo de retorno
 
 methodParams
@@ -76,7 +76,7 @@ type
 
 statement
     : '{' (statement)* '}' #Scope
-    | 'if' '(' expression ')' statement ('else' statement)? #If
+    | 'if' '(' expression ')' statement ('else' statement)? #IfClause
     | 'while' '(' expression ')' statement #While
     | expression ';' #ExpressionStmt
     | var=ID '=' expression ';' #Assign
