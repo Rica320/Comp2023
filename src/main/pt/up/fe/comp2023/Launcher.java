@@ -66,8 +66,8 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         MyNodeVisitor visitor = new MyNodeVisitor("Calculator");
-        String generatedCode = visitor.visit(parserResult.getRootNode());
-        System.out.println(generatedCode);
+        //String generatedCode = visitor.visit(parserResult.getRootNode());
+        //System.out.println(generatedCode);
 
         // Instantiate JmmAnalyser
         // SimpleAnalyser analyser = new SimpleAnalyser();
