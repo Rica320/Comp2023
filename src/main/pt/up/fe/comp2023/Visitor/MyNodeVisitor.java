@@ -98,9 +98,15 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
     // ============================================ Imports + Class ============================================
 
     private String dealWithImports(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
         for (JmmNode child : jmmNode.getChildren()) {
-            st.addImport(child.get("packageID"));
+            if (sb.length() > 0) {
+                sb.append(".");
+            }
+
+            sb.append(child.get("packageID"));
         }
+        st.addImport(sb.toString());
         return "";
     }
 
@@ -138,7 +144,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithMain(JmmNode jmmNode, String s) {
-        MethodScope main = new MethodScope(new Type("void", false), "main", null);
+        MethodScope main = new MethodScope(new Type("void", false), "main", null); // TODO : STRING[] ??
         st.addMethod("main", main);
 
         st.setCurrentMethod("main");
@@ -221,11 +227,9 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithScope(JmmNode jmmNode, String s) {
         // TODO: Ask prof if we need to create a new scope
-        //st.getCurrentMethodScope().newScope();
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
-        //st.getCurrentMethodScope().endScope();
         return "";
     }
 
