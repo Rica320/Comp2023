@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023.SymbolTable;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
 import java.util.ArrayList;
@@ -8,14 +9,14 @@ import java.util.Objects;
 
 public class MethodScope {
     String methodName;
-    List<MySymbol> parameters;
+    List<Symbol> parameters;
     Type returnType;
     Scope currentScope = new Scope(0, null);
     int depth = 0;
 
     // ========================== CONSTRUCTOR ==========================
 
-    public MethodScope(Type returnT, String name, List<MySymbol> MethodParameters) {
+    public MethodScope(Type returnT, String name, List<Symbol> MethodParameters) {
         methodName = name;
         returnType = returnT;
         parameters = Objects.requireNonNullElseGet(MethodParameters, List::of);
@@ -31,22 +32,22 @@ public class MethodScope {
         return returnType;
     }
 
-    public List<MySymbol> getParameters() {
+    public List<Symbol> getParameters() {
         return parameters;
     }
 
-    public void setParameters(List<MySymbol> parameters) {
+    public void setParameters(List<Symbol> parameters) {
         this.parameters = parameters;
     }
 
-    public void addParameter(MySymbol parameter) {
-        parameter.setOrder(parameters.size());
+    public void addParameter(Symbol parameter) {
+        // parameter.setOrder(parameters.size()); .... TODO: N se podia ter isto aqui se usarmos o Symbol
         this.parameters.add(parameter);
     }
 
-    public MySymbol getParameter(String name) {
+    public Symbol getParameter(String name) {
 
-        for (MySymbol p : parameters)
+        for (Symbol p : parameters)
             if (p.getName().equals(name)) return p;
         return null;
     }
@@ -60,11 +61,11 @@ public class MethodScope {
         depth--;
     }
 
-    public List<MySymbol> getLocalVariables() {
+    public List<Symbol> getLocalVariables() {
         return currentScope.getLocalVariables();
     }
 
-    public MySymbol getLocalVariable(String variableName) {
+    public Symbol getLocalVariable(String variableName) {
         return currentScope.getLocalVariable(variableName);
     }
 
@@ -72,20 +73,20 @@ public class MethodScope {
         return currentScope.hasLocalVariable(variableName);
     }
 
-    public void setLocalVariableValue(String name, String value) {
-        currentScope.setLocalVariableValue(name, value);
-    }
+    //public void setLocalVariableValue(String name, String value) {
+    //    currentScope.setLocalVariableValue(name, value);
+    //}
 
-    public boolean assignVariable(MySymbol var) {
+    public boolean assignVariable(Symbol var) {
         return currentScope.assignVariable(var);
     }
 
-    public boolean addLocalVariable(MySymbol var) {
+    public boolean addLocalVariable(Symbol var) {
         return currentScope.addLocalVariable(var);
     }
 
     public boolean isParameter(String parameterLabel) {
-        for (MySymbol p : parameters)
+        for (Symbol p : parameters)
             if (p.getName().equals(parameterLabel)) return true;
         return false;
     }
@@ -94,7 +95,7 @@ public class MethodScope {
         return currentScope.hasLocalVariable(variableLabel);
     }
 
-    public MySymbol isLocalVariableInScope(String variableLabel) {
+    public Symbol isLocalVariableInScope(String variableLabel) {
         Scope scope = currentScope;
         while (scope != null) {
             if (scope.hasLocalVariable(variableLabel)) return scope.getLocalVariable(variableLabel);
@@ -103,9 +104,9 @@ public class MethodScope {
         return null;
     }
 
-    public List<MySymbol> getAllScopeVars() {
+    public List<Symbol> getAllScopeVars() {
         Scope scope = currentScope;
-        List<MySymbol> vars = new ArrayList<>();
+        List<Symbol> vars = new ArrayList<>();
         while (scope != null) {
             vars.addAll(scope.getLocalVariables());
             scope = scope.parentScope;
@@ -118,10 +119,10 @@ public class MethodScope {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("Method: " + methodName + " (");
-        for (MySymbol p : parameters)
+        for (Symbol p : parameters)
             s.append(p.toString()).append(", ");
         s.append(") -> ").append(returnType.toString()).append(" {");
-        for (MySymbol v : currentScope.getLocalVariables())
+        for (Symbol v : currentScope.getLocalVariables())
             s.append(v.toString()).append(", ");
         s.append("}");
         return s.toString() + "\n\n";

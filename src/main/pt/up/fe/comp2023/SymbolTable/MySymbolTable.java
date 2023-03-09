@@ -40,10 +40,10 @@ need to go very deep in the AST, and both approaches are viable.
 public class MySymbolTable implements SymbolTable {
 
     private String currentMethod = null;
-    private Set<String> imports = new HashSet<>();
+    private final Set<String> imports = new HashSet<>();
     private String className = "", superClass = "";
-    private HashMap<String, MethodScope> methods = new HashMap<>();
-    private HashMap<String, MySymbol> fields = new HashMap<>();
+    private final HashMap<String, MethodScope> methods = new HashMap<>();
+    private final HashMap<String, Symbol> fields = new HashMap<>();
 
     // ========================== CONSTRUCTOR ==========================
 
@@ -121,19 +121,15 @@ public class MySymbolTable implements SymbolTable {
         return new ArrayList<>(fields.values());
     }
 
-    public MySymbol getField(String name) {
+    public Symbol getField(String name) {
         return fields.get(name);
-    }
-
-    public void setFieldValue(String name, String value) {
-        fields.get(name).setValue(value);
     }
 
     public boolean hasField(String name) {
         return fields.containsKey(name);
     }
 
-    public Boolean addField(MySymbol symbol) {
+    public Boolean addField(Symbol symbol) {
         if (hasField(symbol.getName())) return false; // already exists
         fields.put(symbol.getName(), symbol);
         return true;
@@ -161,7 +157,7 @@ public class MySymbolTable implements SymbolTable {
 
     @Override
     public List<Symbol> getParameters(String label) {
-        List<MySymbol> parameters = methods.get(label).getParameters();
+        List<Symbol> parameters = methods.get(label).getParameters();
         return new ArrayList<>(parameters);
     }
 
@@ -190,7 +186,7 @@ public class MySymbolTable implements SymbolTable {
         return isField(variableLabel) || isMethod(variableLabel);
     }
 
-    public void assignMethodVariable(String methodLabel, MySymbol symbol) {
+    public void assignMethodVariable(String methodLabel, Symbol symbol) {
         methods.get(methodLabel).assignVariable(symbol);
     }
 
@@ -212,7 +208,7 @@ public class MySymbolTable implements SymbolTable {
         sb.append("\tSuperclass: ").append(superClass).append("\n\n");
 
         sb.append("Fields:\n");
-        for (MySymbol field : fields.values()) {
+        for (Symbol field : fields.values()) {
             sb.append("\t").append(field.getName()).append(" (").append(field.getType()).append(")");
             // if (field.isArray()) {
             //     sb.append("[]");
@@ -227,9 +223,9 @@ public class MySymbolTable implements SymbolTable {
         sb.append("Methods:\n");
         for (MethodScope method : methods.values()) {
             sb.append("\t").append(method.getMethodName()).append("(");
-            List<MySymbol> parameters = method.getParameters();
+            List<Symbol> parameters = method.getParameters();
             for (int i = 0; i < parameters.size(); i++) {
-                MySymbol param = parameters.get(i);
+                Symbol param = parameters.get(i);
                 sb.append(param.getName()).append(":").append(param.getType());
                 // if (param.isArray()) {
                 //     sb.append("[]");
@@ -245,7 +241,7 @@ public class MySymbolTable implements SymbolTable {
             sb.append("\n");
 
             sb.append("\t\tVariables:\n");
-            for (MySymbol variable : method.getLocalVariables()) {
+            for (Symbol variable : method.getLocalVariables()) {
                 sb.append("\t\t\t").append(variable.getName()).append(" (").append(variable.getType()).append(")");
                 // if (variable.isArray()) {
                 //     sb.append("[]");

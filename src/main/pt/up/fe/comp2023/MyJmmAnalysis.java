@@ -2,21 +2,17 @@ package pt.up.fe.comp2023;
 
 import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
-import pt.up.fe.comp2023.SymbolTable.MethodScope;
-import pt.up.fe.comp2023.SymbolTable.MySymbol;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MyJmmAnalysis implements JmmAnalysis {
     @Override
     public JmmSemanticsResult semanticAnalysis(JmmParserResult jmmParserResult) {
 
 
-        MySymbolTable st = new MySymbolTable("Super", "UltraSuper");
+        MySymbolTable st = new MySymbolTable("Super", "UltraSuper"); // N é necessário o nome da classe e a superclasse, correto ?
         st = st.populateSymbolTable(jmmParserResult);
 
         /*

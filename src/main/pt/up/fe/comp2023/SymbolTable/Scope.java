@@ -1,5 +1,7 @@
 package pt.up.fe.comp2023.SymbolTable;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +10,7 @@ import java.util.List;
 public class Scope {
     int depth;
     Scope parentScope = null;
-    HashMap<String, MySymbol> localVariables = new HashMap<>();
+    HashMap<String, Symbol> localVariables = new HashMap<>();
 
     // ========================== CONSTRUCTOR ==========================
 
@@ -19,27 +21,23 @@ public class Scope {
 
     // ========================== GETTERS ==========================
 
-    public List<MySymbol> getLocalVariables() {
-        return new ArrayList<MySymbol>(localVariables.values());
+    public List<Symbol> getLocalVariables() {
+        return new ArrayList<Symbol>(localVariables.values());
     }
 
-    public MySymbol getLocalVariable(String variableName) {
+    public Symbol getLocalVariable(String variableName) {
         return localVariables.get(variableName);
     }
 
     // ========================== SETTERS ==========================
 
-    public Boolean addLocalVariable(MySymbol var) {
+    public Boolean addLocalVariable(Symbol var) {
         if (localVariables.containsKey(var.getName())) return false; // already exists
         localVariables.put(var.getName(), var);
         return true;
     }
 
-    public void setLocalVariableValue(String name, String value) {
-        localVariables.get(name).setValue(value);
-    }
-
-    public boolean assignVariable(MySymbol var) {
+    public boolean assignVariable(Symbol var) {
         if (localVariables.containsKey(var.getName())) return false; // already exists
         localVariables.put(var.getName(), var);
         return true;

@@ -1,10 +1,10 @@
 package pt.up.fe.comp2023.Visitor;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2023.SymbolTable.MethodScope;
-import pt.up.fe.comp2023.SymbolTable.MySymbol;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.List;
 
 public class MyNodeVisitor extends AJmmVisitor<String, String> {
 
-    private MySymbolTable st;
+    private final MySymbolTable st;
 
     public MyNodeVisitor(MySymbolTable st) {
         this.st = st;
@@ -124,7 +124,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String type = this.visit(type_node, s);
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
-        MySymbol new_symbol = new MySymbol(new Type(type, isArr), jmmNode.get("var"));
+        Symbol new_symbol = new Symbol(new Type(type, isArr), jmmNode.get("var"));
 
         // System.out.println("Adding field: " + new_symbol.getName() + " in method " + st.currentMethod);
 
@@ -171,7 +171,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithMethodArgs(JmmNode jmmNode, String s) {
-        List<MySymbol> list = new ArrayList<MySymbol>();
+        List<Symbol> list = new ArrayList<>();
         st.getCurrentMethodScope().setParameters(list);
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
@@ -185,9 +185,9 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String type = this.visit(type_node, s);
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
-        MySymbol param;
-        if (isArr) param = new MySymbol(new Type(type.substring(0, 3), true), "param", null);
-        else param = new MySymbol(new Type(type, false), "param", null);
+        Symbol param;
+        if (isArr) param = new Symbol(new Type(type.substring(0, 3), true), "param");
+        else param = new Symbol(new Type(type, false), "param");
 
         st.getCurrentMethodScope().addParameter(param);
         return "";
@@ -255,7 +255,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String value = jmmNode.getJmmChild(0).get("val");
 
         // TODO: we still need to check if the variable is a field or a local variable and if scope matters
-        st.getCurrentMethodScope().setLocalVariableValue(var, value);
+        st.getCurrentMethodScope();//.setLocalVariableValue(var, value); ... TODO: comentei isto
         return "";
     }
 

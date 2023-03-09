@@ -9,6 +9,7 @@ import java.util.List;
 public class ST_tests {
     public static void main(String[] args) {
 
+        /*
         MySymbolTable st = new MySymbolTable("Test", "Super.java");
 
         System.out.println(st.getClassName());
@@ -64,6 +65,8 @@ public class ST_tests {
 
         System.out.println(st); // Shows all methods and their scopes
 
+
+         */
 
     }
 }
