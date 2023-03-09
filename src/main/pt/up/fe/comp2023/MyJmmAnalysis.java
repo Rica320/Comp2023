@@ -15,9 +15,10 @@ public class MyJmmAnalysis implements JmmAnalysis {
     @Override
     public JmmSemanticsResult semanticAnalysis(JmmParserResult jmmParserResult) {
 
-        /*
+
         MySymbolTable st = new MySymbolTable("Super", "UltraSuper");
 
+        /*
         st.addImport("java.lang.System");
         st.addImport("java.lang.Math");
 
@@ -32,10 +33,10 @@ public class MyJmmAnalysis implements JmmAnalysis {
 
         MethodScope func = new MethodScope(new Type("int", false), "main", paramList);
         st.addMethod("main", func);
-
+*/
 
         JmmSemanticsResult result = new JmmSemanticsResult(jmmParserResult, st, new ArrayList<>());
-           */
+
 
         return null;
     }
