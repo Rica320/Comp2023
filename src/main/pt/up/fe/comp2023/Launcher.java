@@ -72,6 +72,8 @@ public class Launcher {
         visitor.visit(parserResult.getRootNode());
         System.out.println(visitor.getSymbolTable());
 
+        System.out.println("Symbol table: " + st.getMethod("all").getReturnType());
+
         // Instantiate JmmAnalyser
         // SimpleAnalyser analyser = new SimpleAnalyser();
 

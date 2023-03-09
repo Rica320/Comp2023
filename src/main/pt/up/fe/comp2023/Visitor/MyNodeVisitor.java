@@ -108,7 +108,7 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         st.setClassName(jmmNode.get("name"));
 
         try {
-            st.setSuperClass(jmmNode.get("extends"));
+            st.setSuperClass(jmmNode.get("superName"));
         } catch (Exception e) {
             st.setSuperClass("");
         }
@@ -155,7 +155,10 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String type = this.visit(type_node, s);
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
-        MethodScope method = new MethodScope(new Type(type, isArr), jmmNode.get("name"), null);
+        MethodScope method;
+        if (isArr) method = new MethodScope(new Type(type.substring(0,3), true), jmmNode.get("name"), null);
+        else method = new MethodScope(new Type(type, false), jmmNode.get("name"), null);
+
         st.addMethod(jmmNode.get("name"), method);
 
         st.setCurrentMethod(jmmNode.get("name"));
@@ -182,7 +185,9 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String type = this.visit(type_node, s);
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
-        MySymbol param = new MySymbol(new Type(type, isArr), "param", null);
+        MySymbol param;
+        if (isArr) param = new MySymbol(new Type(type.substring(0, 3), true), "param", null);
+        else param = new MySymbol(new Type(type, false), "param", null);
 
         st.getCurrentMethodScope().addParameter(param);
         return "";

@@ -55,11 +55,11 @@ public class SymbolTableTest {
     	var checkObj = 0;
     	System.out.println("FIELDS: "+fields);
     	for(var f :fields){
-    		switch(f.getType().getName()) {
-    		case "MethodsAndFields": checkObj++; break;
-    		case "boolean": checkBool++; break;
-    		case "int": checkInt++;break;
-    		}
+			switch (f.getType().getName()) {
+				case "MethodsAndFields" -> checkObj++;
+				case "boolean" -> checkBool++;
+				case "int" -> checkInt++;
+			}
     	};
     	assertEquals("Field of type int", 1, checkInt);
     	assertEquals("Field of type boolean", 1, checkBool);

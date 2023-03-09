@@ -3,6 +3,8 @@ package pt.up.fe.comp2023.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
+import pt.up.fe.comp.jmm.parser.JmmParserResult;
+import pt.up.fe.comp2023.Visitor.MyNodeVisitor;
 
 import java.util.*;
 
@@ -51,6 +53,12 @@ public class MySymbolTable implements SymbolTable {
     public MySymbolTable(String className, String superClass) {
         this.className = className;
         this.superClass = superClass;
+    }
+
+    public MySymbolTable populateSymbolTable(JmmParserResult parserResult) {
+        MyNodeVisitor visitor = new MyNodeVisitor(this);
+        visitor.visit(parserResult.getRootNode());
+        return this;
     }
 
     public MethodScope getCurrentMethodScope() {
