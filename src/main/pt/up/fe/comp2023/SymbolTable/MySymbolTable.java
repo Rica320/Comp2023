@@ -198,9 +198,69 @@ public class MySymbolTable implements SymbolTable {
 
     @Override
     public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n========== Symbol Table ===============\n\n");
 
-        return "\n\n========== Table ===============\n" + "Imports: " + imports + "\n" + "Class: " + className + "\n" + "Super: " + superClass + "\n" + "Fields: " + fields + "\n" + "Methods: \n\n" + methods + "\n" + "===============================\n\n";
+        sb.append("Imports:\n");
+        for (String imp : imports) {
+            sb.append("\t").append(imp).append("\n");
+        }
+        sb.append("\n");
 
+        sb.append("Class:\n");
+        sb.append("\tName: ").append(className).append("\n");
+        sb.append("\tSuperclass: ").append(superClass).append("\n\n");
+
+        sb.append("Fields:\n");
+        for (MySymbol field : fields.values()) {
+            sb.append("\t").append(field.getName()).append(" (").append(field.getType()).append(")");
+            // if (field.isArray()) {
+            //     sb.append("[]");
+            // }
+            // if (field.getValue() != null) {
+            //     sb.append(" = ").append(field.getValue());
+            // }
+            sb.append("\n");
+        }
+        sb.append("\n");
+
+        sb.append("Methods:\n");
+        for (MethodScope method : methods.values()) {
+            sb.append("\t").append(method.getMethodName()).append("(");
+            List<MySymbol> parameters = method.getParameters();
+            for (int i = 0; i < parameters.size(); i++) {
+                MySymbol param = parameters.get(i);
+                sb.append(param.getName()).append(":").append(param.getType());
+                // if (param.isArray()) {
+                //     sb.append("[]");
+                // }
+                if (i != parameters.size() - 1) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(")");
+            if (method.getReturnType() != null) {
+                sb.append(": ").append(method.getReturnType());
+            }
+            sb.append("\n");
+
+            sb.append("\t\tVariables:\n");
+            for (MySymbol variable : method.getLocalVariables()) {
+                sb.append("\t\t\t").append(variable.getName()).append(" (").append(variable.getType()).append(")");
+                // if (variable.isArray()) {
+                //     sb.append("[]");
+                // }
+                // if (variable.getValue() != null) {
+                //     sb.append(" = ").append(variable.getValue());
+                // }
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+
+        sb.append("======================================\n");
+
+        return sb.toString();
     }
 }
 
