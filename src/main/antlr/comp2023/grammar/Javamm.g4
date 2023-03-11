@@ -149,7 +149,7 @@ LT: '<' ;
 
 
 ID : [a-zA-Z_$][a-zA-Z_$0-9]* ;
-INTEGER:  ('-')? [0-9]+; // o '-' é opcional ??????
+INTEGER: [0] | [1-9][0-9]*; // o '-' é opcional ??????
 
 WS : [ \t\n\r\f]+ -> skip ;
 COMMENT: '/*' .*? '*/'    -> skip;

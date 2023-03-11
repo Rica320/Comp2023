@@ -115,8 +115,8 @@ class Test extends SuperTest {
         if(other.getA() < this.getA())
             res = 1;
         if(this.getA() < other.getA()){
-            res = -1; // TODO: ANNOTATE IF,ELSE, WHILE BETTER IN THE GRAMMAR
-            // res = 0-1; // TODO WE HAVE AN ERROR HERE!!!!
+            res = 3-1; // TODO: ANNOTATE IF,ELSE, WHILE BETTER IN THE GRAMMAR
+            res = 0-1; // TODO WE HAVE AN ERROR HERE!!!!
         }
 
         else res = 0; // TODO: ELSE IS NOT REPRESENTED CORRECTLY IN THE AST STRUCTURE!
