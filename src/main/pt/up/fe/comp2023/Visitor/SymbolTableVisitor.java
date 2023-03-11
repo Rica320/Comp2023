@@ -78,6 +78,9 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         addVisit("Int", this::dealWithInt);
 
 
+        // TODO: because we are only aiming to populate the symbol table,
+        //  we should be using the default visit method for any node that we don't care about
+        // aka any node that doesnt add a new symbol to the table
         setDefaultVisit(this::defaultVisit);
 
     }
@@ -291,11 +294,15 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithNewIntArray(JmmNode jmmNode, String s) {
+        Symbol symbol = new Symbol(new Type("int", true), jmmNode.getJmmParent().get("var"));
+        st.addLocalVariable(st.getCurrentMethod(), symbol);
         return "int[]"; // TODO
     }
 
     private String dealWithNewObject(JmmNode jmmNode, String s) {
-        return jmmNode.get("classID"); // TODO
+        Symbol symbol = new Symbol(new Type(jmmNode.get("objClass"), false), jmmNode.getJmmParent().get("var"));
+        st.addLocalVariable(st.getCurrentMethod(), symbol);
+        return jmmNode.get("objClass");
     }
 
     private String dealWithNot(JmmNode jmmNode, String s) {

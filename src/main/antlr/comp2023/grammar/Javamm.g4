@@ -85,7 +85,7 @@ statement
 
 expression
     : '(' expression ')' #Paren
-    | 'new' 'int' '[' expression ']' #NewIntArray
+    | 'new' 'int' '[' arrSize=expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup
