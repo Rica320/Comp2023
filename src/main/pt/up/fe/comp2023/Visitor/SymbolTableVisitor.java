@@ -260,7 +260,12 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     private String dealWithAssign(JmmNode jmmNode, String s) {
         String var = jmmNode.get("var");
         // String type = this.visit(jmmNode.getChildren().get(0), s);
-        String value = jmmNode.getJmmChild(0).get("val");
+        String value;
+        try {
+            value = jmmNode.getJmmChild(0).get("val");
+        } catch (Exception e) {
+            value = this.visit(jmmNode.getChildren().get(0), s);
+        }
 
         // TODO: we still need to check if the variable is a field or a local variable and if scope matters
         st.getCurrentMethodScope();//.setLocalVariableValue(var, value); ... TODO: comentei isto
