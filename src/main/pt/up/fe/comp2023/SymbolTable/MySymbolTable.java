@@ -8,35 +8,6 @@ import pt.up.fe.comp2023.Visitor.MyNodeVisitor;
 
 import java.util.*;
 
-/*
-• Imported classes
-• Declared class (and its extension)
-• Fields inside the declared class
-• Methods inside the declared class
-• Parameters and return type for each method
-• Local variables for each method
-• Include type in each symbol (e.g. a local variable "a" is of type X. Also, is "a" array?)
-• Print Symbol Table
-• Used interfaces: SymbolTable, AJmmVisitor (the latter is optional)
-*/
-
-
-/*
-
-You are free to implement the SymbolTable as you see fit. One viable way to implement it is to use
-several Map instances internally to map information between a method label, and information
-related to that method (e.g., parameters, return type). Another way is to create a class that stores
-information related to just a single method and use a single Map that maps labels to instances
-of that class.
-
-no overloading => method as its label is sufficient
-
-To build the symbol table you will need to get the information from the AST. You can either visit the
-AST manually (e.g., code that checks the type of the node and visits the children) or use the Visitor
-pattern (e.g. extend AJmmVisitor ). Since the language is relatively simple, the analysis does not
-need to go very deep in the AST, and both approaches are viable.
-*/
-
 public class MySymbolTable implements SymbolTable {
 
     private String currentMethod = null;
@@ -180,16 +151,13 @@ public class MySymbolTable implements SymbolTable {
         return new ArrayList<>(methods.get(methodLabel).getLocalVariables());
     }
 
-    // ========================== OTHERS ==========================
+    public void addLocalVariable(String methodLabel, Symbol symbol) {
+        methods.get(methodLabel).assignVariable(symbol);
+    }
 
     public boolean isVariable(String variableLabel) {
         return isField(variableLabel) || isMethod(variableLabel);
     }
-
-    public void assignMethodVariable(String methodLabel, Symbol symbol) {
-        methods.get(methodLabel).assignVariable(symbol);
-    }
-
     // ========================== PRINT ==========================
 
     @Override
@@ -241,16 +209,21 @@ public class MySymbolTable implements SymbolTable {
             sb.append("\n");
 
             sb.append("\t\tVariables:\n");
-            for (Symbol variable : method.getLocalVariables()) {
-                sb.append("\t\t\t").append(variable.getName()).append(" (").append(variable.getType()).append(")");
-                // if (variable.isArray()) {
-                //     sb.append("[]");
-                // }
-                // if (variable.getValue() != null) {
-                //     sb.append(" = ").append(variable.getValue());
-                // }
-                sb.append("\n");
+            if (method.getLocalVariables().size() == 0)
+                sb.append("\t\t\tNone\n");
+            else {
+                for (Symbol variable : method.getLocalVariables()) {
+                    sb.append("\t\t\t").append(variable.getName()).append(" (").append(variable.getType()).append(")");
+                    // if (variable.isArray()) {
+                    //     sb.append("[]");
+                    // }
+                    // if (variable.getValue() != null) {
+                    //     sb.append(" = ").append(variable.getValue());
+                    // }
+                    sb.append("\n");
+                }
             }
+
             sb.append("\n");
         }
 

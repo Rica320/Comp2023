@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -11,8 +12,7 @@ public class MethodScope {
     String methodName;
     List<Symbol> parameters;
     Type returnType;
-    Scope currentScope = new Scope(0, null);
-    int depth = 0;
+    HashMap<String, Symbol> localVariables = new HashMap<>();
 
     // ========================== CONSTRUCTOR ==========================
 
@@ -22,7 +22,7 @@ public class MethodScope {
         parameters = Objects.requireNonNullElseGet(MethodParameters, List::of);
     }
 
-    // ========================== GETTERS ==========================
+    // ========================== GETTERS / SETTERS ==========================
 
     public String getMethodName() {
         return methodName;
@@ -41,48 +41,13 @@ public class MethodScope {
     }
 
     public void addParameter(Symbol parameter) {
-        // parameter.setOrder(parameters.size()); .... TODO: N se podia ter isto aqui se usarmos o Symbol
         this.parameters.add(parameter);
     }
 
     public Symbol getParameter(String name) {
-
         for (Symbol p : parameters)
             if (p.getName().equals(name)) return p;
         return null;
-    }
-
-    public void newScope() {
-        currentScope = new Scope(++depth, currentScope);
-    }
-
-    public void endScope() {
-        currentScope = currentScope.parentScope;
-        depth--;
-    }
-
-    public List<Symbol> getLocalVariables() {
-        return currentScope.getLocalVariables();
-    }
-
-    public Symbol getLocalVariable(String variableName) {
-        return currentScope.getLocalVariable(variableName);
-    }
-
-    public boolean hasLocalVariable(String variableName) {
-        return currentScope.hasLocalVariable(variableName);
-    }
-
-    //public void setLocalVariableValue(String name, String value) {
-    //    currentScope.setLocalVariableValue(name, value);
-    //}
-
-    public boolean assignVariable(Symbol var) {
-        return currentScope.assignVariable(var);
-    }
-
-    public boolean addLocalVariable(Symbol var) {
-        return currentScope.addLocalVariable(var);
     }
 
     public boolean isParameter(String parameterLabel) {
@@ -91,28 +56,32 @@ public class MethodScope {
         return false;
     }
 
-    public boolean isLocalVariable(String variableLabel) {
-        return currentScope.hasLocalVariable(variableLabel);
+
+    public List<Symbol> getLocalVariables() {
+        return new ArrayList<>(localVariables.values());
     }
 
-    public Symbol isLocalVariableInScope(String variableLabel) {
-        Scope scope = currentScope;
-        while (scope != null) {
-            if (scope.hasLocalVariable(variableLabel)) return scope.getLocalVariable(variableLabel);
-            scope = scope.parentScope;
-        }
-        return null;
+    public Symbol getLocalVariable(String variableName) {
+        return localVariables.get(variableName);
     }
 
-    public List<Symbol> getAllScopeVars() {
-        Scope scope = currentScope;
-        List<Symbol> vars = new ArrayList<>();
-        while (scope != null) {
-            vars.addAll(scope.getLocalVariables());
-            scope = scope.parentScope;
-        }
-        return vars;
+
+    public Boolean addLocalVariable(Symbol var) {
+        if (localVariables.containsKey(var.getName())) return false; // already exists
+        localVariables.put(var.getName(), var);
+        return true;
     }
+
+    public boolean assignVariable(Symbol var) {
+        if (localVariables.containsKey(var.getName())) return false; // already exists
+        localVariables.put(var.getName(), var);
+        return true;
+    }
+
+    public boolean hasLocalVariable(String variableName) {
+        return localVariables.containsKey(variableName);
+    }
+
 
     // ========================== PRINT ==========================
 
@@ -120,12 +89,12 @@ public class MethodScope {
     public String toString() {
         StringBuilder s = new StringBuilder("Method: " + methodName + " (");
         for (Symbol p : parameters)
-            s.append(p.toString()).append(", ");
+            s.append(p).append(", ");
         s.append(") -> ").append(returnType.toString()).append(" {");
-        for (Symbol v : currentScope.getLocalVariables())
-            s.append(v.toString()).append(", ");
+        for (Symbol v : this.getLocalVariables())
+            s.append(v).append(", ");
         s.append("}");
-        return s.toString() + "\n\n";
+        return s + "\n\n";
     }
 
 }
