@@ -10,7 +10,7 @@ import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
-import pt.up.fe.comp2023.Visitor.MyNodeVisitor;
+import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
@@ -68,11 +68,10 @@ public class Launcher {
 
         MySymbolTable st = new MySymbolTable("Class", "SuperClass");
 
-        MyNodeVisitor visitor = new MyNodeVisitor(st);
+        SymbolTableVisitor visitor = new SymbolTableVisitor(st);
         visitor.visit(parserResult.getRootNode());
         System.out.println(visitor.getSymbolTable());
 
-        System.out.println("Symbol table: " + st.getMethod("all").getReturnType());
 
         // Instantiate JmmAnalyser
         // SimpleAnalyser analyser = new SimpleAnalyser();

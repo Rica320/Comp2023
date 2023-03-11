@@ -4,7 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
-import pt.up.fe.comp2023.Visitor.MyNodeVisitor;
+import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
 
 import java.util.*;
 
@@ -27,7 +27,7 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public MySymbolTable populateSymbolTable(JmmParserResult parserResult) {
-        MyNodeVisitor visitor = new MyNodeVisitor(this);
+        SymbolTableVisitor visitor = new SymbolTableVisitor(this);
         visitor.visit(parserResult.getRootNode());
         return this;
     }
@@ -166,62 +166,44 @@ public class MySymbolTable implements SymbolTable {
         sb.append("\n========== Symbol Table ===============\n\n");
 
         sb.append("Imports:\n");
-        for (String imp : imports) {
+        for (String imp : imports)
             sb.append("\t").append(imp).append("\n");
-        }
-        sb.append("\n");
 
-        sb.append("Class:\n");
+        sb.append("\nClass:\n");
         sb.append("\tName: ").append(className).append("\n");
         sb.append("\tSuperclass: ").append(superClass).append("\n\n");
 
         sb.append("Fields:\n");
         for (Symbol field : fields.values()) {
-            sb.append("\t").append(field.getName()).append(" (").append(field.getType()).append(")");
-            // if (field.isArray()) {
-            //     sb.append("[]");
-            // }
-            // if (field.getValue() != null) {
-            //     sb.append(" = ").append(field.getValue());
-            // }
+            String type = field.getType().getName() + (field.getType().isArray() ? "[]" : "");
+            sb.append("\t").append(type).append(" ").append(field.getName());
             sb.append("\n");
         }
         sb.append("\n");
 
         sb.append("Methods:\n");
         for (MethodScope method : methods.values()) {
-            sb.append("\t").append(method.getMethodName()).append("(");
+
+            if (method.getReturnType() != null) {
+                String isArr = (method.getReturnType().isArray() ? "[]" : "");
+                sb.append("\t").append(method.getReturnType().getName()).append(isArr).append(" ");
+            }
+
+            sb.append(method.getMethodName()).append("(");
             List<Symbol> parameters = method.getParameters();
+
             for (int i = 0; i < parameters.size(); i++) {
                 Symbol param = parameters.get(i);
-                sb.append(param.getName()).append(":").append(param.getType());
-                // if (param.isArray()) {
-                //     sb.append("[]");
-                // }
-                if (i != parameters.size() - 1) {
-                    sb.append(", ");
-                }
+                String type = param.getType().getName() + (param.getType().isArray() ? "[]" : "");
+                sb.append(type).append(" ").append(param.getName());
+                if (i != parameters.size() - 1) sb.append(", ");
             }
-            sb.append(")");
-            if (method.getReturnType() != null) {
-                sb.append(": ").append(method.getReturnType());
-            }
-            sb.append("\n");
 
-            sb.append("\t\tVariables:\n");
-            if (method.getLocalVariables().size() == 0)
-                sb.append("\t\t\tNone\n");
-            else {
-                for (Symbol variable : method.getLocalVariables()) {
-                    sb.append("\t\t\t").append(variable.getName()).append(" (").append(variable.getType()).append(")");
-                    // if (variable.isArray()) {
-                    //     sb.append("[]");
-                    // }
-                    // if (variable.getValue() != null) {
-                    //     sb.append(" = ").append(variable.getValue());
-                    // }
-                    sb.append("\n");
-                }
+            sb.append(")\n\t\tVariables:\n");
+            if (method.getLocalVariables().size() == 0) sb.append("\t\t\tNone\n");
+            else for (Symbol variable : method.getLocalVariables()) {
+                String type = variable.getType().getName() + (variable.getType().isArray() ? "[]" : "");
+                sb.append("\t\t\t").append(type).append(" ").append(variable.getName()).append("\n");
             }
 
             sb.append("\n");

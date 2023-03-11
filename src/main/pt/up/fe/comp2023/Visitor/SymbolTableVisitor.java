@@ -10,11 +10,11 @@ import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MyNodeVisitor extends AJmmVisitor<String, String> {
+public class SymbolTableVisitor extends AJmmVisitor<String, String> {
 
     private final MySymbolTable st;
 
-    public MyNodeVisitor(MySymbolTable st) {
+    public SymbolTableVisitor(MySymbolTable st) {
         this.st = st;
     }
 
@@ -130,6 +130,8 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         String type = this.visit(type_node, s);
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
+        if (isArr) type = type.substring(0, type.length() - 2);
+
         Symbol new_symbol = new Symbol(new Type(type, isArr), jmmNode.get("var"));
 
         // System.out.println("Adding field: " + new_symbol.getName() + " in method " + st.currentMethod);
@@ -162,8 +164,9 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
         MethodScope method;
-        if (isArr) method = new MethodScope(new Type(type.substring(0,3), true), jmmNode.get("name"), null);
-        else method = new MethodScope(new Type(type, false), jmmNode.get("name"), null);
+        if (isArr) type = type.substring(0, type.length() - 2);
+
+        method = new MethodScope(new Type(type, isArr), jmmNode.get("name"), null);
 
         st.addMethod(jmmNode.get("name"), method);
 
@@ -192,8 +195,9 @@ public class MyNodeVisitor extends AJmmVisitor<String, String> {
         boolean isArr = type.charAt(type.length() - 1) == ']';
 
         Symbol param;
-        if (isArr) param = new Symbol(new Type(type.substring(0, 3), true), "param");
-        else param = new Symbol(new Type(type, false), "param");
+        if (isArr) type = type.substring(0, type.length() - 2);
+
+        param = new Symbol(new Type(type, isArr), jmmNode.get("var"));
 
         st.getCurrentMethodScope().addParameter(param);
         return "";
