@@ -114,9 +114,9 @@ class Test extends SuperTest {
         int res;
         if(other.getA() < this.getA())
             res = 1;
-        if(this.getA() < other.getA()){
+        else if(this.getA() < other.getA()){
             res = 3-1; // TODO: ANNOTATE IF,ELSE, WHILE BETTER IN THE GRAMMAR
-            res = 0-1; // TODO WE HAVE AN ERROR HERE!!!!
+            res = 0-1;
         }
 
         else res = 0; // TODO: ELSE IS NOT REPRESENTED CORRECTLY IN THE AST STRUCTURE!

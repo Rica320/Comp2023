@@ -74,10 +74,19 @@ type
     | name=ID #IdType
     ;
 
+then_block : statement #ThenBlock
+    ;
+
+else_block : statement #ElseBlock
+    ;
+
+while_block : statement #WhileBlock
+    ;
+
 statement
     : '{' (statement)* '}' #Scope
-    | 'if' '(' expression ')' statement ('else' statement)? #IfClause
-    | 'while' '(' expression ')' statement #While
+    | 'if' '(' expression ')' then_block 'else' else_block #IfClause
+    | 'while' '(' expression ')' while_block #While
     | expression ';' #ExpressionStmt
     | var=ID '=' expression ';' #Assign
     | var=ID '[' expression ']' '=' expression ';' #ArrayAssign
@@ -149,7 +158,7 @@ LT: '<' ;
 
 
 ID : [a-zA-Z_$][a-zA-Z_$0-9]* ;
-INTEGER: [0] | [1-9][0-9]*; // o '-' é opcional ??????
+INTEGER: [0] | [1-9][0-9]*;
 
 WS : [ \t\n\r\f]+ -> skip ;
 COMMENT: '/*' .*? '*/'    -> skip;

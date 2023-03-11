@@ -59,6 +59,9 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
         addVisit("Assign", this::dealWithAssign);
         addVisit("ArrayAssign", this::dealWithArrayAssign);
+        addVisit("ThenBlock", this::dealWithThenBlock);
+        addVisit("ElseBlock", this::dealWithElseBlock);
+        addVisit("WhileBlock", this::dealWithWhileBlock);
 
         // Expression
         addVisit("Paren", this::dealWithParen);
@@ -81,8 +84,32 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         // TODO: because we are only aiming to populate the symbol table,
         //  we should be using the default visit method for any node that we don't care about
         // aka any node that doesnt add a new symbol to the table
+        // Na realidade quase que n precisámos de nenhum visitor porque só alguns
+        // nodes declaram novos simbolos
         setDefaultVisit(this::defaultVisit);
 
+    }
+
+    private String dealWithWhileBlock(JmmNode jmmNode, String s) {
+        // TODO: ESTE TIPO DE FUNÇOES N É NECESSARIO PARA O QUE É PARA FAZER NESTE CP, DEIXAMOS PARA FUTURO SENAO TIRA-SE
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
+        return "";
+    }
+
+    private String dealWithElseBlock(JmmNode jmmNode, String s) {
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
+        return "";
+    }
+
+    private String dealWithThenBlock(JmmNode jmmNode, String s) {
+        for (JmmNode child : jmmNode.getChildren()) {
+            this.visit(child, s);
+        }
+        return "";
     }
 
 
