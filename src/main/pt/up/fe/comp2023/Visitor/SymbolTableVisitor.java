@@ -91,6 +91,7 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithWhileBlock(JmmNode jmmNode, String s) {
+        // podiamos até meter isto no default ....
         // TODO: ESTE TIPO DE FUNÇOES N É NECESSARIO PARA O QUE É PARA FAZER NESTE CP, DEIXAMOS PARA FUTURO SENAO TIRA-SE
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
@@ -317,13 +318,14 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithBoolean(JmmNode jmmNode, String s) {
-        return this.visit(jmmNode.getChildren().get(0), s);
+        // return this.visit(jmmNode.getChildren().get(0), s);
+        return "boolean";
     }
 
     private String dealWithNewIntArray(JmmNode jmmNode, String s) {
         Symbol symbol = new Symbol(new Type("int", true), jmmNode.getJmmParent().get("var"));
         st.addLocalVariable(st.getCurrentMethod(), symbol);
-        return "int[]"; // TODO
+        return "int[]";
     }
 
     private String dealWithNewObject(JmmNode jmmNode, String s) {

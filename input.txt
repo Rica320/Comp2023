@@ -115,11 +115,11 @@ class Test extends SuperTest {
         if(other.getA() < this.getA())
             res = 1;
         else if(this.getA() < other.getA()){
-            res = 3-1; // TODO: ANNOTATE IF,ELSE, WHILE BETTER IN THE GRAMMAR
+            res = 3-1;
             res = 0-1;
         }
 
-        else res = 0; // TODO: ELSE IS NOT REPRESENTED CORRECTLY IN THE AST STRUCTURE!
+        else res = 0;
         return res;
     }
     public int compareSelf(){
@@ -130,7 +130,7 @@ class Test extends SuperTest {
         B b;
         b = new B();
         b.setA(20);
-        c = this.foo(); // TODO this doesnt register in the ST! HOW TO DO IT?
+        c = this.foo(); // TODO this doesnt register in the ST! HOW TO DO IT? ... O c não está declarado, a análise semântica é noutra entrega
         io.println(b.compareSelf());
         return b.compareSelf();
     }
@@ -157,7 +157,6 @@ class Test extends SuperTest {
                                 result = 6;
                             } else {
                                 result = 7;
-                                // int v; // TODO this is not allowed!?!
 
                                 k = new FOo();
                             }
@@ -175,7 +174,7 @@ class Test extends SuperTest {
 	    boolean a;
         int[] arr;
 
-        // arr[true] = 10; // TODO: are we supposed to allow this?
+        // arr[true] = 10; // TODO: are we supposed to allow this? ... sim, a análise semântica trata desses erros... podento até true ser intrepretado como 1
 
 		a = true && false;
 
@@ -194,22 +193,22 @@ class Test extends SuperTest {
 
             arr1 = arr1 + arr2;
 
-            // return true; // todo: returning booleanLiteral crashes ST_VISITOR
-            // return (arr1[0] == 1); // todo: this also doesnt work on parser :(
-            return variable;
+            //return (arr1[0] < 1);
+            //return variable;
+            return true;
     }
 
     public int print(GetterAndSetter b){
         GetterAndSetter myGetter;
         int content;
+        GetterAndSetter b;
+        PrintOtherClassFromParam c;
+        int dummy;
         myGetter = b;
         content = myGetter.getA();
         io.print(content);
 
-         // TODO: CANT DECLARE BELOW!?
-        // GetterAndSetter b;
-        // PrintOtherClassFromParam c;
-        //int dummy;
+
 
 
         b = new GetterAndSetter();
