@@ -18,18 +18,9 @@ public class MySymbolTable implements SymbolTable {
 
     // ========================== CONSTRUCTOR ==========================
 
-    public MySymbolTable() {
-    }
-
-    public MySymbolTable(String className, String superClass) {
-        this.className = className;
-        this.superClass = superClass;
-    }
-
-    public MySymbolTable populateSymbolTable(JmmParserResult parserResult) {
+    public MySymbolTable(JmmParserResult parserResult) {
         SymbolTableVisitor visitor = new SymbolTableVisitor(this);
         visitor.visit(parserResult.getRootNode());
-        return this;
     }
 
     public MethodScope getCurrentMethodScope() {

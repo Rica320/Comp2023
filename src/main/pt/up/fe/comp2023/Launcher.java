@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import pt.up.fe.comp.TestUtils;
+import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
@@ -51,36 +52,28 @@ public class Launcher {
                     System.out.println("Type: " + report.getType());
                 }
             }
+        } else if (parserResult.getRootNode() == null) {
+            System.out.println("Parser result is null!");
+            return;
         } else {
             System.out.println("No errors found!\n\n");
         }
 
-        if (parserResult.getRootNode() == null) {
-            System.out.println("Parser result is null!");
-            return;
-        }
+        // Check if there are parsing errors
+        TestUtils.noErrors(parserResult.getReports());
 
         // Print full AST
         System.out.println(parserResult.getRootNode().toTree());
 
-        // Check if there are parsing errors
-        TestUtils.noErrors(parserResult.getReports());
-
-        MySymbolTable st = new MySymbolTable("Class", "SuperClass");
-
-        SymbolTableVisitor visitor = new SymbolTableVisitor(st);
-        visitor.visit(parserResult.getRootNode());
-        System.out.println(visitor.getSymbolTable());
-
-
         // Instantiate JmmAnalyser
-        // SimpleAnalyser analyser = new SimpleAnalyser();
+        JmmSemanticAnalyser analyser = new JmmSemanticAnalyser();
 
         // Analyse stage
-        // SimpleAnalyserResult analyserResult = analyser.analyse(parserResult, config);
+        JmmSemanticsResult analyserResult = analyser.semanticAnalysis(parserResult);
 
         // Check if there are semantic errors
-        // TestUtils.noErrors(analyserResult.getReports());
+        TestUtils.noErrors(analyserResult.getReports());
+
 
         // Instantiate JmmCodeGenerator
         // SimpleCodeGenerator codeGenerator = new SimpleCodeGenerator();

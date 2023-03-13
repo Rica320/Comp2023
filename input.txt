@@ -1,5 +1,6 @@
 import io;
 import java.util.Scanner;
+import java.lang.System;
 
 class Test extends SuperTest {
 	int i;
@@ -13,7 +14,7 @@ class Test extends SuperTest {
 	}
 
     public boolean r(boolean k) {
-        return k;
+        return k
     }
 
     public int printArr(int[] arr) {

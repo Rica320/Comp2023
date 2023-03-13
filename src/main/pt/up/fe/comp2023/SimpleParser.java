@@ -35,7 +35,9 @@ public class SimpleParser implements JmmParser {
     @Override
     public JmmParserResult parse(String jmmCode, String startingRule, Map<String, String> config) {
 
-        pt.up.fe.comp2023.JavammParser parser = null;
+        var ref = new Object() {
+            pt.up.fe.comp2023.JavammParser parser = null;
+        };
         try {
             // Convert code string into a character stream
             var input = new ANTLRInputStream(jmmCode);
@@ -44,19 +46,19 @@ public class SimpleParser implements JmmParser {
             // Wrap lexer around a token stream
             var tokens = new CommonTokenStream(lex);
             // Transforms tokens into a parse tree
-            parser = new pt.up.fe.comp2023.JavammParser(tokens);
+            ref.parser = new pt.up.fe.comp2023.JavammParser(tokens);
 
             // Convert ANTLR CST to JmmNode AST
-            return AntlrParser.parse(lex, parser, startingRule)
+            return AntlrParser.parse(lex, ref.parser, startingRule)
                     // If there were no errors and a root node was generated, create a JmmParserResult with the node
                     .map(root -> new JmmParserResult(root, Collections.emptyList(), config))
                     // If there were errors, create an error JmmParserResult without root node
-                    .orElseGet(() -> JmmParserResult.newError(new Report(ReportType.WARNING, Stage.SYNTATIC, -1, "There were syntax errors during parsing, terminating")));
+                    .orElseGet(() -> JmmParserResult.newError(new Report(ReportType.ERROR, Stage.SYNTATIC, -1, "There were " + ref.parser.getNumberOfSyntaxErrors() + " syntax errors during parsing, terminating")));
 
         } catch (Exception e) {
             // There was an uncaught exception during parsing, create an error JmmParserResult without root node
-            assert parser != null;
-            return JmmParserResult.newError(Report.newError(Stage.SYNTATIC, parser.getCurrentToken().getLine(), parser.getCurrentToken().getCharPositionInLine(), "Exception during parsing. Number of errors = " + parser.getNumberOfSyntaxErrors(), e));
+            assert ref.parser != null;
+            return JmmParserResult.newError(Report.newError(Stage.SYNTATIC, ref.parser.getCurrentToken().getLine(), ref.parser.getCurrentToken().getCharPositionInLine(), "Exception during parsing. Number of errors = " + ref.parser.getNumberOfSyntaxErrors(), e));
         }
     }
 }
