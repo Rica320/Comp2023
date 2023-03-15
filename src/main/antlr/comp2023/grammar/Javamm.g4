@@ -41,18 +41,10 @@ varDeclaration
     ;
 
 
-methodDeclaration returns [String returnType, String methodName]
-    : ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}'
-    {
-        $returnType = "void";
-        $methodName = "main";
-    }  #MainMethod
-    | ('public')? type name=ID '(' methodParams? ')' '{' (varDeclaration)* (statement)*  returnStatement '}'
-    {
-        $returnType = $type.text;
-        $methodName = $name.text;
-    } #MethodDecl
-    ; // TODO: REMOVER DUPLICADOS
+methodDeclaration
+    : ('public')? 'static' 'void' 'main' '(' type '[' ']' arg=ID ')' '{' (varDeclaration)* (statement)* '}' #MainMethod
+    | ('public')? type name=ID '(' methodParams? ')' '{' (varDeclaration)* (statement)*  returnStatement '}' #MethodDecl
+    ;
 
 methodParams
     : paramDeclaration (',' paramDeclaration)* #MethodArgs
@@ -62,7 +54,7 @@ paramDeclaration
     : type var=ID #ParamDecl
     ;
 
- returnStatement
+returnStatement
     : 'return' expression ';' #ReturnStmt
     ;
 
