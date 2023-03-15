@@ -23,12 +23,12 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
         List<Report> reports = new ArrayList<>();
 
         // Overload Analysis
-        // List<List<String>> overloads = st.getOverloads();
-        // for (List<String> overload : overloads) {
-        //     String message = "Overload found in " + overload.get(0) + " -> " + overload.get(1) + " '" + overload.get(2) + "'";
-        //     Report report = new Report(ReportType.ERROR, Stage.SEMANTIC, -1, message);
-        //     reports.add(report);
-        // }
+        List<List<String>> overloads = st.getOverloads();
+        for (List<String> overload : overloads) {
+            String message = "Overload found in " + overload.get(0) + " -> " + overload.get(1) + " '" + overload.get(2) + "'";
+            Report report = new Report(ReportType.DEBUG, Stage.SEMANTIC, -1, message);
+            reports.add(report);
+        }
 
         // ... more semantic analysis
         return new JmmSemanticsResult(jmmParserResult, st, reports);
