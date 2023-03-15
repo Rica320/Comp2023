@@ -74,7 +74,6 @@ public class Launcher {
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
 
-
         // Instantiate JmmCodeGenerator
         // SimpleCodeGenerator codeGenerator = new SimpleCodeGenerator();
 

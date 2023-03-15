@@ -1,4 +1,4 @@
-package pt.up.fe.comp2023.Visitor;
+package pt.up.fe.comp2023.SemanticVisitors;
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -10,11 +10,11 @@ import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SymbolTableVisitor extends AJmmVisitor<String, String> {
+public class ReturnTypeVisitor extends AJmmVisitor<String, String> {
 
     private final MySymbolTable st;
 
-    public SymbolTableVisitor(MySymbolTable st) {
+    public ReturnTypeVisitor(MySymbolTable st) {
         this.st = st;
     }
 
