@@ -15,6 +15,7 @@ public class MySymbolTable implements SymbolTable {
     private String className = "", superClass = "";
     private final HashMap<String, MethodScope> methods = new HashMap<>();
     private final HashMap<String, Symbol> fields = new HashMap<>();
+    private final List<List<String>> overloads = new ArrayList<>(); // [PLACE, TYPE, NAME]
 
     // ========================== CONSTRUCTOR ==========================
 
@@ -91,10 +92,24 @@ public class MySymbolTable implements SymbolTable {
         return fields.containsKey(name);
     }
 
-    public Boolean addField(Symbol symbol) {
-        if (hasField(symbol.getName())) return false; // already exists
-        fields.put(symbol.getName(), symbol);
-        return true;
+    public List<List<String>> getOverloads() {
+        return overloads;
+    }
+
+    public void addOverload(String place, String type, String name) {
+        List<String> overload = new ArrayList<>();
+        overload.add(place);
+        overload.add(type);
+        overload.add(name);
+        overloads.add(overload);
+    }
+
+    public void addField(Symbol symbol) {
+        if (hasField(symbol.getName())) {
+            // Add the field to the overloads list
+            String name = symbol.getType().getName() + " " + symbol.getName();
+            addOverload("class", "field", name);
+        } else fields.put(symbol.getName(), symbol);
     }
 
     public boolean isField(String fieldLabel) {
@@ -128,7 +143,11 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public void addMethod(String methodLabel, MethodScope methodScope) {
-        this.methods.put(methodLabel, methodScope);
+        if (methods.containsKey(methodLabel)) {
+            // Add the field to the overloads list
+            String name = methodScope.getReturnType().getName() + " " + methodLabel + "()";
+            addOverload("class", "method", name);
+        } else methods.put(methodLabel, methodScope);
     }
 
     public boolean isMethod(String methodLabel) {
@@ -143,7 +162,14 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public void addLocalVariable(String methodLabel, Symbol symbol) {
-        methods.get(methodLabel).assignVariable(symbol);
+        boolean hasVar = methods.get(methodLabel).hasLocalVariable(symbol.getName());
+        boolean hasParam = methods.get(methodLabel).hasParameter(symbol.getName());
+
+        if (hasVar || hasParam) {
+            // Add the field to the overloads list
+            String name = symbol.getType().getName() + " " + symbol.getName();
+            addOverload("method " + methodLabel + "()", "var", name);
+        } else methods.get(methodLabel).addLocalVariable(symbol);
     }
 
     public boolean isVariable(String variableLabel) {

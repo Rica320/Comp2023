@@ -13,8 +13,11 @@ class Test extends SuperTest {
 		return i+2;
 	}
 
+
+
+
     public boolean r(boolean k) {
-        return k
+        return k;
     }
 
     public int printArr(int[] arr) {
@@ -53,7 +56,7 @@ class Test extends SuperTest {
 
     public int x(){
         int a;
-        A a;
+        A b;
         b = new A();
         a.x();
         a = 10;
@@ -63,6 +66,7 @@ class Test extends SuperTest {
 
     public static void main(String[] args){
         Simple s;
+        int x;
         int[] arr;
         int[] arrR;
 
@@ -172,7 +176,7 @@ class Test extends SuperTest {
 
     public int func4(int a, int b){
        int j;
-	    boolean a;
+
         int[] arr;
 
         // arr[true] = 10; // TODO: are we supposed to allow this? ... sim, a análise semântica trata desses erros... podento até true ser intrepretado como 1
@@ -202,7 +206,6 @@ class Test extends SuperTest {
     public int print(GetterAndSetter b){
         GetterAndSetter myGetter;
         int content;
-        GetterAndSetter b;
         PrintOtherClassFromParam c;
         int dummy;
         myGetter = b;

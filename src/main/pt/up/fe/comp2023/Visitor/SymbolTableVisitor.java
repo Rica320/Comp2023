@@ -34,17 +34,16 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         addVisit("ProgramRoot", this::dealWithProgram);
         addVisit("ImportDecl", this::dealWithImports);
 
-
         // Class
         addVisit("ClassDecl", this::dealWithClassDecl);
         addVisit("VarDcl", this::dealWithVarDcl);
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
 
-
+        // Methods
         addVisit("MethodArgs", this::dealWithMethodArgs);
         addVisit("ParamDecl", this::dealWithParamDecl);
-        addVisit("ReturnStmt", this::dealWithReturnStmt);
+
 
         // Type
         addVisit("IntArrayType", this::dealWithIntArrayType);
@@ -52,67 +51,12 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         addVisit("IntType", this::dealWithIntType);
         addVisit("IdType", this::dealWithIdType);
 
-        // Statement
-        addVisit("Scope", this::dealWithScope);
-        addVisit("If", this::dealWithIf);
-        addVisit("While", this::dealWithWhile);
-        addVisit("ExpressionStmt", this::dealWithExpressionStmt);
-        addVisit("Assign", this::dealWithAssign);
-        addVisit("ArrayAssign", this::dealWithArrayAssign);
-        addVisit("ThenBlock", this::dealWithThenBlock);
-        addVisit("ElseBlock", this::dealWithElseBlock);
-        addVisit("WhileBlock", this::dealWithWhileBlock);
-
         // Expression
-        addVisit("Paren", this::dealWithParen);
-        addVisit("Boolean", this::dealWithBoolean);
         addVisit("NewIntArray", this::dealWithNewIntArray);
         addVisit("NewObject", this::dealWithNewObject);
-        addVisit("Not", this::dealWithNot);
-        addVisit("ArrayLookup", this::dealWithArrayLookup);
-        addVisit("ArrayLength", this::dealWithArrayLength);
-        addVisit("MethodCall", this::dealWithMethodCall);
-        addVisit("BinaryOp", this::dealWithBinaryOp);
-        addVisit("BinaryComp", this::dealWithBinaryComp);
-        addVisit("BinaryBool", this::dealWithBinaryBool);
-        addVisit("This", this::dealWithThis);
-        addVisit("Var", this::dealWithVar);
-        addVisit("ArrayLookup", this::dealWithArrayLookup);
-        addVisit("Int", this::dealWithInt);
 
-
-        // TODO: because we are only aiming to populate the symbol table,
-        //  we should be using the default visit method for any node that we don't care about
-        // aka any node that doesnt add a new symbol to the table
-        // Na realidade quase que n precisámos de nenhum visitor porque só alguns
-        // nodes declaram novos simbolos
         setDefaultVisit(this::defaultVisit);
-
     }
-
-    private String dealWithWhileBlock(JmmNode jmmNode, String s) {
-        // podiamos até meter isto no default ....
-        // TODO: ESTE TIPO DE FUNÇOES N É NECESSARIO PARA O QUE É PARA FAZER NESTE CP, DEIXAMOS PARA FUTURO SENAO TIRA-SE
-        for (JmmNode child : jmmNode.getChildren()) {
-            this.visit(child, s);
-        }
-        return "";
-    }
-
-    private String dealWithElseBlock(JmmNode jmmNode, String s) {
-        for (JmmNode child : jmmNode.getChildren()) {
-            this.visit(child, s);
-        }
-        return "";
-    }
-
-    private String dealWithThenBlock(JmmNode jmmNode, String s) {
-        for (JmmNode child : jmmNode.getChildren()) {
-            this.visit(child, s);
-        }
-        return "";
-    }
-
 
     private String defaultVisit(JmmNode jmmNode, String s) {
         return "DEFAULT_VISIT";
@@ -170,7 +114,7 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         if (st.getCurrentMethodScope() == null) {
             st.addField(new_symbol);
         } else {
-            st.getCurrentMethodScope().addLocalVariable(new_symbol);
+            st.addLocalVariable(st.getCurrentMethod(), new_symbol);
         }
 
         return "";
@@ -234,11 +178,6 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         return "";
     }
 
-    private String dealWithReturnStmt(JmmNode jmmNode, String s) {
-        this.visit(jmmNode.getChildren().get(0), s); // Expression
-        return "";
-    }
-
     // ============================================ Type ============================================
 
     private String dealWithIntArrayType(JmmNode jmmNode, String s) {
@@ -258,69 +197,7 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     }
 
 
-    // ============================================ Statement ============================================
-
-    private String dealWithScope(JmmNode jmmNode, String s) {
-        // TODO: Ask prof if we need to create a new scope
-        for (JmmNode child : jmmNode.getChildren()) {
-            this.visit(child, s);
-        }
-        return "";
-    }
-
-    private String dealWithIf(JmmNode jmmNode, String s) {
-        this.visit(jmmNode.getChildren().get(0), s); // Expression
-        this.visit(jmmNode.getChildren().get(1), s); // Scope
-        if (jmmNode.getChildren().size() == 3) {
-            this.visit(jmmNode.getChildren().get(2), s); // Else
-        }
-        return "";
-    }
-
-    private String dealWithWhile(JmmNode jmmNode, String s) {
-        this.visit(jmmNode.getChildren().get(0), s); // Expression
-        this.visit(jmmNode.getChildren().get(1), s); // Scope
-        return "";
-    }
-
-    private String dealWithExpressionStmt(JmmNode jmmNode, String s) {
-        this.visit(jmmNode.getChildren().get(0), s); // Expression
-        return "";
-    }
-
-    private String dealWithAssign(JmmNode jmmNode, String s) {
-        String var = jmmNode.get("var");
-        // String type = this.visit(jmmNode.getChildren().get(0), s);
-        String value;
-        try {
-            value = jmmNode.getJmmChild(0).get("val");
-        } catch (Exception e) {
-            value = this.visit(jmmNode.getChildren().get(0), s);
-        }
-
-        // TODO: we still need to check if the variable is a field or a local variable and if scope matters
-        st.getCurrentMethodScope();//.setLocalVariableValue(var, value); ... TODO: comentei isto
-        return "";
-    }
-
-    private String dealWithArrayAssign(JmmNode jmmNode, String s) {
-        String var = jmmNode.get("var");
-        String type = this.visit(jmmNode.getChildren().get(0), s);
-        // TODO: same problem as above
-        return "";
-    }
-
-
     // ============================================ Expression ============================================
-
-    private String dealWithParen(JmmNode jmmNode, String s) {
-        return this.visit(jmmNode.getChildren().get(0), s);
-    }
-
-    private String dealWithBoolean(JmmNode jmmNode, String s) {
-        // return this.visit(jmmNode.getChildren().get(0), s);
-        return "boolean";
-    }
 
     private String dealWithNewIntArray(JmmNode jmmNode, String s) {
         Symbol symbol = new Symbol(new Type("int", true), jmmNode.getJmmParent().get("var"));
@@ -332,53 +209,6 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         Symbol symbol = new Symbol(new Type(jmmNode.get("objClass"), false), jmmNode.getJmmParent().get("var"));
         st.addLocalVariable(st.getCurrentMethod(), symbol);
         return jmmNode.get("objClass");
-    }
-
-    private String dealWithNot(JmmNode jmmNode, String s) {
-        return "boolean"; // TODO
-    }
-
-    private String dealWithArrayLookup(JmmNode jmmNode, String s) {
-        return "int"; // TODO
-    }
-
-    private String dealWithArrayLength(JmmNode jmmNode, String s) {
-        return "int"; // TODO
-    }
-
-    private String dealWithMethodCall(JmmNode jmmNode, String s) {
-        // TODO
-        return "";
-    }
-
-    private String dealWithBinaryOp(JmmNode jmmNode, String s) {
-        // TODO
-        return "int";
-    }
-
-    private String dealWithBinaryComp(JmmNode jmmNode, String s) {
-        // TODO
-        return "boolean";
-    }
-
-    private String dealWithBinaryBool(JmmNode jmmNode, String s) {
-        // TODO
-        return "boolean";
-    }
-
-    private String dealWithThis(JmmNode jmmNode, String s) {
-        // TODO how does this work?
-        return "";
-    }
-
-    private String dealWithVar(JmmNode jmmNode, String s) {
-        // TODO
-        return "";
-    }
-
-    private String dealWithInt(JmmNode jmmNode, String s) {
-        // TODO
-        return "int";
     }
 
 

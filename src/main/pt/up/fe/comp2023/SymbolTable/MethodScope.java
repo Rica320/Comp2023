@@ -66,10 +66,9 @@ public class MethodScope {
     }
 
 
-    public Boolean addLocalVariable(Symbol var) {
-        if (localVariables.containsKey(var.getName())) return false; // already exists
+    public void addLocalVariable(Symbol var) {
+        if (localVariables.containsKey(var.getName())) return; // already exists
         localVariables.put(var.getName(), var);
-        return true;
     }
 
     public boolean assignVariable(Symbol var) {
@@ -97,4 +96,9 @@ public class MethodScope {
         return s + "\n\n";
     }
 
+    public boolean hasParameter(String name) {
+        for (Symbol p : parameters)
+            if (p.getName().equals(name)) return true;
+        return false;
+    }
 }
