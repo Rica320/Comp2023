@@ -52,7 +52,7 @@ methodDeclaration returns [String returnType, String methodName]
         $returnType = $type.text;
         $methodName = $name.text;
     } #MethodDecl
-    ; // TODO: ver se funcionou o tipo de retorno
+    ; // TODO: REMOVER DUPLICADOS
 
 methodParams
     : paramDeclaration (',' paramDeclaration)* #MethodArgs
@@ -94,7 +94,7 @@ statement
 
 expression
     : '(' expression ')' #Paren
-    | 'new' 'int' '[' arrSize=expression ']' #NewIntArray
+    | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup

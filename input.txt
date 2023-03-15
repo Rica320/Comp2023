@@ -196,11 +196,11 @@ class Test extends SuperTest {
             arr1 = new int[3];
             arr2 = new int[3];
 
+            arr1[true]=1;
+
             arr1 = arr1 + arr2;
 
-            //return (arr1[0] < 1);
-            //return variable;
-            return true;
+            return (arr1[0] < 1);
     }
 
     public int print(GetterAndSetter b){
