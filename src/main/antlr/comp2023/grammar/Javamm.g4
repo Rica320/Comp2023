@@ -6,20 +6,6 @@ grammar Javamm;
 
 // PARSER
 
-//
-// Notas: queria dar um nome ao returno da função
-//
-
-// A melhorar:
-// 1. Ver o tipo de retorno identificado .. [0]
-// melhor nome aos objetos nos em method calls
-// talvez o mesmo de cima mas para argumentos
-// no if else n sei se valerá a pena
-
-
-// se x.length(y.length()); então o que considerá-mos .... a função length ou a var length
-// ou deixar como está e perguntar ao professor o que acha
-
 program
     : (importDeclaration)* classDeclaration EOF #ProgramRoot
     ;
@@ -86,19 +72,19 @@ statement
 
 expression
     : '(' expression ')' #Paren
+    | expression '[' expression ']' #ArrayLookup
+    | var=ID '[' expression ']' #ArrayLookup
+    | expression '.' atribute=ID #AtributeAccess
+    | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall
+    | '!' expression #Not
     | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
-    | '!' expression #Not
-    | expression '[' expression ']' #ArrayLookup
-    | expression '.' atribute=ID #ArrayLength
-    | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto...queremos ?
-    | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
+    | expression op=('*'| '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | expression op='<' expression #BinaryComp
     | expression op='&&' expression #BinaryBool
     | 'this' #This
     | var=ID #Var
-    | var=ID '[' expression ']' #ArrayLookup
     | val=BooleanLiteral #Boolean
     | val=INTEGER #Int
     ;
@@ -155,5 +141,3 @@ WS : [ \t\n\r\f]+ -> skip ;
 COMMENT: '/*' .*? '*/'    -> skip;
 LINE_COMMENT:  '//' ~[\r\n]*  -> skip;
 
-// o Any pode ser usado para apanhar erros ... um dos pontos do checkpoint
-// ANY: . ;
