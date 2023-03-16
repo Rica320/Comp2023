@@ -54,12 +54,13 @@ class Test extends SuperTest {
         return 0;
     }
 
-    public int x(){
+    public int length(){
         int a;
         A b;
         b = new A();
         a.x();
         a = 10;
+        a = x.length();
         io.print(a);
         return a;
     }

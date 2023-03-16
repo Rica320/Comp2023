@@ -90,7 +90,7 @@ expression
     | 'new' objClass=ID '(' ')' #NewObject
     | '!' expression #Not
     | expression '[' expression ']' #ArrayLookup
-    | expression '.' 'length' #ArrayLength
+    | expression '.' atribute=ID #ArrayLength
     | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall // TODO ... é possivel dar um node ao objeto...queremos ?
     | expression op=('*'| '/') expression #BinaryOp  // nota ... a assocividade é importante
     | expression op=('+' | '-') expression #BinaryOp
@@ -113,7 +113,6 @@ STATIC: 'static' ;
 VOID: 'void' ;
 RETURN: 'return' ;
 NEW: 'new' ;
-LENGTH: 'length' ;
 THIS: 'this' ;
 
 BooleanLiteral
