@@ -20,6 +20,7 @@ public class MySymbolTable implements SymbolTable {
     // ========================== CONSTRUCTOR ==========================
 
     public MySymbolTable(JmmParserResult parserResult) {
+        if(parserResult == null) return;
         SymbolTableVisitor visitor = new SymbolTableVisitor(this);
         visitor.visit(parserResult.getRootNode());
     }

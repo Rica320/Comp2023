@@ -166,7 +166,7 @@ public class OllirTest {
 
     @Test
     public void testClassArray() {
-        var method = getOllirResult("classArray.ollir")
+        var method = getOllirResult("MyInputOllir.ollir")
                         .getOllirClass().getMethod(1);
         assertEquals("classArray", ((ArrayType) method.getParam(0).getType()).getElementClass());
     }
