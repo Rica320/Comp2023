@@ -1,6 +1,8 @@
 package pt.up.fe.comp2023.Jasmin;
 
+import org.specs.comp.ollir.AssignInstruction;
 import org.specs.comp.ollir.ClassUnit;
+import org.specs.comp.ollir.Instruction;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
@@ -53,6 +55,12 @@ public class MyJasminBackend implements JasminBackend {
             System.out.println("\tMETHOD: " + method.getMethodName());
             System.out.println("\tPARAMS: " + method.getParams());
             System.out.println("\tRETURN TYPE: " + method.getReturnType());
+            System.out.println("\t===================INSTRUCTIONS===================");
+            method.getInstructions().forEach(instruction -> {
+                System.out.println("\t\t");
+                instruction.show();
+            });
+            System.out.println("\t===================<INSTRUCTIONS/>===================");
             System.out.println("<END METHOD/>");
         });
     }
@@ -91,6 +99,8 @@ public class MyJasminBackend implements JasminBackend {
 
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n\n.method public static main([Ljava/lang/String;)V\n");
+            else if (method.getMethodName().equals(this.classe.getClassName()))
+                return; // ignore constructor
             else
                 codeBuilder.append("\n\n.method public ").append(method.getMethodName()).append("(");
 
@@ -110,9 +120,10 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append("\t.limit stack 99;\n");
 
 
-
-            codeBuilder.append("\t...CODE...\n");
-
+            // add instructions
+            method.getInstructions().forEach(instruction -> {
+                codeBuilder.append("\t").append(addInstruction(instruction)).append("\n");
+            });
 
 
             if (returnType.equals("VOID")) {
@@ -133,11 +144,59 @@ public class MyJasminBackend implements JasminBackend {
         return codeBuilder.toString();
     }
 
+    private String addInstruction(Instruction instruction) {
+        String str = "";
+
+        String instType = instruction.getInstType().toString();
+
+        switch (instType) {
+            case "ASSIGN" -> {
+                AssignInstruction assignInstruction = (AssignInstruction) instruction;
+                System.out.println(assignInstruction.getDest().toString());
+                return "assign";
+            }
+            case "RETURN" -> {
+                return "return";
+            }
+            case "CALL" -> {
+                return "call";
+            }
+            case "GETFIELD" -> {
+                return "getfield";
+            }
+            case "PUTFIELD" -> {
+                return "putfield";
+            }
+            case "UNARYOPER" -> {
+                return "unarop";
+            }
+            case "BINARYOPER" -> {
+                return "binop";
+            }
+            case "NOPER" -> {
+                return "noper";
+            }
+            case "BRANCH" -> {
+                return "branch";
+            }
+            case "GOTO" -> {
+                return "goto";
+            }
+            default -> {
+                return "error";
+            }
+        }
+
+        // 		invokevirtual(c.Foo,"test",$1.A.array.classArray).V;
+        // CALL Operand: c OBJECTREF, Literal: "test", Operand: A ARRAYREF
+
+    }
+
     @Override
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
-        //this.showClass(); // debug print class
+        this.showClass(); // debug print class
 
 
         code+= this.addHeaders();
