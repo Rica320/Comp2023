@@ -101,4 +101,15 @@ public class MethodScope {
             if (p.getName().equals(name)) return true;
         return false;
     }
+
+    public int getVarRegister(String name) {
+        for (int i = 0; i < parameters.size(); i++)
+            if (parameters.get(i).getName().equals(name)) return i;
+
+        var vars = getLocalVariables();
+        for (int i = 0; i < vars.size(); i++)
+            if (vars.get(i).getName().equals(name)) return i + parameters.size() - 1;
+
+        return -1;
+    }
 }
