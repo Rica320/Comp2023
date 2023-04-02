@@ -10,16 +10,17 @@ import java.util.*;
 
 public class MySymbolTable implements SymbolTable {
 
-    private String currentMethod = null;
     private final Set<String> imports = new HashSet<>();
-    private String className = "", superClass = "";
     private final HashMap<String, MethodScope> methods = new HashMap<>();
     private final HashMap<String, Symbol> fields = new HashMap<>();
     private final List<List<String>> overloads = new ArrayList<>(); // [PLACE, TYPE, NAME]
+    private String currentMethod = null;
+    private String className = "", superClass = "";
 
     // ========================== CONSTRUCTOR ==========================
 
     public MySymbolTable(JmmParserResult parserResult) {
+        if (parserResult == null) return;
         SymbolTableVisitor visitor = new SymbolTableVisitor(this);
         visitor.visit(parserResult.getRootNode());
     }
@@ -28,12 +29,12 @@ public class MySymbolTable implements SymbolTable {
         return this.getMethod(this.currentMethod);
     }
 
-    public void setCurrentMethod(String methodLabel) {
-        this.currentMethod = methodLabel;
-    }
-
     public String getCurrentMethod() {
         return this.currentMethod;
+    }
+
+    public void setCurrentMethod(String methodLabel) {
+        this.currentMethod = methodLabel;
     }
 
     // ========================== IMPORTS ==========================
@@ -230,6 +231,8 @@ public class MySymbolTable implements SymbolTable {
 
         return sb.toString();
     }
+
+
 }
 
 
