@@ -181,20 +181,8 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append("\n");
         } else {
             // Unary operation
-
             UnaryOpInstruction op = (UnaryOpInstruction) rhs;
-
-            boolean isNumber = op.getOperand().getType().getTypeOfElement().equals(ElementType.INT32) || op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN);
-
-            codeBuilder.append("\t");
-
-            if (op.getOperand().isLiteral()) // Number or Boolean
-                codeBuilder.append("bipush ").append(((LiteralElement) op.getOperand()).getLiteral());
-            else // Other types
-                codeBuilder.append("aload_").append(((Operand) op.getOperand()).getName());
-
-            System.out.println("Unary operation!!!");
-
+            addUnaryOperation(codeBuilder, op);
         }
 
         // Storing final value in variable
@@ -203,6 +191,35 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append("\n\t; End Assign Instruction\n\n");
 
         return codeBuilder.toString();
+    }
+
+    private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
+        codeBuilder.append("\n\t; Executing unary operation\n");
+
+        // Load operand if needed to execute unary operation
+        if (op.getOperand().isLiteral()) {
+            codeBuilder.append("\t");
+            if (op.getOperand().getType().getTypeOfElement().equals(ElementType.INT32) || op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN))
+                codeBuilder.append("bipush ").append(((LiteralElement) op.getOperand()).getLiteral());
+            else codeBuilder.append("aload_").append(((Operand) op.getOperand()).getName());
+            codeBuilder.append("\n");
+        } else if (op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN)) {
+            String boolVal = ((Operand) op.getOperand()).getName();
+            int value = boolVal.equals("true") ? 1 : 0;
+            codeBuilder.append("\tbipush ").append(value).append(" ; ").append(boolVal).append("\n");
+        }
+
+        // Execute unary operation
+        codeBuilder.append("\t");
+        if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
+            codeBuilder.append("iconst_1\n");
+            codeBuilder.append("\txor\n");
+        } else if (op.getOperation().getOpType().equals(OperationType.SUB)) {
+            codeBuilder.append("ineg\n");
+        }
+
+        codeBuilder.append("\t; End unary operation\n\n");
+
     }
 
     private void addStore(StringBuilder codeBuilder, Element dest, Instruction rhs) {
@@ -282,7 +299,7 @@ public class MyJasminBackend implements JasminBackend {
 
     private String addInstruction(Instruction instruction) {
 
-
+        StringBuilder codeBuilder = new StringBuilder();
         String instType = instruction.getInstType().toString();
 
         switch (instType) {
@@ -291,7 +308,6 @@ public class MyJasminBackend implements JasminBackend {
             }
             case "RETURN" -> {
                 ReturnInstruction inst = (ReturnInstruction) instruction;
-
 
                 if (inst.getOperand() != null) {
                     if (inst.getOperand().isLiteral()) { // int or boolean
@@ -317,12 +333,12 @@ public class MyJasminBackend implements JasminBackend {
                 return "putfield";
             }
             case "UNARYOPER" -> {
-                //UnaryOpInstruction inst = (UnaryOpInstruction) instruction;
-                return "unarop";
+                addUnaryOperation(codeBuilder, (UnaryOpInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "BINARYOPER" -> {
-                //BinaryOpInstruction inst = (BinaryOpInstruction) instruction;
-                return "binop";
+                addBinaryOperation(codeBuilder, (BinaryOpInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "BRANCH" -> {
                 //SingleOpCondInstruction inst = (SingleOpCondInstruction) instruction;
