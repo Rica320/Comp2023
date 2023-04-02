@@ -12,6 +12,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
+import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
@@ -73,6 +74,10 @@ public class Launcher {
 
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
+
+        MyOllir myOllir = new MyOllir();
+        myOllir.toOllir(analyserResult);
+
 
         // Instantiate JmmCodeGenerator
         // SimpleCodeGenerator codeGenerator = new SimpleCodeGenerator();
