@@ -159,36 +159,48 @@ public class MyJasminBackend implements JasminBackend {
     private String addInstructionAssign(AssignInstruction instruction) {
         StringBuilder codeBuilder = new StringBuilder();
 
+        codeBuilder.append("\n\t; Assign Instruction\n");
+
         Element dest = instruction.getDest(); // instruction type <=> inst.getTypeOfAssign()
-
         Instruction rhs = instruction.getRhs();
-
-        System.out.println("Element dist: " + rhs);
-
         InstructionType instType = rhs.getInstType();
 
-        if (instType.equals(InstructionType.BINARYOPER))
-            return addBinaryOperation(codeBuilder, dest, (BinaryOpInstruction) rhs);
-
-        // Else: NOPER / CALL
-
-        if (instType.equals(InstructionType.NOPER)) {
-            //  iinc 2 1        ; Increment local variable 2 by 1
-            //     iconst_5        ; load the integer value 5 onto the stack
-            //    istore_0        ; store the value at top of stack in variable 0
-
+        if (instType.equals(InstructionType.BINARYOPER)) {
+            addBinaryOperation(codeBuilder, (BinaryOpInstruction) rhs); // Add binary operation loads and calculation
+        } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand().isLiteral())
-                codeBuilder.append("\tbipush ").append("<LITERAL_VALUE>").append("\n");
-            else
-                codeBuilder.append("\taload_").append(((Operand) op.getSingleOperand()).getName()).append("\n"); // should be a number
+            boolean isNumber = op.getSingleOperand().getType().getTypeOfElement().equals(ElementType.INT32) || op.getSingleOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+            codeBuilder.append("\t");
+
+            if (op.getSingleOperand().isLiteral()) // Number or Boolean
+                codeBuilder.append("bipush ").append(((LiteralElement) op.getSingleOperand()).getLiteral());
+            else // Other types
+                codeBuilder.append("aload_").append(((Operand) op.getSingleOperand()).getName());
+
+            codeBuilder.append("\n");
+        } else {
+            // Unary operation
+
+            UnaryOpInstruction op = (UnaryOpInstruction) rhs;
+
+            boolean isNumber = op.getOperand().getType().getTypeOfElement().equals(ElementType.INT32) || op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+
+            codeBuilder.append("\t");
+
+            if (op.getOperand().isLiteral()) // Number or Boolean
+                codeBuilder.append("bipush ").append(((LiteralElement) op.getOperand()).getLiteral());
+            else // Other types
+                codeBuilder.append("aload_").append(((Operand) op.getOperand()).getName());
+
+            System.out.println("Unary operation!!!");
 
         }
 
-        // Storing value in variable
+        // Storing final value in variable
         addStore(codeBuilder, dest, rhs);
 
+        codeBuilder.append("\n\t; End Assign Instruction\n\n");
 
         return codeBuilder.toString();
     }
@@ -208,40 +220,50 @@ public class MyJasminBackend implements JasminBackend {
         }
     }
 
-    private String addBinaryOperation(StringBuilder codeBuilder, Element dest, BinaryOpInstruction opInstruction) {
+    private void addBinaryOperation(StringBuilder codeBuilder, BinaryOpInstruction opInstruction) {
 
         OperationType opType = opInstruction.getOperation().getOpType();
 
-        if (opInstruction.getLeftOperand().isLiteral() && opInstruction.getRightOperand().isLiteral()) {
-            BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getLeftOperand());
-            BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getRightOperand());
-            return codeBuilder.toString();
+        codeBuilder.append("\n\t; Executing binary operation\n");
+
+        // Load operands if needed to execute binary operation
+
+        boolean isLeftLiteral = opInstruction.getLeftOperand().isLiteral();
+        boolean isRightLiteral = opInstruction.getRightOperand().isLiteral();
+
+        if (isLeftLiteral || isRightLiteral) {
+            // if one operand is literal and the other a variable, we need to load the variable operand first
+            codeBuilder.append("\t");
+            if (isLeftLiteral) {
+                codeBuilder.append("bipush ").append(((LiteralElement) opInstruction.getLeftOperand()).getLiteral()).append("\n"); // load literal
+            } else { // right operand is literal
+                codeBuilder.append("aload_").append(((Operand) opInstruction.getLeftOperand()).getName()).append("\n"); // load variable
+            }
+            codeBuilder.append("\t");
+            if (isRightLiteral) {
+                codeBuilder.append("bipush ").append(((LiteralElement) opInstruction.getRightOperand()).getLiteral()).append("\n");
+            } else { // left operand is literal
+                codeBuilder.append("aload_").append(((Operand) opInstruction.getRightOperand()).getName()).append("\n");
+            }
+        } else { // both operands are variables
+            // load both operands
+            codeBuilder.append("\t");
+            codeBuilder.append("aload_").append(((Operand) opInstruction.getLeftOperand()).getName()).append("\n");
+            codeBuilder.append("\t");
+            codeBuilder.append("aload_").append(((Operand) opInstruction.getRightOperand()).getName()).append("\n");
         }
 
+        // execute operation
+        BinaryOpInstAux(codeBuilder, opType);
+
+        codeBuilder.append("\t; End binary operation\n\n ");
+    }
+
+    private void BinaryOpInstAux(StringBuilder codeBuilder, OperationType opType) {
         codeBuilder.append("\t");
-
         switch (opType) {
-            case ADD, SUB -> {
-                boolean leftLiteral = !opInstruction.getLeftOperand().isLiteral() && opInstruction.getRightOperand().isLiteral();
-                if (leftLiteral) {
-                    Operand leftOp = (Operand) opInstruction.getLeftOperand();
-                    Operand destOp = (Operand) dest;
-                    if (leftOp.getName().equals(destOp.getName())) {
-                        BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getRightOperand());
-                        return codeBuilder.toString();
-                    }
-
-
-                } else {
-                    Operand rightOp = (Operand) opInstruction.getRightOperand();
-                    Operand destOp = (Operand) dest;
-                    if (rightOp.getName().equals(destOp.getName())) {
-                        BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getLeftOperand());
-                        return codeBuilder.toString();
-                    }
-
-                }
-            }
+            case ADD -> codeBuilder.append("iadd\n");
+            case SUB -> codeBuilder.append("isub\n");
             case MUL -> codeBuilder.append("imul\n");
             case DIV -> codeBuilder.append("idiv\n");
             case LTH -> {
@@ -256,18 +278,6 @@ public class MyJasminBackend implements JasminBackend {
             case AND -> codeBuilder.append("iand\n");
             default -> System.out.println("Binary op error");
         }
-
-        return codeBuilder.toString();
-    }
-
-    private void BinaryOpAssignAux(StringBuilder codeBuilder, OperationType opType, LiteralElement literal) {
-        codeBuilder.append("\tiinc ");
-        // REGISTER MISSING
-        if (opType.equals(OperationType.ADD)) codeBuilder.append(" ");
-        else codeBuilder.append(" -");
-
-        int v = Integer.parseInt(literal.getLiteral());
-        codeBuilder.append(v);
     }
 
     private String addInstruction(Instruction instruction) {
@@ -338,25 +348,28 @@ public class MyJasminBackend implements JasminBackend {
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.append("\n\t; Making a call instruction\n\t");
         if (inst.getFirstArg() != null) {
-            if (inst.getFirstArg().isLiteral()) codeBuilder.append("ldc ").append("<LITERAL_VALUE>").append("\n");
+            if (inst.getFirstArg().isLiteral())
+                codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()).append("\n");
             else
                 codeBuilder.append("aload_").append(((Operand) inst.getFirstArg()).getName()).append("\n"); // should be a number
 
             if (inst.getSecondArg() != null) {
                 if (inst.getSecondArg().isLiteral())
-                    codeBuilder.append("\tldc ").append("<LITERAL_VALUE>").append("\n");
+                    codeBuilder.append("\tldc ").append(((LiteralElement) inst.getSecondArg()).getLiteral()).append("\n");
                 else
                     codeBuilder.append("\taload_").append(((Operand) inst.getSecondArg()).getName()).append("\n"); // should be a number
             }
         }
 
         for (Element arg : inst.getListOfOperands()) {
-            if (arg.isLiteral()) codeBuilder.append("\tbipush ").append("<LITERAL_VALUE>").append("\n");
+            if (arg.isLiteral())
+                codeBuilder.append("\tbipush ").append(((LiteralElement) arg).getLiteral()).append("\n");
             else codeBuilder.append("\taload_").append(((Operand) arg).getName()).append("\n"); // should be a number
         }
 
         // invoke method
         codeBuilder.append("\tinvokevirtual " + "<METHOD_NAME>(");
+
 
         if (inst.getFirstArg() != null) {
             codeBuilder.append(toJasminType(inst.getFirstArg().getType().toString()));
