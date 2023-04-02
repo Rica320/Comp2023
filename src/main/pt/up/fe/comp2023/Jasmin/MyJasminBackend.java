@@ -4,7 +4,8 @@ import org.specs.comp.ollir.*;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+
+import java.util.HashMap;
 
 // • Assignments
 //• Arithmetic operations (with correct precedence)
@@ -14,18 +15,14 @@ public class MyJasminBackend implements JasminBackend {
 
     ClassUnit classe;
     String code = "";
-    MySymbolTable st;
 
-    String currentMethod = "";
+    HashMap<String, Descriptor> currVarTable;
 
     int labelCounter = 0;
 
-    public MyJasminBackend(MySymbolTable st) {
-        this.st = st;
-    }
-
     private String getRegister(String var) {
-        return String.valueOf(st.getMethodRegister(currentMethod, var));
+        if (currVarTable.containsKey(var)) return String.valueOf(currVarTable.get(var).getVirtualReg());
+        return "-1";
     }
 
     private String getNewLabel() {
@@ -155,7 +152,7 @@ public class MyJasminBackend implements JasminBackend {
         StringBuilder codeBuilder = new StringBuilder();
         this.classe.getMethods().forEach(method -> {
 
-            currentMethod = method.getMethodName();
+            currVarTable = method.getVarTable();
 
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n.method public static main([Ljava/lang/String;)V\n");
@@ -174,7 +171,8 @@ public class MyJasminBackend implements JasminBackend {
             // add instructions
             method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
 
-            currentMethod = "";
+            currVarTable = null;
+
             codeBuilder.append(".end method\n\n");
         });
         return codeBuilder.toString();
@@ -379,24 +377,18 @@ public class MyJasminBackend implements JasminBackend {
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.append("\n\t; Making a call instruction\n\t");
 
-        if (inst.getFirstArg() != null) {
-            loadElement(codeBuilder, inst.getFirstArg());
-
-            if (inst.getSecondArg() != null) loadElement(codeBuilder, inst.getSecondArg());
-        }
-
         // load other arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(codeBuilder, arg);
 
+        String name = ((Operand) inst.getFirstArg()).getName();
+        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
+        method = method.substring(1, method.length() - 1); // remove quotes from method name
 
         // invoke method
-        codeBuilder.append("invokevirtual " + "<METHOD_NAME>(");
-
-        if (inst.getFirstArg() != null) {
-            codeBuilder.append(toJasminType(inst.getFirstArg().getType().toString()));
-            if (inst.getSecondArg() != null) codeBuilder.append(toJasminType(inst.getSecondArg().getType().toString()));
-        }
+        codeBuilder.append("invokevirtual ").append(name);
+        if (inst.getSecondArg() != null) codeBuilder.append(".").append(method);
+        codeBuilder.append("(");
 
         for (Element arg : inst.getListOfOperands())
             codeBuilder.append(toJasminType(arg.getType().toString()));
