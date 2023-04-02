@@ -16,8 +16,14 @@ public class MyJasminBackend implements JasminBackend {
     String code = "";
     MySymbolTable st;
 
+    int labelCounter = 0;
+
     public MyJasminBackend(MySymbolTable st) {
         this.st = st;
+    }
+
+    private String getNewLabel() {
+        return "label_" + labelCounter++;
     }
 
     private String toJasminType(String type) {
@@ -91,15 +97,18 @@ public class MyJasminBackend implements JasminBackend {
 
     public String addFields() {
         StringBuilder codeBuilder = new StringBuilder();
-        this.classe.getFields().forEach(field -> {
-            codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
-        });
+        this.classe.getFields().forEach(field -> codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
         return codeBuilder.toString();
     }
 
     public String addConstructor() {
-        String codeBuilder = "\n.method public <init>()V\n" + "\taload_0\n" + "\tinvokenonvirtual java/lang/Object/<init>()V\n" + "\treturn\n" + ".end method\n";
-        return codeBuilder;
+        return """
+                \n.method public <init>()V
+                \taload_0
+                \tinvokenonvirtual java/lang/Object/<init>()V
+                \treturn
+                .end method
+                """;
     }
 
     private String addMethods() {
@@ -112,9 +121,7 @@ public class MyJasminBackend implements JasminBackend {
             else codeBuilder.append("\n.method public ").append(method.getMethodName()).append("(");
 
 
-            method.getParams().forEach(param -> {
-                codeBuilder.append(toJasminType(param.getType().toString()));
-            });
+            method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
 
 
             String returnType = method.getReturnType().toString();
@@ -127,9 +134,7 @@ public class MyJasminBackend implements JasminBackend {
 
 
             // add instructions
-            method.getInstructions().forEach(instruction -> {
-                codeBuilder.append(addInstruction(instruction)).append("\n");
-            });
+            method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
 
 
             codeBuilder.append(".end method\n\n");
@@ -240,13 +245,13 @@ public class MyJasminBackend implements JasminBackend {
             case MUL -> codeBuilder.append("imul\n");
             case DIV -> codeBuilder.append("idiv\n");
             case LTH -> {
-                String label_1 = "label_1", label_2 = "label_1";
-                codeBuilder.append("if_icmplt ").append(label_1).append("\n");
-                codeBuilder.append("\ticonst_0\n"); // false
-                codeBuilder.append("\tgoto ").append(label_2).append("\n");
-                codeBuilder.append(label_1).append(":\n");
-                codeBuilder.append("\ticonst_1\n"); // true
-                codeBuilder.append(label_2).append(":\n");
+                String trueL = getNewLabel(), endL = getNewLabel();
+                codeBuilder.append("if_icmplt ").append(trueL).append("\n");
+                codeBuilder.append("\ticonst_0\n"); // false scope
+                codeBuilder.append("\tgoto ").append(endL).append("\n");
+                codeBuilder.append(trueL).append(":\n");
+                codeBuilder.append("\ticonst_1\n"); // true scope
+                codeBuilder.append(endL).append(":\n");
             }
             case AND -> codeBuilder.append("iand\n");
             default -> System.out.println("Binary op error");
@@ -266,7 +271,7 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     private String addInstruction(Instruction instruction) {
-        String str = "";
+
 
         String instType = instruction.getInstType().toString();
 
@@ -294,19 +299,19 @@ public class MyJasminBackend implements JasminBackend {
                 return addCallInstruction((CallInstruction) instruction);
             }
             case "GETFIELD" -> {
-                GetFieldInstruction inst = (GetFieldInstruction) instruction;
+                //GetFieldInstruction inst = (GetFieldInstruction) instruction;
                 return "getfield";
             }
             case "PUTFIELD" -> {
-                PutFieldInstruction inst = (PutFieldInstruction) instruction;
+                //PutFieldInstruction inst = (PutFieldInstruction) instruction;
                 return "putfield";
             }
             case "UNARYOPER" -> {
-                UnaryOpInstruction inst = (UnaryOpInstruction) instruction;
+                //UnaryOpInstruction inst = (UnaryOpInstruction) instruction;
                 return "unarop";
             }
             case "BINARYOPER" -> {
-                BinaryOpInstruction inst = (BinaryOpInstruction) instruction;
+                //BinaryOpInstruction inst = (BinaryOpInstruction) instruction;
                 return "binop";
             }
             case "BRANCH" -> {
@@ -314,7 +319,7 @@ public class MyJasminBackend implements JasminBackend {
                 return "branch";
             }
             case "GOTO" -> {
-                GotoInstruction inst = (GotoInstruction) instruction;
+                //GotoInstruction inst = (GotoInstruction) instruction;
                 return "goto";
             }
             default -> {
