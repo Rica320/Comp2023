@@ -74,11 +74,14 @@ public class MyJasminBackend implements JasminBackend {
         else {
             code += ".super java/lang/Object\n";
         }
+        code += "\n";
         return code;
     }
 
     private String addImports() {
         StringBuilder imports = new StringBuilder();
+
+        if (this.classe.getImports().size() == 0) return "; No imports\n";
 
         for (String imp : this.classe.getImports()) {
             imports.append(".import ").append(imp).append("\n");
@@ -89,13 +92,13 @@ public class MyJasminBackend implements JasminBackend {
     public String addFields() {
         StringBuilder codeBuilder = new StringBuilder();
         this.classe.getFields().forEach(field -> {
-            codeBuilder.append("\n\n.field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
+            codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
         });
         return codeBuilder.toString();
     }
 
     public String addConstructor() {
-        String codeBuilder = "\n\n.method public <init>()V\n" + "\taload_0\n" + "\tinvokenonvirtual java/lang/Object/<init>()V\n" + "\treturn\n" + ".end method\n\n";
+        String codeBuilder = "\n.method public <init>()V\n" + "\taload_0\n" + "\tinvokenonvirtual java/lang/Object/<init>()V\n" + "\treturn\n" + ".end method\n";
         return codeBuilder;
     }
 
@@ -104,9 +107,9 @@ public class MyJasminBackend implements JasminBackend {
         this.classe.getMethods().forEach(method -> {
 
             if (method.getMethodName().equals("main"))
-                codeBuilder.append("\n\n.method public static main([Ljava/lang/String;)V\n");
+                codeBuilder.append("\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
-            else codeBuilder.append("\n\n.method public ").append(method.getMethodName()).append("(");
+            else codeBuilder.append("\n.method public ").append(method.getMethodName()).append("(");
 
 
             method.getParams().forEach(param -> {
@@ -120,7 +123,7 @@ public class MyJasminBackend implements JasminBackend {
 
             // in this phase we don't need to worry about locals and stack limits
             codeBuilder.append("\t.limit locals 99;\n");
-            codeBuilder.append("\t.limit stack 99;\n");
+            codeBuilder.append("\t.limit stack 99;\n\n");
 
 
             // add instructions
@@ -137,13 +140,13 @@ public class MyJasminBackend implements JasminBackend {
     private String addReturn(String returnType) {
         switch (returnType) {
             case "VOID" -> {
-                return "\treturn\n";
+                return "\treturn";
             }
             case "INT32", "BOOLEAN" -> {
-                return "\tireturn\n";
+                return "\tireturn";
             }
             default -> {
-                return "\tareturn\n"; // ARRAYREF or OBJECTREF
+                return "\tareturn"; // ARRAYREF or OBJECTREF
             }
         }
     }
@@ -274,17 +277,18 @@ public class MyJasminBackend implements JasminBackend {
             case "RETURN" -> {
                 ReturnInstruction inst = (ReturnInstruction) instruction;
 
+
                 if (inst.getOperand() != null) {
                     if (inst.getOperand().isLiteral()) { // int or boolean
                         LiteralElement literal = (LiteralElement) inst.getOperand();
-                        return "\ticonst_" + literal.getLiteral() + "\n" + addReturn(inst.getReturnType().toString());
+                        return "\n\ticonst_" + literal.getLiteral() + "\n" + addReturn(inst.getReturnType().toString());
                     } else { // Object
                         Operand operand = (Operand) inst.getOperand();
-                        return "\taload_" + operand.getName() + "\n" + addReturn(inst.getReturnType().toString());
+                        return "\n\taload_" + operand.getName() + "\n" + addReturn(inst.getReturnType().toString());
                     }
                 }
                 // Else return void
-                return addReturn(inst.getReturnType().toString());
+                return "\n" + addReturn(inst.getReturnType().toString());
             }
             case "CALL" -> {
                 return addCallInstruction((CallInstruction) instruction);
@@ -354,7 +358,6 @@ public class MyJasminBackend implements JasminBackend {
             if (inst.getSecondArg() != null) codeBuilder.append(toJasminType(inst.getSecondArg().getType().toString()));
         }
 
-        // for some stupid reason, the first 2 arguments are not in the list of operands...
         for (Element arg : inst.getListOfOperands())
             codeBuilder.append(toJasminType(arg.getType().toString()));
 
@@ -367,64 +370,24 @@ public class MyJasminBackend implements JasminBackend {
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
-        this.showClass(); // debug print class
-
+        // this.showClass(); // debug print class
 
         code += this.addHeaders();
+        code += "; Imports\n";
         code += this.addImports();
+        code += "\n; Fields\n";
         code += this.addFields();
+        code += "\n; Constructor";
         code += this.addConstructor();
+        code += "\n; ================ Methods ================\n";
         code += this.addMethods();
 
-        System.out.println("\n\n======================JASMIN CODE======================\n\n");
+        System.out.println("\n======================JASMIN CODE======================\n");
         System.out.println(code);
         System.out.println("======================================================");
 
 
-        return new JasminResult("""
-                    .class public HelloWorld
-                    .super java/lang/Object
-
-                    ;
-                    ; standard initializer (calls java.lang.Object's initializer)
-                    ;
-                    .method public <init>()V
-                       aload_0
-                       invokenonvirtual java/lang/Object/<init>()V
-                       return
-                    .end method
-
-                    ;
-                    ; main() - prints out Hello World
-                    ;
-                    .method public static main([Ljava/lang/String;)V
-                       .limit stack 2   ; up to two items can be pushed
-
-                       ; push System.out onto the stack
-                       getstatic java/lang/System/out Ljava/io/PrintStream;
-
-                       ; push a string onto the stack
-                       ldc "120"
-
-                       ; call the PrintStream.println() method.
-                       invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
-
-                       ; push another string onto the stack
-                       ; ldc "Hello World Again!"
-
-                       ; call the io.println() method.
-                       ; invokestatic io/println(Ljava/lang/String;)V
-
-                       ; done
-                       return
-                    .end method
-                   \s
-                     .method public foo(II)V
-                     \t.limit locals 3 ; This is the minimum value, one for "this" and two for the arguments
-                     \treturn
-                     .end method\
-                """);
+        return new JasminResult(code);
     }
-
 
 }
