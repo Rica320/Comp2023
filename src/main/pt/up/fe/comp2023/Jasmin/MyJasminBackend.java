@@ -159,14 +159,17 @@ public class MyJasminBackend implements JasminBackend {
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else codeBuilder.append("\n.method public ").append(method.getMethodName()).append("(");
 
-            method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
+            if (!method.getMethodName().equals("main"))
+                method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
 
-            String returnType = method.getReturnType().toString();
-            codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
+            if (!method.getMethodName().equals("main")) { // ignore constructor
+                String returnType = method.getReturnType().toString();
+                codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
+            }
 
             // in this phase we don't need to worry about locals and stack limits
-            codeBuilder.append("\t.limit locals 99;\n");
-            codeBuilder.append("\t.limit stack 99;\n\n");
+            codeBuilder.append("\t.limit stack 30\n");
+            codeBuilder.append("\t.limit locals 30\n\n");
 
             // add instructions
             method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
@@ -376,6 +379,7 @@ public class MyJasminBackend implements JasminBackend {
         // load arguments
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.append("\n\t; Making a call instruction\n\t");
+        //codeBuilder.append("getstatic java/lang/System/out Ljava/io/PrintStream;\n\t");
 
         // load other arguments
         for (Element arg : inst.getListOfOperands())
@@ -410,8 +414,7 @@ public class MyJasminBackend implements JasminBackend {
         code += "\n; Fields\n";
         code += this.addFields();
         code += "\n; Constructor";
-        code += this.addConstructor();
-        code += "\n; ================ Methods ================\n";
+        //code += this.addConstructor();
         code += this.addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");

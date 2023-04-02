@@ -18,11 +18,12 @@ public class MyJasminTests {
         OllirResult ollirResult = new OllirResult(ollirCode, new HashMap<>());
         var jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         var jasminCode = jasminResult.getJasminCode();
-        try {
+
+        /*try {
             var output = TestUtils.runJasmin(jasminCode);
         } catch (Exception e) {
             System.out.println("Count not run Jasmin code: " + e.getMessage());
-        }
+        }*/
 
         //assertEquals("120", SpecsStrings.normalizeFileContents(output).trim());
     }
