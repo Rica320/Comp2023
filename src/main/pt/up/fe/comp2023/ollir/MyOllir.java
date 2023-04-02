@@ -5,6 +5,8 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
+import java.util.Collections;
+
 public class MyOllir implements JmmOptimization {
 
     @Override
@@ -14,10 +16,10 @@ public class MyOllir implements JmmOptimization {
         MyOllirVisitor myOllirVisitor = new MyOllirVisitor(symbolTable);
 
 
-        myOllirVisitor.visit(jmmSemanticsResult.getRootNode());
+        String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode());
 
-        System.out.println(jmmSemanticsResult.getRootNode().toString());
-
+        System.out.println(code);
+        //return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
         return null;
     }
 

@@ -124,6 +124,9 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
         for (JmmNode child : jmmNode.getChildren()) {
             this.visit(child, s);
         }
+
+        Symbol new_symbol = new Symbol(new Type("String", true), jmmNode.get("arg"));
+        st.getCurrentMethodScope().setParameters(List.of(new_symbol));
         st.setCurrentMethod(null);
 
         return "";
