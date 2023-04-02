@@ -16,10 +16,16 @@ public class MyJasminBackend implements JasminBackend {
     String code = "";
     MySymbolTable st;
 
+    String currentMethod = "";
+
     int labelCounter = 0;
 
     public MyJasminBackend(MySymbolTable st) {
         this.st = st;
+    }
+
+    private String getRegister(String var) {
+        return String.valueOf(st.getMethodRegister(currentMethod, var));
     }
 
     private String getNewLabel() {
@@ -116,6 +122,8 @@ public class MyJasminBackend implements JasminBackend {
         StringBuilder codeBuilder = new StringBuilder();
         this.classe.getMethods().forEach(method -> {
 
+            currentMethod = method.getMethodName();
+
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
@@ -133,6 +141,7 @@ public class MyJasminBackend implements JasminBackend {
             // add instructions
             method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
 
+            currentMethod = "";
             codeBuilder.append(".end method\n\n");
         });
         return codeBuilder.toString();
@@ -171,8 +180,12 @@ public class MyJasminBackend implements JasminBackend {
 
             if (op.getSingleOperand().isLiteral()) // Number or Boolean
                 codeBuilder.append("bipush ").append(((LiteralElement) op.getSingleOperand()).getLiteral());
-            else // Other types
-                codeBuilder.append("aload_").append(((Operand) op.getSingleOperand()).getName());
+            else {
+                // Other types
+                String name = ((Operand) op.getSingleOperand()).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name);
+            }
+
 
             codeBuilder.append("\n");
         } else {
@@ -197,7 +210,10 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append("\t");
             if (op.getOperand().getType().getTypeOfElement().equals(ElementType.INT32) || op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN))
                 codeBuilder.append("bipush ").append(((LiteralElement) op.getOperand()).getLiteral());
-            else codeBuilder.append("aload_").append(((Operand) op.getOperand()).getName());
+            else {
+                String name = ((Operand) op.getOperand()).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name);
+            }
             codeBuilder.append("\n");
         } else if (op.getOperand().getType().getTypeOfElement().equals(ElementType.BOOLEAN)) {
             String boolVal = ((Operand) op.getOperand()).getName();
@@ -226,11 +242,11 @@ public class MyJasminBackend implements JasminBackend {
                 codeBuilder.append("i"); // Number
             else codeBuilder.append("a"); // Generic Object
             codeBuilder.append("store_");
-            codeBuilder.append(((Operand) dest).getName());
         } else {
             codeBuilder.append("astore_");
-            codeBuilder.append(((Operand) dest).getName());
         }
+        String name = ((Operand) dest).getName();
+        codeBuilder.append(getRegister(name)).append(" ; ").append(name);
     }
 
     private void addBinaryOperation(StringBuilder codeBuilder, BinaryOpInstruction opInstruction) {
@@ -250,20 +266,24 @@ public class MyJasminBackend implements JasminBackend {
             if (isLeftLiteral) {
                 codeBuilder.append("bipush ").append(((LiteralElement) opInstruction.getLeftOperand()).getLiteral()).append("\n"); // load literal
             } else { // right operand is literal
-                codeBuilder.append("aload_").append(((Operand) opInstruction.getLeftOperand()).getName()).append("\n"); // load variable
+                String name = ((Operand) opInstruction.getLeftOperand()).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
             }
             codeBuilder.append("\t");
             if (isRightLiteral) {
                 codeBuilder.append("bipush ").append(((LiteralElement) opInstruction.getRightOperand()).getLiteral()).append("\n");
             } else { // left operand is literal
-                codeBuilder.append("aload_").append(((Operand) opInstruction.getRightOperand()).getName()).append("\n");
+                String name = ((Operand) opInstruction.getRightOperand()).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
             }
         } else { // both operands are variables
             // load both operands
             codeBuilder.append("\t");
-            codeBuilder.append("aload_").append(((Operand) opInstruction.getLeftOperand()).getName()).append("\n");
+            String name = ((Operand) opInstruction.getLeftOperand()).getName();
+            codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
             codeBuilder.append("\t");
-            codeBuilder.append("aload_").append(((Operand) opInstruction.getRightOperand()).getName()).append("\n");
+            name = ((Operand) opInstruction.getRightOperand()).getName();
+            codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
         }
 
         // execute operation
@@ -311,7 +331,8 @@ public class MyJasminBackend implements JasminBackend {
                         return "\n\ticonst_" + literal.getLiteral() + "\n" + addReturn(inst.getReturnType().toString());
                     } else { // Object
                         Operand operand = (Operand) inst.getOperand();
-                        return "\n\taload_" + operand.getName() + "\n" + addReturn(inst.getReturnType().toString());
+                        String name = operand.getName();
+                        return "\n\taload_" + getRegister(name) + " ; " + name + "\n" + addReturn(inst.getReturnType().toString());
                     }
                 }
                 // Else return void
@@ -374,20 +395,25 @@ public class MyJasminBackend implements JasminBackend {
             if (isLeftLiteral) {
                 codeBuilder.append("bipush ").append(((LiteralElement) leftOperand).getLiteral()).append("\n"); // load literal
             } else { // right operand is literal
-                codeBuilder.append("aload_").append(((Operand) leftOperand).getName()).append("\n"); // load variable
+
+                String name = ((Operand) leftOperand).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n"); // load variable
             }
             codeBuilder.append("\t");
             if (isRightLiteral) {
                 codeBuilder.append("bipush ").append(((LiteralElement) rightOperand).getLiteral()).append("\n");
             } else { // left operand is literal
-                codeBuilder.append("aload_").append(((Operand) rightOperand).getName()).append("\n");
+                String name = ((Operand) rightOperand).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
             }
         } else { // both operands are variables
             // load both operands
             codeBuilder.append("\t");
-            codeBuilder.append("aload_").append(((Operand) leftOperand).getName()).append("\n");
+            String name = ((Operand) leftOperand).getName();
+            codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
             codeBuilder.append("\t");
-            codeBuilder.append("aload_").append(((Operand) rightOperand).getName()).append("\n");
+            name = ((Operand) rightOperand).getName();
+            codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n");
         }
 
         // execute operation (only LTH is supported)
@@ -416,14 +442,19 @@ public class MyJasminBackend implements JasminBackend {
         if (inst.getFirstArg() != null) {
             if (inst.getFirstArg().isLiteral())
                 codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()).append("\n");
-            else
-                codeBuilder.append("aload_").append(((Operand) inst.getFirstArg()).getName()).append("\n"); // should be a number
+            else {
+                String name = ((Operand) inst.getFirstArg()).getName();
+                codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n"); // should be a number
+            }
+
 
             if (inst.getSecondArg() != null) {
                 if (inst.getSecondArg().isLiteral())
                     codeBuilder.append("\tldc ").append(((LiteralElement) inst.getSecondArg()).getLiteral()).append("\n");
-                else
-                    codeBuilder.append("\taload_").append(((Operand) inst.getSecondArg()).getName()).append("\n"); // should be a number
+                else {
+                    String name = ((Operand) inst.getSecondArg()).getName();
+                    codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name).append("\n"); // should be a number
+                }
             }
         }
 

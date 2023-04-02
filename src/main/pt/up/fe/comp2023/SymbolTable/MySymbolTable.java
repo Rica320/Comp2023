@@ -128,6 +128,12 @@ public class MySymbolTable implements SymbolTable {
         return methods.get(label);
     }
 
+    public int getMethodRegister(String method, String var){
+        if (methods.containsKey(method))
+            return methods.get(method).getVarRegister(var);
+        else return -1;
+    }
+
     @Override
     public Type getReturnType(String label) {
         return methods.get(label).getReturnType();
