@@ -97,6 +97,7 @@ public class MyJasminBackend implements JasminBackend {
 
     public String addFields() {
         StringBuilder codeBuilder = new StringBuilder();
+        if (this.classe.getFields().size() == 0) return "; No fields\n";
         this.classe.getFields().forEach(field -> codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
         return codeBuilder.toString();
     }
@@ -120,22 +121,17 @@ public class MyJasminBackend implements JasminBackend {
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else codeBuilder.append("\n.method public ").append(method.getMethodName()).append("(");
 
-
             method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
-
 
             String returnType = method.getReturnType().toString();
             codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
-
 
             // in this phase we don't need to worry about locals and stack limits
             codeBuilder.append("\t.limit locals 99;\n");
             codeBuilder.append("\t.limit stack 99;\n\n");
 
-
             // add instructions
             method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
-
 
             codeBuilder.append(".end method\n\n");
         });
@@ -213,7 +209,7 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append("\t");
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
             codeBuilder.append("iconst_1\n");
-            codeBuilder.append("\txor\n");
+            codeBuilder.append("\tixor\n");
         } else if (op.getOperation().getOpType().equals(OperationType.SUB)) {
             codeBuilder.append("ineg\n");
         }
@@ -341,12 +337,12 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "BRANCH" -> {
-                //SingleOpCondInstruction inst = (SingleOpCondInstruction) instruction;
-                return "branch";
+                addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "GOTO" -> {
-                //GotoInstruction inst = (GotoInstruction) instruction;
-                return "goto";
+                GotoInstruction inst = (GotoInstruction) instruction;
+                return "\n\tgoto " + inst.getLabel() + "\n";
             }
             default -> {
                 return "error";
@@ -356,6 +352,60 @@ public class MyJasminBackend implements JasminBackend {
         // 		invokevirtual(c.Foo,"test",$1.A.array.classArray).V;
         // CALL Operand: c OBJECTREF, Literal: "test", Operand: A ARRAYREF
 
+    }
+
+    private void addConditionalBranch(StringBuilder codeBuilder, OpCondInstruction instruction) {
+        OpInstruction opType = instruction.getCondition();
+        String trueL = getNewLabel(); // should I use instruction.getLabel() or my getNewLabel() like the line below?
+        String endL = getNewLabel();
+
+        codeBuilder.append("\n\t; Executing conditional branch\n");
+
+        Element leftOperand = opType.getOperands().get(0);
+        Element rightOperand = opType.getOperands().get(1);
+
+        // Load operands if needed to execute binary operation
+        boolean isLeftLiteral = leftOperand.isLiteral();
+        boolean isRightLiteral = rightOperand.isLiteral();
+
+        if (isLeftLiteral || isRightLiteral) {
+            // if one operand is literal and the other a variable, we need to load the variable operand first
+            codeBuilder.append("\t");
+            if (isLeftLiteral) {
+                codeBuilder.append("bipush ").append(((LiteralElement) leftOperand).getLiteral()).append("\n"); // load literal
+            } else { // right operand is literal
+                codeBuilder.append("aload_").append(((Operand) leftOperand).getName()).append("\n"); // load variable
+            }
+            codeBuilder.append("\t");
+            if (isRightLiteral) {
+                codeBuilder.append("bipush ").append(((LiteralElement) rightOperand).getLiteral()).append("\n");
+            } else { // left operand is literal
+                codeBuilder.append("aload_").append(((Operand) rightOperand).getName()).append("\n");
+            }
+        } else { // both operands are variables
+            // load both operands
+            codeBuilder.append("\t");
+            codeBuilder.append("aload_").append(((Operand) leftOperand).getName()).append("\n");
+            codeBuilder.append("\t");
+            codeBuilder.append("aload_").append(((Operand) rightOperand).getName()).append("\n");
+        }
+
+        // execute operation (only LTH is supported)
+        codeBuilder.append("\tif_icmplt ").append(trueL).append("\n"); // if condition is true, jump to true label
+
+        // TODO : CODE IF CONDITION IS FALSE HERE
+
+        // if condition is false, jump to end label
+        codeBuilder.append("\tgoto ").append(endL).append("\n");
+
+        codeBuilder.append(trueL).append(":\n");
+
+        // TODO : CODE IF CONDITION IS TRUE HERE
+
+        // end label
+        codeBuilder.append(endL).append(":\n");
+
+        codeBuilder.append("\t; End of conditional branch");
     }
 
     private String addCallInstruction(CallInstruction inst) {
@@ -386,7 +436,6 @@ public class MyJasminBackend implements JasminBackend {
         // invoke method
         codeBuilder.append("\tinvokevirtual " + "<METHOD_NAME>(");
 
-
         if (inst.getFirstArg() != null) {
             codeBuilder.append(toJasminType(inst.getFirstArg().getType().toString()));
             if (inst.getSecondArg() != null) codeBuilder.append(toJasminType(inst.getSecondArg().getType().toString()));
@@ -404,7 +453,7 @@ public class MyJasminBackend implements JasminBackend {
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
-        // this.showClass(); // debug print class
+        this.showClass(); // debug print class
 
         code += this.addHeaders();
         code += "; Imports\n";
