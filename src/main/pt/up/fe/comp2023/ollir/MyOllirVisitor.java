@@ -29,7 +29,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         addVisit("MethodDecl", this::dealWithMethod);
 
         // Methods
-        addVisit("MethodArgs", this::dealWithMethodArgs);
+        //addVisit("MethodArgs", this::dealWithMethodArgs);
         addVisit("ParamDecl", this::dealWithParamDecl);
         addVisit("MethodCall", this::dealWithMethodCall);
 
@@ -137,12 +137,39 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         return null;
     }
 
-    private String dealWithMethodArgs(JmmNode jmmNode, String s) {
-        return null;
+    private String dealWithMethodArgs(List<Symbol> symbols) {
+        StringBuilder sb = new StringBuilder();
+        if (!symbols.isEmpty()) {
+            Symbol firstSym = symbols.get(0);
+            sb.append(firstSym.getName()).append(".")
+                    .append(getOllirType(firstSym.getType().getName(), firstSym.getType().isArray()));
+            for (int i = 1; i < symbols.size(); i++) {
+                Symbol sym = symbols.get(i);
+                sb.append(", ")
+                        .append(sym.getName()).append(".")
+                        .append(getOllirType(sym.getType().getName(), sym.getType().isArray()));
+            }
+        }
+        return sb.toString();
     }
 
     private String dealWithMethod(JmmNode jmmNode, String s) {
-        return null;
+        StringBuilder sb = new StringBuilder();
+
+        String methodName = jmmNode.get("name");
+
+        symbolTable.setCurrentMethod(methodName);
+        // TODO: OUTRA VEZ PUBLIC OU PRIVATE ?
+        sb.append(".method public ").append(methodName).append("(")
+                .append(dealWithMethodArgs(symbolTable.getCurrentMethodScope().getParameters()))
+                .append(").").append(getOllirType(symbolTable.getReturnType(methodName).getName(),
+                        symbolTable.getReturnType(methodName).isArray())).append(" {\n");
+
+
+        sb.append("}\n");
+        symbolTable.setCurrentMethod(null);
+
+        return sb.toString();
     }
 
     private String dealWithMain(JmmNode jmmNode, String s) {
@@ -158,7 +185,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
             if (childCode != null)
                 sb.append(childCode).append("\n");
         }
-        sb.append("ret.V;\n");
+        sb.append("ret.V;");
         sb.append("\n}");
 
         symbolTable.setCurrentMethod(null);
@@ -186,7 +213,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithClassDecl(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
-        sb.append(symbolTable.getClassName()).append(" {\n\n");
+
+        String extendsClass = symbolTable.getSuper() == null ? "" : " extends " + symbolTable.getSuper();
+        sb.append(symbolTable.getClassName()).append(extendsClass).append(" {\n\n");
+
         sb.append(dealWithVarDcl()).append("\n"); // TODO: ESTES \n sao para efeitos visuais
         sb.append(defaultConstructor());
         for (JmmNode child : jmmNode.getChildren()) {
