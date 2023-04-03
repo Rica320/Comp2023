@@ -2,29 +2,29 @@ package pt.up.fe.comp2023.ollir;
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.List;
 import java.util.function.BiFunction;
 
 public class MyOllirVisitor extends AJmmVisitor<String, String> {
 
-    private final SymbolTable symbolTable;
+    private final MySymbolTable symbolTable;
 
     public MyOllirVisitor(SymbolTable symbolTable) {
-        this.symbolTable = symbolTable;
+        this.symbolTable = (MySymbolTable) symbolTable;
     }
 
 
     @Override
     protected void buildVisitor() {
         addVisit("ProgramRoot", this::dealWithProgram);
-        addVisit("ImportDecl", this::dealWithImports);
 
         // Class
         addVisit("ClassDecl", this::dealWithClassDecl);
-        addVisit("VarDcl", this::dealWithVarDcl);
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
 
@@ -43,15 +43,60 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         // Expression
         addVisit("NewIntArray", this::dealWithNewIntArray);
         addVisit("NewObject", this::dealWithNewObject);
+        addVisit("ReturnStmt", this::returnStmt);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private String returnStmt(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
+        String ret = getOllirType(type.getName(), type.isArray());
+        sb.append("ret.").append(ret).append(" ").append(""); //TODO: return value
+        return sb.toString();
+    }
+
+    public static String getOllirType(String type, boolean isArray) {
+        StringBuilder sb = new StringBuilder();
+        if (isArray)
+            sb.append("array.");
+        return switch (type) {
+            case "int" -> sb.append("i32").toString();
+            case "boolean" -> sb.append("bool").toString();
+            case "void", ".Any" -> sb.append("V").toString();
+            default -> sb.append(type).toString();
+        };
     }
 
     private String dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
+        String varName = jmmNode.getChildren().get(0).get("var");
+        String methodName = jmmNode.get("method");
 
-        return null;
+        if (symbolTable.isVariable(varName) || varName == null) {
+            if (varName == null) {
+                sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
+            } else {
+                sb.append("invokevirtual(").append(varName).append(", \"").append(methodName).append("\"");
+            }
+        }else {
+            sb.append("invokestatic(").append(varName).append(", \"").append(methodName).append("\"");
+        }
+
+        // List<Symbol> params = symbolTable.getCurrentMethodScope().getParameters(); // TODO: get params from method call
+        // if (!params.isEmpty()) {
+        //     for (Symbol param : params) {
+        //         sb.append(param.getType().getName()).append(" ");
+        //     }
+        // }
+        Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
+
+        sb.append(").")
+                .append(getOllirType(type.getName(), type.isArray()))
+                .append(";");
+
+        return sb.toString();
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
@@ -103,27 +148,47 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
     private String dealWithMain(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
-        List<Symbol> symbols = symbolTable.getParameters("main");
+        symbolTable.setCurrentMethod("main");
+        List<Symbol> symbols = symbolTable.getCurrentMethodScope().getParameters();
 
-        sb.append(".method public static main(").append(symbols.get(0).getName()).append(".array.String).V {");
+        sb.append(".method public static main(").append(symbols.get(0).getName()).append(".array.String).V {\n");
 
         for (JmmNode child : jmmNode.getChildren()) {
             String childCode = this.visit(child, " ");
             if (childCode != null)
-                sb.append(childCode);
+                sb.append(childCode).append("\n");
         }
+        sb.append("ret.V;\n");
         sb.append("\n}");
+
+        symbolTable.setCurrentMethod(null);
+
         return sb.toString();
     }
 
-    private String dealWithVarDcl(JmmNode jmmNode, String s) {
-        return null;
+    private String dealWithVarDcl() {
+        StringBuilder sb = new StringBuilder();
+        for (Symbol symbol : symbolTable.getFields()) { // TODO: PRIVATE or public????
+            sb.append(".field public ")
+                    .append(symbol.getName()).append(".")
+                    .append(getOllirType(symbol.getType().getName(), symbol.getType().isArray())).append(";\n");
+        }
+        return sb.toString();
+    }
+
+    private String defaultConstructor() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(".construct ").append(symbolTable.getClassName()).append("().V {\n");
+        sb.append("invokespecial(this, \"<init>\").V;\n").append("}\n");
+
+        return sb.toString();
     }
 
     private String dealWithClassDecl(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
-        sb.append("class ").append(symbolTable.getClassName()).append(" {\n");
-
+        sb.append(symbolTable.getClassName()).append(" {\n\n");
+        sb.append(dealWithVarDcl()).append("\n"); // TODO: ESTES \n sao para efeitos visuais
+        sb.append(defaultConstructor());
         for (JmmNode child : jmmNode.getChildren()) {
             String childCode = this.visit(child, " ");
             if (childCode != null)
@@ -134,7 +199,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         return sb.toString();
     }
 
-    private String dealWithImports(JmmNode jmmNode, String s) {
+    private String dealWithImports() {
         StringBuilder sb = new StringBuilder();
         for (String impr : symbolTable.getImports())
             sb.append("import ").append(impr).append(";\n");
@@ -144,12 +209,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithProgram(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
+        sb.append(dealWithImports()).append("\n");
+        List<JmmNode> children = jmmNode.getChildren();
 
-        String imports = this.visit(jmmNode.getJmmChild(0), " ");
-        if (imports != null)
-            sb.append(imports);
-
-        String childCode = this.visit(jmmNode.getJmmChild(1), " ");
+        String childCode = this.visit(children.get(children.size() -1), " ");
         if (childCode != null)
             sb.append(childCode);
 
