@@ -33,6 +33,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         addVisit("ParamDecl", this::dealWithParamDecl);
         addVisit("MethodCall", this::dealWithMethodCall);
 
+        addVisit("Int", this::dealWithInt);
+        addVisit("Var", this::dealWithVar);
+
 
         // Type
         addVisit("IntArrayType", this::dealWithIntArrayType);
@@ -48,12 +51,23 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         setDefaultVisit(this::defaultVisit);
     }
 
+    private String dealWithVar(JmmNode jmmNode, String s) {
+        String varName = jmmNode.get("var");
+
+        Type type = symbolTable.getCurrentMethodScope().getReturnType(); // TODO: assumindo que a semantica esta bem
+        return varName + "." + getOllirType(type.getName(), type.isArray());
+    }
+
+    private String dealWithInt(JmmNode jmmNode, String s) {
+        return jmmNode.get("val") + ".i32";
+    }
+
     private String returnStmt(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
         String ret = getOllirType(type.getName(), type.isArray());
-        sb.append("ret.").append(ret).append(" ").append(""); //TODO: return value
-        return sb.toString();
+        sb.append("ret.").append(ret).append(" ").append(this.visit(jmmNode.getJmmChild(0))); //TODO: return value
+        return sb.append(";\n").toString();
     }
 
     public static String getOllirType(String type, boolean isArray) {
@@ -158,6 +172,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
 
         String methodName = jmmNode.get("name");
 
+        List<JmmNode> children = jmmNode.getChildren();
+
         symbolTable.setCurrentMethod(methodName);
         // TODO: OUTRA VEZ PUBLIC OU PRIVATE ?
         sb.append(".method public ").append(methodName).append("(")
@@ -165,7 +181,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
                 .append(").").append(getOllirType(symbolTable.getReturnType(methodName).getName(),
                         symbolTable.getReturnType(methodName).isArray())).append(" {\n");
 
-
+        sb.append(dealWithLocalVarDcl(symbolTable.getCurrentMethodScope().getLocalVariables()));
+        sb.append(this.visit(children.get(children.size() - 1), " "));
         sb.append("}\n");
         symbolTable.setCurrentMethod(null);
 
@@ -193,12 +210,25 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         return sb.toString();
     }
 
-    private String dealWithVarDcl() {
+    private String dealWithVarDcl(List<Symbol> symbols) {
         StringBuilder sb = new StringBuilder();
-        for (Symbol symbol : symbolTable.getFields()) { // TODO: PRIVATE or public????
+        for (Symbol symbol : symbols) { // TODO: PRIVATE or public????
             sb.append(".field public ")
                     .append(symbol.getName()).append(".")
                     .append(getOllirType(symbol.getType().getName(), symbol.getType().isArray())).append(";\n");
+        }
+        return sb.toString();
+    }
+
+    private String dealWithLocalVarDcl(List<Symbol> symbols) {
+        StringBuilder sb = new StringBuilder();
+        for (Symbol symbol : symbols) {
+            Type type = symbol.getType();
+            sb.append(symbol.getName()).append(".")
+                    .append(getOllirType(type.getName(), type.isArray()))
+                    .append(" :=.").append(getOllirType(type.getName(), type.isArray()))
+                    .append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
+                    .append(";\n");
         }
         return sb.toString();
     }
@@ -217,7 +247,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         String extendsClass = symbolTable.getSuper() == null ? "" : " extends " + symbolTable.getSuper();
         sb.append(symbolTable.getClassName()).append(extendsClass).append(" {\n\n");
 
-        sb.append(dealWithVarDcl()).append("\n"); // TODO: ESTES \n sao para efeitos visuais
+        sb.append(dealWithVarDcl(symbolTable.getFields())).append("\n"); // TODO: ESTES \n sao para efeitos visuais
         sb.append(defaultConstructor());
         for (JmmNode child : jmmNode.getChildren()) {
             String childCode = this.visit(child, " ");
