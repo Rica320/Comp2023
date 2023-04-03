@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2023.SymbolTable.MethodScope;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.List;
@@ -131,7 +132,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithVar(JmmNode jmmNode, String s) {
         String varName = jmmNode.get("var");
 
-        Type type = symbolTable.getCurrentMethodScope().getReturnType(); // TODO: assumindo que a semantica esta bem
+        Type type = findTypeVar(varName); // TODO: assumindo que a semantica esta bem
         return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
     }
 
@@ -149,6 +150,28 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return new Pair<>(sb.append(";\n").toString(), null);
     }
 
+    public Type findTypeVar(String varName) {
+        Symbol symbol = symbolTable.getCurrentMethodScope().getLocalVariable(varName); // Is it a local variable?
+        if (symbol == null) {
+            symbol = symbolTable.getField(varName); // Is it a field?
+        }
+        if (symbol == null) {
+            symbol = symbolTable.getCurrentMethodScope().getParameter(varName); // Is it a parameter ?
+        }
+        if (symbolTable.hasImport(varName)) { // Is it an import? ... TODO: always void ?
+            return new Type("void", false);
+        }
+        return symbol.getType();
+    }
+
+    public Type findRetMethod(String methodName) {
+        MethodScope symbol = symbolTable.getMethod(methodName);
+        if (symbol == null) {
+            return new Type("void", false);
+        }
+        return symbol.getReturnType(); // TODO: é suposto assumir que é void ???
+    }
+
     public static String getOllirType(String type, boolean isArray) {
         StringBuilder sb = new StringBuilder();
         if (isArray)
@@ -160,13 +183,14 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             default -> sb.append(type).toString();
         };
     }
-
+    // TODO ::: VER ISTO ... t4.V :=.V invokestatic(io, "println", c.i32).V;
     private Pair<String, String> dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
         String varName = jmmNode.getJmmChild(0).getKind().equals("This") ? null : jmmNode.getJmmChild(0).get("var");
         String methodName = jmmNode.get("method");
-        Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
+
+        Type type = findRetMethod(methodName);
         String olirType = getOllirType(type.getName(), type.isArray());
 
         String newTemp = "t" + newTemp() + "." + olirType;
@@ -182,12 +206,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             sb.append("invokestatic(").append(varName).append(", \"").append(methodName).append("\"");
         }
 
-        // List<Symbol> params = symbolTable.getCurrentMethodScope().getParameters(); // TODO: get params from method call
-        // if (!params.isEmpty()) {
-        //     for (Symbol param : params) {
-        //         sb.append(param.getType().getName()).append(" ");
-        //     }
-        // }
+        List<JmmNode> params = jmmNode.getChildren(); // TODO: get params from method call
+        if (params.size() > 1) {
+            for (int i = 1; i < params.size(); i++) {
+                sb.append(", ").append(this.visit(jmmNode.getJmmChild(i)).b); // TODO: e se ouver expr aqui ...
+            }
+        }
 
         sb.append(").")
                 .append(olirType)
@@ -292,8 +316,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         symbolTable.setCurrentMethod("main");
         List<Symbol> symbols = symbolTable.getCurrentMethodScope().getParameters();
 
-        sb.append(".method public static main(").append(symbols.get(0).getName()).append(".array.String).V {\n");
+        sb.append("\n.method public static main(").append(symbols.get(0).getName()).append(".array.String).V {\n");
 
+        /*
+         TODO: o que acontece no caso Simple e; ... fica s.Simple :=.Simple 0.Simple; ? ou seja nulo?
+         */
+        sb.append(dealWithLocalVarDcl(symbolTable.getCurrentMethodScope().getLocalVariables()));
         for (JmmNode child : jmmNode.getChildren()) {
             Pair<String, String> childCode = this.visit(child, " ");
             if (childCode != null)
