@@ -16,7 +16,7 @@ public class MyOllir implements JmmOptimization {
         MyOllirVisitor myOllirVisitor = new MyOllirVisitor(symbolTable);
 
 
-        String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode()).b;
+        String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode()).a;
 
         System.out.println(code);
         return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
