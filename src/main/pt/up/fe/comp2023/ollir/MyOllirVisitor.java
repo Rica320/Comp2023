@@ -62,8 +62,22 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("BinaryComp", this::dealWithBinaryComp);
         addVisit("BinaryBool", this::dealWithBinaryComp);
         addVisit("Paren", this::dealWithParen);
+        addVisit("AtributeAccess", this::dealWithAtributeAccess);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Pair<String, String> dealWithAtributeAccess(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> left = this.visit(jmmNode.getJmmChild(0));
+
+        sb.append(left.a); // code that "creates" the child
+
+        String place = "t" + newTemp() + ".i32";
+        sb.append(place).append(" :=.i32 arraylength(").append(left.b)
+                .append(").i32;\n");
+
+        return new Pair<>(sb.toString(), place);
     }
 
     private Pair<String, String> dealWithParen(JmmNode jmmNode, String s) {
@@ -146,8 +160,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             case FIELD:
                 StringBuilder sb = new StringBuilder();
                 String ollirType = getOllirType(type.getName(), type.isArray());
-                String newTemp = "t" + newTemp() + ollirType;
-                sb.append(newTemp).append(".").append(ollirType).append(" :=.")
+                String newTemp = "t" + newTemp() + "." + ollirType;
+                sb.append(newTemp).append(" :=.")
                         .append(ollirType).append(" getfield(this,")
                         .append(varName).append(".").append(ollirType).append(").").append(ollirType).append(";\n");
                 return new Pair<>(sb.toString(), newTemp);
