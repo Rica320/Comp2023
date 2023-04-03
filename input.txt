@@ -1,4 +1,4 @@
-class CompileAssignment {
+class CompileArithmetic {
 
     public static void main(String[] args) {
 
@@ -8,10 +8,9 @@ class CompileAssignment {
         int a;
         int b;
 
+        a = 1;
         b = 2;
 
-        a = b;
-
-        return 0;
+        return a + b;
     }
 }

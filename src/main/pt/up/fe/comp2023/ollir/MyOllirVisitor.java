@@ -50,8 +50,17 @@ public class MyOllirVisitor extends AJmmVisitor<String, String> {
         addVisit("NewIntArray", this::dealWithNewIntArray);
         addVisit("NewObject", this::dealWithNewObject);
         addVisit("ReturnStmt", this::returnStmt);
+        addVisit("BinaryOp", this::dealWithBinaryOp);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private String dealWithBinaryOp(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        String left = this.visit(jmmNode.getJmmChild(0));
+        String right = this.visit(jmmNode.getJmmChild(1));
+        String op = jmmNode.get("op");
+        return sb.append(left).append(" ").append(op).append(" ").append(right).toString(); // TODO: TEMPORARY VALUES
     }
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
