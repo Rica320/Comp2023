@@ -193,9 +193,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Type type = findRetMethod(methodName);
         String olirType = getOllirType(type.getName(), type.isArray());
 
-        String newTemp = "t" + newTemp() + "." + olirType;
+        String newTemp = null;
 
-        sb.append(newTemp).append(" :=.").append(olirType).append(" ");
+        if (!olirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
+            newTemp = "t" + newTemp() + "." + olirType;
+            sb.append(newTemp).append(" :=.").append(olirType).append(" ");
+        }
         if (symbolTable.isVariable(varName) || varName == null) {
             if (varName == null) {
                 sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
