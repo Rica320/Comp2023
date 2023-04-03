@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { // pair code/place
@@ -38,6 +39,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         addVisit("Int", this::dealWithInt);
         addVisit("Var", this::dealWithVar);
+        addVisit("Boolean", this::dealWithBool);
 
         // Statements
         addVisit("Assign", this::dealWithAssign);
@@ -54,8 +56,38 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("NewObject", this::dealWithNewObject);
         addVisit("ReturnStmt", this::returnStmt);
         addVisit("BinaryOp", this::dealWithBinaryOp);
+        addVisit("BinaryComp", this::dealWithBinaryComp);
+        addVisit("BinaryBool", this::dealWithBinaryComp);
+        addVisit("Paren", this::dealWithParen);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Pair<String, String> dealWithParen(JmmNode jmmNode, String s) {
+        return this.visit(jmmNode.getJmmChild(0));
+    }
+
+
+    private Pair<String, String> dealWithBool(JmmNode jmmNode, String s) {
+        String val = Objects.equals(jmmNode.get("val"), "true") ? "1" : "0";
+        return new Pair<>("", val + ".bool");
+    }
+
+    private Pair<String, String> dealWithBinaryComp(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> left = this.visit(jmmNode.getJmmChild(0));
+        Pair<String, String> right = this.visit(jmmNode.getJmmChild(1));
+        String op = jmmNode.get("op") + ".bool";
+
+        String place = "t" + newTemp() + ".bool";
+
+        sb.append(left.a).append("\n");
+        sb.append(right.a).append("\n");
+
+        String code = sb.append(place).append(" :=.bool ").append(left.b)
+                .append(" ").append(op).append(" ")
+                .append(right.b).append(";").toString();
+        return new Pair<>(code, place);
     }
 
     private int newTemp() {
@@ -64,26 +96,35 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
     private Pair<String, String> dealWithBinaryOp(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
-        String left = this.visit(jmmNode.getJmmChild(0)).b;
-        String right = this.visit(jmmNode.getJmmChild(1)).b;
+        Pair<String, String> left = this.visit(jmmNode.getJmmChild(0));
+        Pair<String, String> right = this.visit(jmmNode.getJmmChild(1));
         String op = jmmNode.get("op") + ".i32";
         // TODO: ver este
         String place = "t" + newTemp() + ".i32"; // TODO: BINARY OP IS .i32 ALL THE  TIME ???
-        String code = sb.append(place).append(" :=.i32 ").append(left)
+
+        sb.append(left.a).append("\n"); // TODO para poupar temps, verificar se o left.a é vazio
+        sb.append(right.a).append("\n");
+
+        String code = sb.append(place).append(" :=.i32 ").append(left.b)
                 .append(" ").append(op).append(" ")
-                .append(right).append(";").toString();
-        return new Pair<>(code, place); // TODO: TEMPORARY VALUES
+                .append(right.b).append(";").toString();
+        return new Pair<>(code, place);
     }
 
     private Pair<String, String> dealWithAssign(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         String varName = jmmNode.get("var");
-        String value = this.visit(jmmNode.getJmmChild(0)).b; // TODO: adicionar codigo do lado esquerdo
+
+        Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
         Type type = symbolTable.getCurrentMethodScope().getLocalVariable(varName).getType(); // TODO: e se n for local ...
         String ollirType = getOllirType(type.getName(), type.isArray());
+
+        // TODO: we can improve the number of temps by modifying the code bellow ... a := 2 + 1 instead of t1 := 2 + 1; a := t1
+        sb.append(codePlace.a).append("\n"); // APPENDED CODE THAT GENERATES THE TEMP ON THE RIGHT OF THE ASSIGN
         sb.append(varName).append(".").append(ollirType)
                 .append(" :=.").append(ollirType).append(" ")
-                .append(value); // TODO assumindo o valor da variavel da direita??
+                .append(codePlace.b); // TODO assumindo o valor da variavel da direita??
+
         return new Pair<>(sb.append(";\n").toString(), null);
     }
 
@@ -123,9 +164,14 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
-        String varName = jmmNode.getChildren().get(0).get("var");
+        String varName = jmmNode.getJmmChild(0).getKind().equals("This") ? null : jmmNode.getJmmChild(0).get("var");
         String methodName = jmmNode.get("method");
+        Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
+        String olirType = getOllirType(type.getName(), type.isArray());
 
+        String newTemp = "t" + newTemp() + "." + olirType;
+
+        sb.append(newTemp).append(" :=.").append(olirType).append(" ");
         if (symbolTable.isVariable(varName) || varName == null) {
             if (varName == null) {
                 sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
@@ -142,13 +188,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         //         sb.append(param.getType().getName()).append(" ");
         //     }
         // }
-        Type type = symbolTable.getReturnType(symbolTable.getCurrentMethod());
 
         sb.append(").")
-                .append(getOllirType(type.getName(), type.isArray()))
+                .append(olirType)
                 .append(";");
 
-        return new Pair<>(sb.toString(), null);
+        return new Pair<>(sb.toString(), newTemp);
     }
 
     private Pair<String, String> defaultVisit(JmmNode jmmNode, String s) {
@@ -161,8 +206,16 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return new Pair<>(sb.toString(), null);
     }
 
-    private Pair<String, String> dealWithNewObject(JmmNode jmmNode, String s) {
-        return null;
+    private Pair<String, String> dealWithNewObject(JmmNode jmmNode, String s) { // TODO: otimizações
+        // TODO: especial é para method new object
+        StringBuilder sb = new StringBuilder();
+        String className = jmmNode.get("objClass");
+        String newTemp = "t" + newTemp() + "." + className;
+        sb.append(newTemp).append(" :=.").append(className).append(" ");
+        sb.append("new(").append(className).append(").").append(className).append(";\n")
+                .append("invokespecial(").append(newTemp)
+                .append(", \"<init>\").V;");
+        return new Pair<>(sb.toString(), newTemp);
     }
 
     private Pair<String, String> dealWithNewIntArray(JmmNode jmmNode, String s) {
