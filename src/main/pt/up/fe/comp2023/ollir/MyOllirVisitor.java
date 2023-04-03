@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2023.SymbolTable.MethodScope;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -194,6 +195,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String olirType = getOllirType(type.getName(), type.isArray());
 
         String newTemp = null;
+        List<JmmNode> params = jmmNode.getChildren();
+        List<Pair<String, String>> codePlace = new ArrayList<>();
+        for (int i = 1; i < params.size(); i++) {
+            codePlace.add(this.visit(params.get(i)));
+            sb.append(codePlace.get(i - 1).a).append("\n");
+        }
 
         if (!olirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
             newTemp = "t" + newTemp() + "." + olirType;
@@ -209,11 +216,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             sb.append("invokestatic(").append(varName).append(", \"").append(methodName).append("\"");
         }
 
-        List<JmmNode> params = jmmNode.getChildren(); // TODO: get params from method call
         if (params.size() > 1) {
-            for (int i = 1; i < params.size(); i++) {
-                sb.append(", ").append(this.visit(jmmNode.getJmmChild(i)).b); // TODO: e se ouver expr aqui ...
-            }
+           for (Pair<String,String> codeP : codePlace) {
+               sb.append(", ").append(codeP.b);
+           }
         }
 
         sb.append(").")
