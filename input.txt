@@ -15,7 +15,7 @@ class Simple {
         a = 20;
         b = 10;
         s = new Simple();
-        c = s.add(a,b);
+        c = s.add(a,b+args);
         io.println(c);
     }
 

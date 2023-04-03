@@ -8,6 +8,7 @@ import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp2023.SymbolTable.MethodScope;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+import pt.up.fe.comp2023.SymbolTable.SymbolOrigin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,7 +134,24 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithVar(JmmNode jmmNode, String s) {
         String varName = jmmNode.get("var");
 
+        SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
         Type type = findTypeVar(varName); // TODO: assumindo que a semantica esta bem
+
+        switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
+            case PARAMETER: // already checks STATIC
+                return new Pair<>("", "$" + symbolTable.getParameterIndex(varName) + "." + varName + ".i32");
+            case IMPORT:
+            case LOCAL:
+                return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
+            case FIELD:
+                StringBuilder sb = new StringBuilder();
+                String ollirType = getOllirType(type.getName(), type.isArray());
+                String newTemp = "t" + newTemp() + ollirType;
+                sb.append(newTemp).append(".").append(ollirType).append(" :=.")
+                        .append(ollirType).append(" getfield(this,")
+                        .append(varName).append(".").append(ollirType).append(").").append(ollirType).append(";\n");
+                return new Pair<>(sb.toString(), newTemp);
+        }
         return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
     }
 
@@ -192,7 +210,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String methodName = jmmNode.get("method");
 
         Type type = findRetMethod(methodName);
-        String olirType = getOllirType(type.getName(), type.isArray());
+        String ollirType = getOllirType(type.getName(), type.isArray());
 
         String newTemp = null;
         List<JmmNode> params = jmmNode.getChildren();
@@ -202,15 +220,18 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             sb.append(codePlace.get(i - 1).a).append("\n");
         }
 
-        if (!olirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
-            newTemp = "t" + newTemp() + "." + olirType;
-            sb.append(newTemp).append(" :=.").append(olirType).append(" ");
+        if (!ollirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
+            newTemp = "t" + newTemp() + "." + ollirType;
+            sb.append(newTemp).append(" :=.").append(ollirType).append(" ");
         }
         if (symbolTable.isVariable(varName) || varName == null) {
             if (varName == null) {
                 sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
             } else {
-                sb.append("invokevirtual(").append(varName).append(", \"").append(methodName).append("\"");
+                Type typeVar = findTypeVar(varName);
+                sb.append("invokevirtual(").append(varName)
+                        .append(".").append(getOllirType(typeVar.getName(), typeVar.isArray()))
+                        .append(", \"").append(methodName).append("\"");
             }
         }else {
             sb.append("invokestatic(").append(varName).append(", \"").append(methodName).append("\"");
@@ -223,7 +244,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         }
 
         sb.append(").")
-                .append(olirType)
+                .append(ollirType)
                 .append(";");
 
         return new Pair<>(sb.toString(), newTemp);
