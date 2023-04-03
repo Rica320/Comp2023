@@ -19,8 +19,8 @@ public class MyOllir implements JmmOptimization {
         String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode());
 
         System.out.println(code);
-        //return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
-        return null;
+        return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
+        //return null;
     }
 
 }
