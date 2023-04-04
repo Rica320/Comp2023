@@ -329,6 +329,8 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString() + addInstructionAssign((AssignInstruction) instruction);
             }
             case "RETURN" -> {
+                if (currentMethod.getMethodName().equals("main"))
+                    return "";
                 ReturnInstruction inst = (ReturnInstruction) instruction;
                 codeBuilder.append("\t");
 
