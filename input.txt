@@ -18,6 +18,11 @@ class Simple {
         s = new Simple();
         c = s.add(a,b+args);
         io.println(x.length + 2);
+        if (c < 1000) {
+            io.println(c);
+        } else {
+            io.println(0);
+        }
     }
 
     public int constInstr(){

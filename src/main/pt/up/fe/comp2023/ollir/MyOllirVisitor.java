@@ -20,6 +20,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private final MySymbolTable symbolTable;
 
     private int temp = 0;
+    private int label = 0;
 
     public MyOllirVisitor(SymbolTable symbolTable) {
         this.symbolTable = (MySymbolTable) symbolTable;
@@ -46,6 +47,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         // Statements
         addVisit("Assign", this::dealWithAssign);
+        addVisit("IfClause", this::dealWithIf);
 
 
         // Type
@@ -65,6 +67,29 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("AtributeAccess", this::dealWithAtributeAccess);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Pair<String, String> dealWithIf(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
+        Pair<String, String> then = this.visit(jmmNode.getJmmChild(1));
+        Pair<String, String> els = this.visit(jmmNode.getJmmChild(2));
+
+        // TODO: outra vez a questão de n estar a utilizar as variaveis de uma forma eficiente
+        sb.append(condition.a).append("\n");
+        String label = newLabel();
+        String thenLabel = "Then" + label;
+        String endLabel = "End" + label;
+        sb.append("if (").append(condition.b).append(") goto ").append(thenLabel).append(";\n");
+        sb.append(els.a).append("\ngoto ").append(endLabel).append(";\n")
+                .append(thenLabel).append(":\n").append(then.a).append("\n")
+                .append(endLabel).append(":\n");
+
+        return new Pair<>(sb.toString(), "");
+    }
+
+    private String newLabel() {
+        return String.valueOf(label++);
     }
 
     private Pair<String, String> dealWithAtributeAccess(JmmNode jmmNode, String s) {
