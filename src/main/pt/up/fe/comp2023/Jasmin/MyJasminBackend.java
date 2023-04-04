@@ -357,7 +357,12 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "BRANCH" -> {
-                addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
+                if (instruction instanceof OpCondInstruction inst) {
+                    addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
+                }else if (instruction instanceof SingleOpCondInstruction inst) {
+                    addSingleConditionalBranch(codeBuilder, (SingleOpCondInstruction) instruction);
+                }
+
                 return codeBuilder.toString();
             }
             case "GOTO" -> {
@@ -372,6 +377,27 @@ public class MyJasminBackend implements JasminBackend {
         // 		invokevirtual(c.Foo,"test",$1.A.array.classArray).V;
         // CALL Operand: c OBJECTREF, Literal: "test", Operand: A ARRAYREF
 
+    }
+
+    private void addSingleConditionalBranch(StringBuilder codeBuilder, SingleOpCondInstruction instruction) {
+        Operand op = (Operand) instruction.getOperands().get(0);
+        String label = instruction.getLabel();
+        String trueL = getNewLabel(), endL = getNewLabel();
+
+        codeBuilder.append("\n\t; Executing conditional branch\n\t");
+
+        loadElement(codeBuilder, op);
+
+        // TODO THIS IS WRONG !!!!! REDOO
+
+        codeBuilder.append("ifeq ").append(trueL).append("\n");
+        codeBuilder.append("\ticonst_0\n"); // false scope
+        codeBuilder.append("\tgoto ").append(endL).append("\n");
+        codeBuilder.append(trueL).append(":\n");
+        codeBuilder.append("\ticonst_1\n"); // true scope
+        codeBuilder.append(endL).append(":\n");
+
+        codeBuilder.append("\t; End conditional branch\n\n");
     }
 
     private void addGetPutField(StringBuilder codeBuilder, Instruction instruction) {
