@@ -150,7 +150,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         sb.append("Loop").append(newLabel).append(":\n");
         Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
         sb.append(condition.a).append("\n");
-        sb.append("if (").append(condition.b).append(") goto End").append(newLabel).append(";\n"); // TODO: outro sitio onde se pode poupar temps
+        sb.append("if (!.bool ").append(condition.b).append(") goto End").append(newLabel).append(";\n"); // TODO: outro sitio onde se pode poupar temps
         Pair<String, String> body = this.visit(jmmNode.getJmmChild(1));
         sb.append(body.a).append("\ngoto Loop").append(newLabel).append(";\n");
         sb.append("End").append(newLabel).append(":\n");
