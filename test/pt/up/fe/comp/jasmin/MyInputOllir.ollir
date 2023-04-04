@@ -1,6 +1,7 @@
 myClass {
 	// .field private a.i32;
 
+/*
 	.method public sum(i.i32).i32 {
 
     		if (i.i32 <.bool 3.i32) goto LTrue;
@@ -14,6 +15,12 @@ myClass {
 
    .method public obj(bk.String).V{
      a.Foo :=.Foo new(Foo).Foo;
+
+        invokespecial(a.Foo, "<init>", 2.i32).V;
+
+
+
+
 
 
 
@@ -35,7 +42,7 @@ myClass {
 
    }
 
-/*
+
     	.method public check(A.array.classArray, b.String).bool {
     		all.bool :=.bool 0.bool;
     		l.String :=.String b.String;
@@ -73,7 +80,17 @@ myClass {
 	.construct myClass().V {
  		invokespecial(this, "<init>").V;
 	}
+
+
+
+
 */
+
+
+
+
+
+
 	.method public static main(args.array.String).V {
         s.i32 :=.i32 5.i32;
 	  	// invokestatic(io, "println", s.String).V;

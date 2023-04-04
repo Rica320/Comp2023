@@ -195,11 +195,6 @@ public class MyJasminBackend implements JasminBackend {
 
             currVarTable = null;
 
-            if (method.getMethodName().equals("main")) {
-                codeBuilder.append(addPrint("Program finished"));
-                codeBuilder.append("\treturn\n");
-            }
-
             codeBuilder.append(".end method\n\n");
         });
         return codeBuilder.toString();
@@ -318,11 +313,8 @@ public class MyJasminBackend implements JasminBackend {
         // add label to instruction if needed
         var labels = currentMethod.getLabels(instruction);
 
-        for (String label : labels) {
-            // System.out.println("Label: " + label + " ");
-            // instruction.show();
+        for (String label : labels)
             codeBuilder.append(label).append(":\n");
-        }
 
 
         switch (instType) {
@@ -330,15 +322,18 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder + addInstructionAssign((AssignInstruction) instruction);
             }
             case "RETURN" -> {
-                if(currentMethod.getMethodName().equals("main"))
-                    return ""; // TODO this only solves ret.V in main, but not ret.V in other methods
                 ReturnInstruction inst = (ReturnInstruction) instruction;
                 codeBuilder.append("\t");
+
+                if (inst.getReturnType().toString().equals("VOID")) {
+                    codeBuilder.append("return");
+                    return codeBuilder.toString();
+                }
+
 
                 loadElement(codeBuilder, inst.getOperand());
 
                 switch (inst.getReturnType().toString()) {
-                    case "VOID" -> codeBuilder.append("return");
                     case "INT32", "BOOLEAN" -> codeBuilder.append("ireturn");
                     default -> codeBuilder.append("areturn"); // ARRAYREF or OBJECTREF
                 }
@@ -447,11 +442,10 @@ public class MyJasminBackend implements JasminBackend {
             case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst);
             case "invokestatic" -> callInvokeStatic(codeBuilder, inst);
             case "invokespecial" -> callInvokeSpecial(codeBuilder, inst);
-            case "arraylength" -> {
+            case "ldc" -> callLDC(codeBuilder, inst);
+            case "arraylength" -> { // t1.i32 :=.i32 arraylength($1.A.array.i32).i32;
+                // perguntar ao ricardo cm funciona
                 codeBuilder.append("arraylength"); // TODO should i store the result in a local variable?
-            }
-            case "ldc" -> {
-                codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
             }
             default -> {
                 System.out.println("Call instruction not supported");
@@ -467,12 +461,10 @@ public class MyJasminBackend implements JasminBackend {
     }
 
 
-
-
     public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
         codeBuilder.append("new ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
         codeBuilder.append("dup\n\t");
-        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V;");
+        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V");
     }
 
     public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst) {
@@ -484,7 +476,7 @@ public class MyJasminBackend implements JasminBackend {
         if (name.equals("io") && method.equals("\"println\"")) {
             codeBuilder.append("getstatic java/lang/System/out Ljava/io/PrintStream;\n\t");
             loadElement(codeBuilder, inst.getListOfOperands().get(0)); // prints a single element
-            codeBuilder.append("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V;");
+            codeBuilder.append("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V");
             return;
         }
 
@@ -515,7 +507,6 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     private void callInvokeSpecial(StringBuilder codeBuilder, CallInstruction inst) {
-        String name = ((Operand) inst.getFirstArg()).getName();
         String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
 
         method = method.substring(1, method.length() - 1); // remove quotes from method name
@@ -526,7 +517,7 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append(toJasminType(arg.getType().toString()));
         }
         codeBuilder.append(")");
-        codeBuilder.append(toJasminType(inst.getReturnType().toString())).append(";");
+        codeBuilder.append(toJasminType(inst.getReturnType().toString()));
 
         // TODO should i force a store here?
     }
@@ -541,15 +532,31 @@ public class MyJasminBackend implements JasminBackend {
         for (Element arg : inst.getListOfOperands()) // add arguments types
             codeBuilder.append(toJasminType(arg.getType().toString()));
 
-        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString())).append(";");
-    }
-
-    public void callArrayLength(StringBuilder codeBuilder, CallInstruction inst) {
-    // todo
+        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString()));
     }
 
     public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
-          codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: n testei
+        codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: n testei
+    }
+
+
+    public void createArray(StringBuilder codeBuilder, int arrSize){
+        codeBuilder.append("ldc ").append(arrSize).append("\n\tnewarray [I\n\t");
+    }
+
+    public void setArrayElem(StringBuilder codeBuilder, int pos, int val){
+        // TODO get array from stack with aload k
+
+        codeBuilder.append("\nbipush ").append(pos).append("\n\t");
+        codeBuilder.append("bipush ").append(val).append("\n\t");
+        codeBuilder.append("iastore\n\t");
+    }
+
+    public void getArrayElem(StringBuilder codeBuilder, int pos){
+        // TODO get array from stack with aload k
+
+        codeBuilder.append("\nbipush ").append(pos).append("\n\t");
+        codeBuilder.append("iaload\n\t");
     }
 
 

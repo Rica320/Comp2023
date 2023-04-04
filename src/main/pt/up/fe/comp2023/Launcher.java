@@ -16,6 +16,7 @@ import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.Jasmin.MyJasminBackend;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
+import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
@@ -77,6 +78,23 @@ public class Launcher {
 
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
+
+        MyOllir myOllir = new MyOllir();
+        OllirResult ollirResult = myOllir.toOllir(analyserResult);
+
+        JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
+        String jasminCode = jasminResult.getJasminCode();
+
+        System.out.println(jasminCode);
+//
+        // try {
+        //     String output = TestUtils.runJasmin(jasminCode);
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
+        // Instantiate JmmCodeGenerator
+        // SimpleCodeGenerator codeGenerator = new SimpleCodeGenerator();
 
 
     }

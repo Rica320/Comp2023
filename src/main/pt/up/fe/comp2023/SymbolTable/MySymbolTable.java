@@ -180,8 +180,26 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public boolean isVariable(String variableLabel) {
-        return isField(variableLabel) || isMethod(variableLabel);
+        return isField(variableLabel) || isLocal(variableLabel);
     }
+
+    private boolean isLocal(String variableLabel) {
+        return getCurrentMethodScope().hasLocalVariable(variableLabel);
+    }
+
+
+    public SymbolOrigin getSymbolOrigin(String symbolLabel) {
+        if (getCurrentMethodScope().hasParameter(symbolLabel)) // Is it a parameter?
+            return SymbolOrigin.PARAMETER;
+        else if (getCurrentMethodScope().hasLocalVariable(symbolLabel)) // Is it a local variable?
+            return SymbolOrigin.LOCAL;
+        else if (hasField(symbolLabel)) // Is it a field?
+            return SymbolOrigin.FIELD;
+        else if (hasImport(symbolLabel))
+            return SymbolOrigin.IMPORT;
+        return SymbolOrigin.UNKNOWN;
+    }
+
     // ========================== PRINT ==========================
 
     @Override
@@ -238,7 +256,16 @@ public class MySymbolTable implements SymbolTable {
         return sb.toString();
     }
 
+    public int curIsNotStatic() { // TODO: falar com o stor
+        return currentMethod.equals("main") ? 0 : 1;
+    }
 
+    public String getParameterIndex(String varName) {
+        MethodScope methodScope = getCurrentMethodScope();
+        List<Symbol> parameters = methodScope.getParameters();
+
+        return String.valueOf(parameters.indexOf(methodScope.getParameter(varName)) + curIsNotStatic());
+    }
 }
 
 
