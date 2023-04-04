@@ -82,8 +82,10 @@ public class Launcher {
         MyOllir myOllir = new MyOllir();
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
-        // JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
-        // String jasminCode = jasminResult.getJasminCode();
+        JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
+        String jasminCode = jasminResult.getJasminCode();
+
+        System.out.println(jasminCode);
 //
         // try {
         //     String output = TestUtils.runJasmin(jasminCode);

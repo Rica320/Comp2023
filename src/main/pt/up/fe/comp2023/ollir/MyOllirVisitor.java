@@ -97,7 +97,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         // Type type = findTypeVar(arrayName);
         // String olliType = getOllirType(type.getName(), type.isArray());
 
-        switch (origin) {
+        switch (origin) { // REFACTOR THIS TODO
             case FIELD: // DA PARA MELHORAR TEMPS
                 String tempName = "t" + temp++ + ".i32";
                 code.append(tempName).append(".array.i32 :=.array.i32 getfield(this, ").append(arrayName)
