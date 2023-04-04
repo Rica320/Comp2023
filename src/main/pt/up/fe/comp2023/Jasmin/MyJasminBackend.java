@@ -16,6 +16,8 @@ public class MyJasminBackend implements JasminBackend {
     ClassUnit classe;
     String code = "";
 
+    Method currentMethod;
+
     HashMap<String, Descriptor> currVarTable;
 
     int labelCounter = 0;
@@ -93,6 +95,8 @@ public class MyJasminBackend implements JasminBackend {
                 codeBuilder.append("\n\t");
                 return;
             } else { // variable
+
+                // TODO ricardo disse q n preciso true and false
                 if (isBoolean && (((Operand) element).getName().equals("true") || ((Operand) element).getName().equals("false"))) {
                     String boolVal = ((Operand) element).getName();
                     codeBuilder.append(boolVal.equals("true") ? "iconst_1" : "iconst_0");
@@ -166,6 +170,8 @@ public class MyJasminBackend implements JasminBackend {
         this.classe.getMethods().forEach(method -> {
 
             currVarTable = method.getVarTable();
+            this.currentMethod = method;
+
 
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
@@ -308,9 +314,19 @@ public class MyJasminBackend implements JasminBackend {
         StringBuilder codeBuilder = new StringBuilder();
         String instType = instruction.getInstType().toString();
 
+        // add label to instruction if needed
+        var labels = currentMethod.getLabels(instruction);
+
+        for (String label : labels) {
+            System.out.println("Label: " + label + " ");
+            instruction.show();
+            codeBuilder.append(label).append(":\n");
+        }
+
+
         switch (instType) {
             case "ASSIGN" -> {
-                return addInstructionAssign((AssignInstruction) instruction);
+                return codeBuilder.toString() + addInstructionAssign((AssignInstruction) instruction);
             }
             case "RETURN" -> {
                 ReturnInstruction inst = (ReturnInstruction) instruction;
@@ -327,7 +343,7 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "CALL" -> {
-                return addCallInstruction((CallInstruction) instruction);
+                return codeBuilder.toString() + addCallInstruction((CallInstruction) instruction);
             }
             case "GETFIELD", "PUTFIELD" -> {
                 addGetPutField(codeBuilder, instruction);
@@ -348,7 +364,7 @@ public class MyJasminBackend implements JasminBackend {
             }
             case "GOTO" -> {
                 GotoInstruction inst = (GotoInstruction) instruction;
-                return "\n\tgoto " + inst.getLabel() + "\n";
+                return codeBuilder.toString() + "\n\tgoto " + inst.getLabel() + "\n";
             }
             default -> {
                 return "error";
@@ -399,8 +415,8 @@ public class MyJasminBackend implements JasminBackend {
 
     private void addConditionalBranch(StringBuilder codeBuilder, OpCondInstruction instruction) {
         OpInstruction opType = instruction.getCondition();
-        String trueL = getNewLabel(); // should I use instruction.getLabel() or my getNewLabel() like the line below?
-        String endL = getNewLabel();
+        String trueL = instruction.getLabel(); // should I use instruction.getLabel() or my getNewLabel() like the line below?
+        //String endL = getNewLabel();
 
         codeBuilder.append("\n\t; Executing conditional branch\n\t");
 
@@ -417,14 +433,14 @@ public class MyJasminBackend implements JasminBackend {
         // TODO : CODE IF CONDITION IS FALSE HERE
 
         // if condition is false, jump to end label
-        codeBuilder.append("\tgoto ").append(endL).append("\n");
+        //codeBuilder.append("\tgoto ").append(endL).append("\n");
 
-        codeBuilder.append(trueL).append(":\n");
+        //codeBuilder.append(trueL).append(":\n");
 
         // TODO : CODE IF CONDITION IS TRUE HERE
 
         // end label
-        codeBuilder.append(endL).append(":\n");
+        //codeBuilder.append(endL).append(":\n");
 
         codeBuilder.append("\t; End of conditional branch");
     }
