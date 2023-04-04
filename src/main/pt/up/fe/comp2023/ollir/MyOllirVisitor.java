@@ -144,7 +144,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         sb.append(left.a); // code that "creates" the child
 
         String place = "t" + newTemp() + ".i32";
-        sb.append(place).append(" :=.i32 arraylength(").append(left.b)
+        sb.append(place).append(" :=.i32 arraylength(").append(left.b) // TODO: suposição que o array é de inteiros ... e o String da main
                 .append(").i32;\n");
 
         return new Pair<>(sb.toString(), place);
@@ -203,14 +203,31 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
 
         Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
-        Type type = symbolTable.getCurrentMethodScope().getLocalVariable(varName).getType(); // TODO: e se n for local ...
+        SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
+        Type type = findTypeVar(varName); // TODO: e se n for local ...
         String ollirType = getOllirType(type.getName(), type.isArray());
 
         // TODO: we can improve the number of temps by modifying the code bellow ... a := 2 + 1 instead of t1 := 2 + 1; a := t1
         sb.append(codePlace.a).append("\n"); // APPENDED CODE THAT GENERATES THE TEMP ON THE RIGHT OF THE ASSIGN
-        sb.append(varName).append(".").append(ollirType)
-                .append(" :=.").append(ollirType).append(" ")
-                .append(codePlace.b); // TODO assumindo o valor da variavel da direita??
+        //sb.append(varName).append(".").append(ollirType)
+        //        .append(" :=.").append(ollirType).append(" ")
+        //        .append(codePlace.b); // TODO assumindo o valor da variavel da direita??
+
+        switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
+            case PARAMETER -> // already checks STATIC
+                    sb.append("$").append(symbolTable.getParameterIndex(varName)).append(".").append(varName).append(".i32")
+                            .append(" :=.").append(ollirType).append(" ").append(codePlace.b);
+            case IMPORT, LOCAL -> sb.append(varName).append(".").append(ollirType)
+                    .append(" :=.").append(ollirType).append(" ").append(codePlace.b);
+            case FIELD -> {
+                sb.append("putfield(this,")
+                        .append(varName).append(".").append(ollirType).append(", ")
+                        .append(codePlace.b).append(").")
+                        .append("V;\n"); // TODO: .V ????
+                return new Pair<>(sb.toString(), null);
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + symbolOrign);
+        }
 
         return new Pair<>(sb.append(";\n").toString(), null);
     }
@@ -223,7 +240,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
             case PARAMETER: // already checks STATIC
-                return new Pair<>("", "$" + symbolTable.getParameterIndex(varName) + "." + varName + ".i32");
+                return new Pair<>("", "$" + symbolTable.getParameterIndex(varName)
+                        + "." + varName + "." + getOllirType(type.getName(), type.isArray()) );
             case IMPORT:
             case LOCAL:
                 return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
