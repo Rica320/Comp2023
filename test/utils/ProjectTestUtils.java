@@ -1,7 +1,14 @@
 package utils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.specs.comp.ollir.*;
+import pt.up.fe.comp.jmm.jasmin.JasminResult;
+import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.specs.util.SpecsIo;
+import pt.up.fe.specs.util.SpecsStrings;
+import pt.up.fe.specs.util.SpecsSystem;
+import pt.up.fe.specs.util.exceptions.NotImplementedException;
+import pt.up.fe.specs.util.system.ProcessOutputAsString;
+import pt.up.fe.specs.util.utilities.LineStream;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,28 +18,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.specs.comp.ollir.ArrayType;
-import org.specs.comp.ollir.AssignInstruction;
-import org.specs.comp.ollir.CallInstruction;
-import org.specs.comp.ollir.CallType;
-import org.specs.comp.ollir.ClassType;
-import org.specs.comp.ollir.ClassUnit;
-import org.specs.comp.ollir.Element;
-import org.specs.comp.ollir.ElementType;
-import org.specs.comp.ollir.LiteralElement;
-import org.specs.comp.ollir.Method;
-import org.specs.comp.ollir.Node;
-import org.specs.comp.ollir.Operand;
-import org.specs.comp.ollir.Type;
-
-import pt.up.fe.comp.jmm.jasmin.JasminResult;
-import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.specs.util.SpecsIo;
-import pt.up.fe.specs.util.SpecsStrings;
-import pt.up.fe.specs.util.SpecsSystem;
-import pt.up.fe.specs.util.exceptions.NotImplementedException;
-import pt.up.fe.specs.util.system.ProcessOutputAsString;
-import pt.up.fe.specs.util.utilities.LineStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ProjectTestUtils {
 
@@ -47,7 +34,7 @@ public class ProjectTestUtils {
 
     /**
      * Helper method assumes repo is working dir.
-     * 
+     *
      * @param repoFolder
      * @return
      */
@@ -57,7 +44,7 @@ public class ProjectTestUtils {
 
     /**
      * Prepares a folder for running the compiler. Includes fixes such as copying the .properties files
-     * 
+     *
      * @return
      */
     public static File prepareRunningFolder(File repoFolder) {
@@ -184,13 +171,12 @@ public class ProjectTestUtils {
                 return objectRef.getName();
             case ARRAYREF:
                 var arrayType = (ArrayType) ollirType;
-                return toString(arrayType.getElementType())
+                return arrayType.getTypeOfElement().toString()
                         + SpecsStrings.buildLine("[]", arrayType.getNumDimensions());
             default:
                 throw new NotImplementedException(elementType);
         }
     }
-
 
 
     public static Method getLastMethod(ClassUnit classUnit) {
@@ -316,7 +302,7 @@ public class ProjectTestUtils {
 
     /**
      * Verifies if the given code matches (contains) the given regex
-     * 
+     *
      * @param code
      * @param regex
      */
@@ -333,7 +319,7 @@ public class ProjectTestUtils {
         var output = SpecsStrings.normalizeFileContents(jasminResult.run(), true);
 
         // No expected output, just run test
-        if(expected == null) {
+        if (expected == null) {
             return;
         }
 
@@ -376,8 +362,7 @@ public class ProjectTestUtils {
         }
 
         // Special cases
-        if (currentNode instanceof AssignInstruction) {
-            var assign = (AssignInstruction) currentNode;
+        if (currentNode instanceof AssignInstruction assign) {
             getOllirNodes(assign.getRhs(), filter, filteredNodes);
         }
     }
@@ -387,10 +372,8 @@ public class ProjectTestUtils {
                 inst -> inst instanceof CallInstruction &&
                         ((CallInstruction) inst).getInvocationType() == invokeType);
 
-        assertTrue(
-                "Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n"
-                        + ollirResult.getOllirCode(),
-                nodes.size() == 1);
+        assertEquals("Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n"
+                + ollirResult.getOllirCode(), 1, nodes.size());
     }
 
     /*

@@ -21,18 +21,7 @@ public class MyJasminBackend implements JasminBackend {
     int labelCounter = 0;
 
     private String getRegister(String var) {
-
-        System.out.println("\n\n\nGET REGISTER:\n");
-        // Iterate over the key-value pairs and print them out
-        for (var entry : currVarTable.entrySet()) {
-            String key = entry.getKey();
-            System.out.println(key + " -> " + currVarTable.get(key).getVirtualReg());
-        }
-        System.out.println("\n\n\n");
-
         if (currVarTable.containsKey(var)) return String.valueOf(currVarTable.get(var).getVirtualReg());
-
-
         return "-1";
     }
 
