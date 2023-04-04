@@ -48,6 +48,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         // Statements
         addVisit("Assign", this::dealWithAssign);
         addVisit("IfClause", this::dealWithIf);
+        addVisit("While", this::dealWithWhile);
+        addVisit("ArrayAssign", this::dealWithArrayAssign);
 
 
         // Type
@@ -65,11 +67,54 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("BinaryBool", this::dealWithBinaryComp);
         addVisit("Paren", this::dealWithParen);
         addVisit("AtributeAccess", this::dealWithAtributeAccess);
+        addVisit("Not", this::dealWithNot);
 
         setDefaultVisit(this::defaultVisit);
     }
 
-    private Pair<String, String> dealWithIf(JmmNode jmmNode, String s) {
+    private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) { // TODO.... a string pode ser um array? no main... ficava mais fácil sem esse
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> index = this.visit(jmmNode.getJmmChild(0));
+        Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
+
+        String varName = jmmNode.get("var");
+        Type type = findTypeVar(varName);
+
+        String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array
+
+        sb.append(index.a).append("\n");
+        sb.append(value.a).append("\n");
+        sb.append(varName).append("[").append(index.b).append("].").append(olliType)
+                .append(" :=.").append(olliType).append(" ").append(value.b).append(";\n"); // TODO: temp pode ser melhorado
+
+        return new Pair<>(sb.toString(), null);
+    }
+
+    // TODO:t10.bool :=.bool c.i32 <.bool 1000.i32; if (t10.bool) goto End2; .... esta correto ???
+    private Pair<String, String> dealWithWhile(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        String newLabel = newLabel();
+        sb.append("Loop").append(newLabel).append(":\n");
+        Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
+        sb.append(condition.a).append("\n");
+        sb.append("if (").append(condition.b).append(") goto End").append(newLabel).append(";\n"); // TODO: outro sitio onde se pode poupar temps
+        Pair<String, String> body = this.visit(jmmNode.getJmmChild(1));
+        sb.append(body.a).append("\ngoto Loop").append(newLabel).append(";\n");
+        sb.append("End").append(newLabel).append(":\n");
+        return new Pair<>(sb.toString(), null);
+    }
+
+    private Pair<String, String> dealWithNot(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> expr = this.visit(jmmNode.getJmmChild(0));
+        sb.append(expr.a).append("\n");
+        String temp = "t" + newTemp() + ".bool" ;
+        sb.append(temp).append(" :=.bool ").append("!.bool ").append(expr.b).append(";\n");
+        return new Pair<>(sb.toString(), temp); // TODO: tb é possivel poupar temps aqui ...t8.bool :=.bool !.bool 0.bool; if (t8.bool) goto Then1;
+
+    }
+
+    private Pair<String, String> dealWithIf(JmmNode jmmNode, String s) { // TODO ... STOR ... no exemplo tem !.bool exp ... mas n fiz assim, está bem ?
         StringBuilder sb = new StringBuilder();
         Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
         Pair<String, String> then = this.visit(jmmNode.getJmmChild(1));
