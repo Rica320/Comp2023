@@ -80,8 +80,16 @@ public class Launcher {
         TestUtils.noErrors(analyserResult.getReports());
 
         MyOllir myOllir = new MyOllir();
-        myOllir.toOllir(analyserResult);
+        OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
+        // JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
+        // String jasminCode = jasminResult.getJasminCode();
+//
+        // try {
+        //     String output = TestUtils.runJasmin(jasminCode);
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
         // Instantiate JmmCodeGenerator
         // SimpleCodeGenerator codeGenerator = new SimpleCodeGenerator();

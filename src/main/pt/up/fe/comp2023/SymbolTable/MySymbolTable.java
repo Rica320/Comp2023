@@ -197,7 +197,7 @@ public class MySymbolTable implements SymbolTable {
             return SymbolOrigin.FIELD;
         else if (hasImport(symbolLabel))
             return SymbolOrigin.IMPORT;
-        return null;
+        return SymbolOrigin.UNKNOWN;
     }
 
     // ========================== PRINT ==========================

@@ -32,11 +32,12 @@ class Simple {
             io.println(1);
             c = c + 1;
         }
-        args[c + 2] = 1 + 2;
+        x[c + 2] = 1 + 2;
     }
 
     public int constInstr(int a){
         int c;
+        x = 1;
         a = 2;
         c = 0;
         c = 4;
@@ -46,7 +47,13 @@ class Simple {
         c = 400;
         c = 1000;
         c = 100474650;
-		c = 10;
+		c = a[a];
+		c = (a)[a];
+		c = x[a];
+		c = (x)[a];
+		c = c[a];
+		c = (c)[a];
+		c = io[a];
 		x = a;
         return c;
     }

@@ -68,8 +68,57 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("Paren", this::dealWithParen);
         addVisit("AtributeAccess", this::dealWithAtributeAccess);
         addVisit("Not", this::dealWithNot);
+        addVisit("ArrayLookup", this::dealWithArrayLookup);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Pair<String, String> dealWithArrayLookup(JmmNode jmmNode, String s) {
+        StringBuilder sb = new StringBuilder();
+        StringBuilder code = new StringBuilder();
+        Pair<String, String> array;
+        Pair<String, String> index;
+        String arrayName = "";
+        if (jmmNode.hasAttribute("var")) {
+            array = new Pair<>("", jmmNode.get("var"));
+            arrayName = array.b;
+            index = this.visit(jmmNode.getJmmChild(0));
+        } else {
+            array = this.visit(jmmNode.getJmmChild(0));
+            int isParam = array.b.charAt(0) == '$' ? 1 : 0;
+            arrayName = array.b.split("\\.")[isParam];
+            index = this.visit(jmmNode.getJmmChild(1));
+        }
+        code.append(array.a).append("\n");
+        code.append(index.a).append("\n");
+
+        SymbolOrigin origin = symbolTable.getSymbolOrigin(arrayName);
+        System.out.println("ArrayLookup: " + arrayName + " " + origin);
+        // Type type = findTypeVar(arrayName);
+        // String olliType = getOllirType(type.getName(), type.isArray());
+
+        switch (origin) {
+            case FIELD: // DA PARA MELHORAR TEMPS
+                String tempName = "t" + temp++ + ".i32";
+                code.append(tempName).append(".array.i32 :=.array.i32 getfield(this, ").append(arrayName)
+                        .append(".array.i32).array.i32;");
+
+                return new Pair<>(code.toString(),sb.append(arrayName).append("[")
+                                .append(index.b).append("].i32").toString());
+            case PARAMETER:
+                sb.append("$").append(symbolTable.getParameterIndex(arrayName)).append(".").append(arrayName)
+                        .append("[").append(index.b).append("].i32");
+                return new Pair<>(code.toString(), sb.toString());
+            case IMPORT:
+                throw new RuntimeException("ArrayLookup: IMPORT");
+
+            case LOCAL:
+            default:
+                return new Pair<>(code.toString(),
+                        sb.append(arrayName).append("[")
+                                .append(index.b).append("].i32")
+                                .toString()); // TODO: mesma questão do default
+        }
     }
 
     private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) { // TODO.... a string pode ser um array? no main... ficava mais fácil sem esse
@@ -80,10 +129,14 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
         Type type = findTypeVar(varName);
 
-        String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array
+        /*
+            TODO:::::::: SE FOR UM FIELD
+         */
+
+        String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array ... que na grammar n pode ser array
 
         sb.append(index.a).append("\n");
-        sb.append(value.a).append("\n");
+        sb.append(value.a).append("\n"); // TODO: perguntar ao STOR ... e se for um field ????
         sb.append(varName).append("[").append(index.b).append("].").append(olliType)
                 .append(" :=.").append(olliType).append(" ").append(value.b).append(";\n"); // TODO: temp pode ser melhorado
 
@@ -216,7 +269,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
             case PARAMETER -> // already checks STATIC
                     sb.append("$").append(symbolTable.getParameterIndex(varName)).append(".").append(varName).append(".i32")
-                            .append(" :=.").append(ollirType).append(" ").append(codePlace.b);
+                            .append(" :=.").append(ollirType).append(" ").append(codePlace.b); // TODO: FALAR COM STOR
             case IMPORT, LOCAL -> sb.append(varName).append(".").append(ollirType)
                     .append(" :=.").append(ollirType).append(" ").append(codePlace.b);
             case FIELD -> {
@@ -502,7 +555,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         StringBuilder sb = new StringBuilder();
 
         String extendsClass = symbolTable.getSuper().isEmpty() ? "" : " extends " + symbolTable.getSuper();
-        sb.append(symbolTable.getClassName()).append(extendsClass).append(" {\n\n");
+        sb.append(symbolTable.getClassName()).append(extendsClass).append(" {\n");
 
         sb.append(dealWithVarDcl(symbolTable.getFields())).append("\n"); // TODO: ESTES \n sao para efeitos visuais
         sb.append(defaultConstructor());
