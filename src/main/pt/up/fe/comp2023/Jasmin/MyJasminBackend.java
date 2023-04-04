@@ -4,7 +4,8 @@ import org.specs.comp.ollir.*;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+
+import java.util.HashMap;
 
 // • Assignments
 //• Arithmetic operations (with correct precedence)
@@ -14,10 +15,18 @@ public class MyJasminBackend implements JasminBackend {
 
     ClassUnit classe;
     String code = "";
-    MySymbolTable st;
 
-    public MyJasminBackend(MySymbolTable st) {
-        this.st = st;
+    HashMap<String, Descriptor> currVarTable;
+
+    int labelCounter = 0;
+
+    private String getRegister(String var) {
+        if (currVarTable.containsKey(var)) return String.valueOf(currVarTable.get(var).getVirtualReg());
+        return "-1";
+    }
+
+    private String getNewLabel() {
+        return "label_" + labelCounter++;
     }
 
     private String toJasminType(String type) {
@@ -68,6 +77,39 @@ public class MyJasminBackend implements JasminBackend {
         });
     }
 
+
+    private void loadElement(StringBuilder codeBuilder, Element element) {
+        boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
+        boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+
+        if (element.isLiteral()) {
+            if (isNumber) {
+                LiteralElement literal = (LiteralElement) element;
+                int value = Integer.parseInt(literal.getLiteral());
+                if (value < 6) codeBuilder.append("iconst_");  // more efficient than bipush
+                else if (value < 128) codeBuilder.append("bipush ");
+                else codeBuilder.append("ldc ");
+                codeBuilder.append(value);
+            } else  // string
+                codeBuilder.append("ldc ").append(((LiteralElement) element).getLiteral());
+
+            codeBuilder.append("\n\t");
+            return;
+        } else if (isBoolean && (((Operand) element).getName().equals("true") || ((Operand) element).getName().equals("false"))) {
+            String boolVal = ((Operand) element).getName();
+            codeBuilder.append(boolVal.equals("true") ? "iconst_1" : "iconst_0");
+            codeBuilder.append(" ; ").append(boolVal).append("\n\t");
+            return;
+        }
+
+        // variable or array
+        Operand variable = (Operand) element;
+        String name = variable.getName();
+        codeBuilder.append("aload_").append(getRegister(name)).append(" ; ").append(name);
+        codeBuilder.append("\n\t");
+    }
+
+
     private String addHeaders() {
         code += ".class public " + this.classe.getClassName() + "\n";
         if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
@@ -91,183 +133,159 @@ public class MyJasminBackend implements JasminBackend {
 
     public String addFields() {
         StringBuilder codeBuilder = new StringBuilder();
-        this.classe.getFields().forEach(field -> {
-            codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
-        });
+        if (this.classe.getFields().size() == 0) return "; No fields\n";
+        this.classe.getFields().forEach(field -> codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
         return codeBuilder.toString();
     }
 
     public String addConstructor() {
-        String codeBuilder = "\n.method public <init>()V\n" + "\taload_0\n" + "\tinvokenonvirtual java/lang/Object/<init>()V\n" + "\treturn\n" + ".end method\n";
-        return codeBuilder;
+        return """
+                \n.method public <init>()V
+                \taload_0
+                \tinvokenonvirtual java/lang/Object/<init>()V
+                \treturn
+                .end method
+                """;
     }
 
     private String addMethods() {
         StringBuilder codeBuilder = new StringBuilder();
         this.classe.getMethods().forEach(method -> {
 
+            currVarTable = method.getVarTable();
+
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else codeBuilder.append("\n.method public ").append(method.getMethodName()).append("(");
 
+            if (!method.getMethodName().equals("main"))
+                method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
 
-            method.getParams().forEach(param -> {
-                codeBuilder.append(toJasminType(param.getType().toString()));
-            });
-
-
-            String returnType = method.getReturnType().toString();
-            codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
-
+            if (!method.getMethodName().equals("main")) { // ignore constructor
+                String returnType = method.getReturnType().toString();
+                codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
+            }
 
             // in this phase we don't need to worry about locals and stack limits
-            codeBuilder.append("\t.limit locals 99;\n");
-            codeBuilder.append("\t.limit stack 99;\n\n");
-
+            codeBuilder.append("\t.limit stack 30\n");
+            codeBuilder.append("\t.limit locals 30\n\n");
 
             // add instructions
-            method.getInstructions().forEach(instruction -> {
-                codeBuilder.append(addInstruction(instruction)).append("\n");
-            });
+            method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
 
+            currVarTable = null;
 
             codeBuilder.append(".end method\n\n");
         });
         return codeBuilder.toString();
     }
 
-    private String addReturn(String returnType) {
-        switch (returnType) {
-            case "VOID" -> {
-                return "\treturn";
-            }
-            case "INT32", "BOOLEAN" -> {
-                return "\tireturn";
-            }
-            default -> {
-                return "\tareturn"; // ARRAYREF or OBJECTREF
-            }
-        }
-    }
 
     private String addInstructionAssign(AssignInstruction instruction) {
         StringBuilder codeBuilder = new StringBuilder();
 
+        codeBuilder.append("\n\t; Assign Instruction\n");
+
         Element dest = instruction.getDest(); // instruction type <=> inst.getTypeOfAssign()
-
         Instruction rhs = instruction.getRhs();
-
-        System.out.println("Element dist: " + rhs);
-
         InstructionType instType = rhs.getInstType();
 
-        if (instType.equals(InstructionType.BINARYOPER))
-            return addBinaryOperation(codeBuilder, dest, (BinaryOpInstruction) rhs);
-
-        // Else: NOPER / CALL
-
-        if (instType.equals(InstructionType.NOPER)) {
-            //  iinc 2 1        ; Increment local variable 2 by 1
-            //     iconst_5        ; load the integer value 5 onto the stack
-            //    istore_0        ; store the value at top of stack in variable 0
-
+        if (instType.equals(InstructionType.BINARYOPER)) {
+            addBinaryOperation(codeBuilder, (BinaryOpInstruction) rhs); // Add binary operation loads and calculation
+            codeBuilder.append("\t");
+        } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
-
-            if (op.getSingleOperand().isLiteral())
-                codeBuilder.append("\tbipush ").append("<LITERAL_VALUE>").append("\n");
-            else
-                codeBuilder.append("\taload_").append(((Operand) op.getSingleOperand()).getName()).append("\n"); // should be a number
-
+            codeBuilder.append("\t");
+            loadElement(codeBuilder, op.getSingleOperand());
+        } else {
+            // Unary operation
+            UnaryOpInstruction op = (UnaryOpInstruction) rhs;
+            addUnaryOperation(codeBuilder, op);
+            codeBuilder.append("\t");
         }
 
-        // Storing value in variable
-        addStore(codeBuilder, dest, rhs);
+        // Storing final value in variable
+        storeElement(codeBuilder, dest, rhs);
 
+        codeBuilder.append("\n\t; End Assign Instruction\n\n");
 
         return codeBuilder.toString();
     }
 
-    private void addStore(StringBuilder codeBuilder, Element dest, Instruction rhs) {
-        codeBuilder.append("\t");
+    private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
+        codeBuilder.append("\n\t; Executing unary operation\n\t");
+
+        // Load operand if needed to execute unary operation
+        loadElement(codeBuilder, op.getOperand());
+
+
+        // Execute unary operation
+        if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
+            codeBuilder.append("iconst_1\n");
+            codeBuilder.append("\tixor\n");
+        } else if (op.getOperation().getOpType().equals(OperationType.SUB)) {
+            codeBuilder.append("ineg\n");
+        }
+
+        codeBuilder.append("\t; End unary operation\n\n");
+
+    }
+
+    private void storeElement(StringBuilder codeBuilder, Element dest, Instruction rhs) {
         if (!(rhs instanceof CallInstruction)) {
             Operand operand = (Operand) dest;
             if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
                 codeBuilder.append("i"); // Number
             else codeBuilder.append("a"); // Generic Object
             codeBuilder.append("store_");
-            codeBuilder.append(((Operand) dest).getName());
         } else {
             codeBuilder.append("astore_");
-            codeBuilder.append(((Operand) dest).getName());
         }
+        String name = ((Operand) dest).getName();
+        codeBuilder.append(getRegister(name)).append(" ; ").append(name);
     }
 
-    private String addBinaryOperation(StringBuilder codeBuilder, Element dest, BinaryOpInstruction opInstruction) {
+    private void addBinaryOperation(StringBuilder codeBuilder, BinaryOpInstruction opInstruction) {
 
         OperationType opType = opInstruction.getOperation().getOpType();
 
-        if (opInstruction.getLeftOperand().isLiteral() && opInstruction.getRightOperand().isLiteral()) {
-            BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getLeftOperand());
-            BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getRightOperand());
-            return codeBuilder.toString();
-        }
+        codeBuilder.append("\n\t; Executing binary operation\n\t");
 
-        codeBuilder.append("\t");
+        // Load operands
+        loadElement(codeBuilder, opInstruction.getLeftOperand());
+        loadElement(codeBuilder, opInstruction.getRightOperand());
+
+        // execute operation
+        BinaryOpInstAux(codeBuilder, opType);
+
+        codeBuilder.append("\t; End binary operation\n\n ");
+    }
+
+    private void BinaryOpInstAux(StringBuilder codeBuilder, OperationType opType) {
 
         switch (opType) {
-            case ADD, SUB -> {
-                boolean leftLiteral = !opInstruction.getLeftOperand().isLiteral() && opInstruction.getRightOperand().isLiteral();
-                if (leftLiteral) {
-                    Operand leftOp = (Operand) opInstruction.getLeftOperand();
-                    Operand destOp = (Operand) dest;
-                    if (leftOp.getName().equals(destOp.getName())) {
-                        BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getRightOperand());
-                        return codeBuilder.toString();
-                    }
-
-
-                } else {
-                    Operand rightOp = (Operand) opInstruction.getRightOperand();
-                    Operand destOp = (Operand) dest;
-                    if (rightOp.getName().equals(destOp.getName())) {
-                        BinaryOpAssignAux(codeBuilder, opType, (LiteralElement) opInstruction.getLeftOperand());
-                        return codeBuilder.toString();
-                    }
-
-                }
-            }
+            case ADD -> codeBuilder.append("iadd\n");
+            case SUB -> codeBuilder.append("isub\n");
             case MUL -> codeBuilder.append("imul\n");
             case DIV -> codeBuilder.append("idiv\n");
             case LTH -> {
-                String label_1 = "label_1", label_2 = "label_1";
-                codeBuilder.append("if_icmplt ").append(label_1).append("\n");
-                codeBuilder.append("\ticonst_0\n"); // false
-                codeBuilder.append("\tgoto ").append(label_2).append("\n");
-                codeBuilder.append(label_1).append(":\n");
-                codeBuilder.append("\ticonst_1\n"); // true
-                codeBuilder.append(label_2).append(":\n");
+                String trueL = getNewLabel(), endL = getNewLabel();
+                codeBuilder.append("if_icmplt ").append(trueL).append("\n");
+                codeBuilder.append("\ticonst_0\n"); // false scope
+                codeBuilder.append("\tgoto ").append(endL).append("\n");
+                codeBuilder.append(trueL).append(":\n");
+                codeBuilder.append("\ticonst_1\n"); // true scope
+                codeBuilder.append(endL).append(":\n");
             }
             case AND -> codeBuilder.append("iand\n");
             default -> System.out.println("Binary op error");
         }
-
-        return codeBuilder.toString();
-    }
-
-    private void BinaryOpAssignAux(StringBuilder codeBuilder, OperationType opType, LiteralElement literal) {
-        codeBuilder.append("\tiinc ");
-        // REGISTER MISSING
-        if (opType.equals(OperationType.ADD)) codeBuilder.append(" ");
-        else codeBuilder.append(" -");
-
-        int v = Integer.parseInt(literal.getLiteral());
-        codeBuilder.append(v);
     }
 
     private String addInstruction(Instruction instruction) {
-        String str = "";
 
+        StringBuilder codeBuilder = new StringBuilder();
         String instType = instruction.getInstType().toString();
 
         switch (instType) {
@@ -276,46 +294,43 @@ public class MyJasminBackend implements JasminBackend {
             }
             case "RETURN" -> {
                 ReturnInstruction inst = (ReturnInstruction) instruction;
+                codeBuilder.append("\t");
+                loadElement(codeBuilder, inst.getOperand());
 
-
-                if (inst.getOperand() != null) {
-                    if (inst.getOperand().isLiteral()) { // int or boolean
-                        LiteralElement literal = (LiteralElement) inst.getOperand();
-                        return "\n\ticonst_" + literal.getLiteral() + "\n" + addReturn(inst.getReturnType().toString());
-                    } else { // Object
-                        Operand operand = (Operand) inst.getOperand();
-                        return "\n\taload_" + operand.getName() + "\n" + addReturn(inst.getReturnType().toString());
-                    }
+                switch (inst.getReturnType().toString()) {
+                    case "VOID" -> codeBuilder.append("return");
+                    case "INT32", "BOOLEAN" -> codeBuilder.append("ireturn");
+                    default -> codeBuilder.append("areturn"); // ARRAYREF or OBJECTREF
                 }
-                // Else return void
-                return "\n" + addReturn(inst.getReturnType().toString());
+
+                return codeBuilder.toString();
             }
             case "CALL" -> {
                 return addCallInstruction((CallInstruction) instruction);
             }
             case "GETFIELD" -> {
-                GetFieldInstruction inst = (GetFieldInstruction) instruction;
+                //GetFieldInstruction inst = (GetFieldInstruction) instruction;
                 return "getfield";
             }
             case "PUTFIELD" -> {
-                PutFieldInstruction inst = (PutFieldInstruction) instruction;
+                //PutFieldInstruction inst = (PutFieldInstruction) instruction;
                 return "putfield";
             }
             case "UNARYOPER" -> {
-                UnaryOpInstruction inst = (UnaryOpInstruction) instruction;
-                return "unarop";
+                addUnaryOperation(codeBuilder, (UnaryOpInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "BINARYOPER" -> {
-                BinaryOpInstruction inst = (BinaryOpInstruction) instruction;
-                return "binop";
+                addBinaryOperation(codeBuilder, (BinaryOpInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "BRANCH" -> {
-                //SingleOpCondInstruction inst = (SingleOpCondInstruction) instruction;
-                return "branch";
+                addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
+                return codeBuilder.toString();
             }
             case "GOTO" -> {
                 GotoInstruction inst = (GotoInstruction) instruction;
-                return "goto";
+                return "\n\tgoto " + inst.getLabel() + "\n";
             }
             default -> {
                 return "error";
@@ -327,36 +342,57 @@ public class MyJasminBackend implements JasminBackend {
 
     }
 
+    private void addConditionalBranch(StringBuilder codeBuilder, OpCondInstruction instruction) {
+        OpInstruction opType = instruction.getCondition();
+        String trueL = getNewLabel(); // should I use instruction.getLabel() or my getNewLabel() like the line below?
+        String endL = getNewLabel();
+
+        codeBuilder.append("\n\t; Executing conditional branch\n\t");
+
+        Element leftOperand = opType.getOperands().get(0);
+        Element rightOperand = opType.getOperands().get(1);
+
+        // Load operands if needed to execute binary operation
+        loadElement(codeBuilder, leftOperand);
+        loadElement(codeBuilder, rightOperand);
+
+        // execute operation (only LTH is supported)
+        codeBuilder.append("if_icmplt ").append(trueL).append("\n"); // if condition is true, jump to true label
+
+        // TODO : CODE IF CONDITION IS FALSE HERE
+
+        // if condition is false, jump to end label
+        codeBuilder.append("\tgoto ").append(endL).append("\n");
+
+        codeBuilder.append(trueL).append(":\n");
+
+        // TODO : CODE IF CONDITION IS TRUE HERE
+
+        // end label
+        codeBuilder.append(endL).append(":\n");
+
+        codeBuilder.append("\t; End of conditional branch");
+    }
+
     private String addCallInstruction(CallInstruction inst) {
 
         // load arguments
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.append("\n\t; Making a call instruction\n\t");
-        if (inst.getFirstArg() != null) {
-            if (inst.getFirstArg().isLiteral()) codeBuilder.append("ldc ").append("<LITERAL_VALUE>").append("\n");
-            else
-                codeBuilder.append("aload_").append(((Operand) inst.getFirstArg()).getName()).append("\n"); // should be a number
+        //codeBuilder.append("getstatic java/lang/System/out Ljava/io/PrintStream;\n\t");
 
-            if (inst.getSecondArg() != null) {
-                if (inst.getSecondArg().isLiteral())
-                    codeBuilder.append("\tldc ").append("<LITERAL_VALUE>").append("\n");
-                else
-                    codeBuilder.append("\taload_").append(((Operand) inst.getSecondArg()).getName()).append("\n"); // should be a number
-            }
-        }
+        // load other arguments
+        for (Element arg : inst.getListOfOperands())
+            loadElement(codeBuilder, arg);
 
-        for (Element arg : inst.getListOfOperands()) {
-            if (arg.isLiteral()) codeBuilder.append("\tbipush ").append("<LITERAL_VALUE>").append("\n");
-            else codeBuilder.append("\taload_").append(((Operand) arg).getName()).append("\n"); // should be a number
-        }
+        String name = ((Operand) inst.getFirstArg()).getName();
+        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
+        method = method.substring(1, method.length() - 1); // remove quotes from method name
 
         // invoke method
-        codeBuilder.append("\tinvokevirtual " + "<METHOD_NAME>(");
-
-        if (inst.getFirstArg() != null) {
-            codeBuilder.append(toJasminType(inst.getFirstArg().getType().toString()));
-            if (inst.getSecondArg() != null) codeBuilder.append(toJasminType(inst.getSecondArg().getType().toString()));
-        }
+        codeBuilder.append("invokevirtual ").append(name);
+        if (inst.getSecondArg() != null) codeBuilder.append(".").append(method);
+        codeBuilder.append("(");
 
         for (Element arg : inst.getListOfOperands())
             codeBuilder.append(toJasminType(arg.getType().toString()));
@@ -378,8 +414,7 @@ public class MyJasminBackend implements JasminBackend {
         code += "\n; Fields\n";
         code += this.addFields();
         code += "\n; Constructor";
-        code += this.addConstructor();
-        code += "\n; ================ Methods ================\n";
+        //code += this.addConstructor();
         code += this.addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");
