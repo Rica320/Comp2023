@@ -223,7 +223,9 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append("\t");
             loadElement(codeBuilder, op.getSingleOperand());
         } else if (instType.equals(InstructionType.GETFIELD)) {
-            codeBuilder.append(addInstruction(rhs));
+            addGetPutField(codeBuilder, rhs);
+        } else if (instType.equals(InstructionType.CALL)) {
+            codeBuilder.append(addCallInstruction((CallInstruction) rhs));
         } else {
             // Unary operation
             UnaryOpInstruction op = (UnaryOpInstruction) rhs;
@@ -244,7 +246,6 @@ public class MyJasminBackend implements JasminBackend {
 
         // Load operand if needed to execute unary operation
         loadElement(codeBuilder, op.getOperand());
-
 
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
@@ -318,17 +319,19 @@ public class MyJasminBackend implements JasminBackend {
         var labels = currentMethod.getLabels(instruction);
 
         for (String label : labels) {
-            System.out.println("Label: " + label + " ");
-            instruction.show();
+            // System.out.println("Label: " + label + " ");
+            // instruction.show();
             codeBuilder.append(label).append(":\n");
         }
 
 
         switch (instType) {
             case "ASSIGN" -> {
-                return codeBuilder.toString() + addInstructionAssign((AssignInstruction) instruction);
+                return codeBuilder + addInstructionAssign((AssignInstruction) instruction);
             }
             case "RETURN" -> {
+                if(currentMethod.getMethodName().equals("main"))
+                    return ""; // TODO this only solves ret.V in main, but not ret.V in other methods
                 ReturnInstruction inst = (ReturnInstruction) instruction;
                 codeBuilder.append("\t");
 
@@ -343,7 +346,7 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "CALL" -> {
-                return codeBuilder.toString() + addCallInstruction((CallInstruction) instruction);
+                return codeBuilder + addCallInstruction((CallInstruction) instruction);
             }
             case "GETFIELD", "PUTFIELD" -> {
                 addGetPutField(codeBuilder, instruction);
@@ -364,7 +367,7 @@ public class MyJasminBackend implements JasminBackend {
             }
             case "GOTO" -> {
                 GotoInstruction inst = (GotoInstruction) instruction;
-                return codeBuilder.toString() + "\n\tgoto " + inst.getLabel() + "\n";
+                return codeBuilder + "\n\tgoto " + inst.getLabel() + "\n";
             }
             default -> {
                 return "error";
@@ -427,21 +430,7 @@ public class MyJasminBackend implements JasminBackend {
         loadElement(codeBuilder, leftOperand);
         loadElement(codeBuilder, rightOperand);
 
-        // execute operation (only LTH is supported)
-        codeBuilder.append("if_icmplt ").append(trueL).append("\n"); // if condition is true, jump to true label
-
-        // TODO : CODE IF CONDITION IS FALSE HERE
-
-        // if condition is false, jump to end label
-        //codeBuilder.append("\tgoto ").append(endL).append("\n");
-
-        //codeBuilder.append(trueL).append(":\n");
-
-        // TODO : CODE IF CONDITION IS TRUE HERE
-
-        // end label
-        //codeBuilder.append(endL).append(":\n");
-
+        codeBuilder.append("if_icmplt ").append(trueL).append("\n");
         codeBuilder.append("\t; End of conditional branch");
     }
 
@@ -449,7 +438,44 @@ public class MyJasminBackend implements JasminBackend {
 
         // load arguments
         StringBuilder codeBuilder = new StringBuilder();
-        codeBuilder.append("\n\t; Making a call instruction\n\t");
+        codeBuilder.append("\t; Making a call instruction\n\t");
+
+
+        var callType = (inst.getInvocationType()).toString();
+        switch (callType) { // no need for invoke special ?
+            case "NEW" -> callNew(codeBuilder, inst);
+            case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst);
+            case "invokestatic" -> callInvokeStatic(codeBuilder, inst);
+            case "invokespecial" -> callInvokeSpecial(codeBuilder, inst);
+            case "arraylength" -> {
+                codeBuilder.append("arraylength"); // TODO should i store the result in a local variable?
+            }
+            case "ldc" -> {
+                codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
+            }
+            default -> {
+                System.out.println("Call instruction not supported");
+                System.out.println("NAME: " + callType);
+            }
+        }
+
+        codeBuilder.append("\n\t");
+
+
+        codeBuilder.append("; End of call instruction\n\t");
+        return codeBuilder.toString();
+    }
+
+
+
+
+    public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
+        codeBuilder.append("new ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
+        codeBuilder.append("dup\n\t");
+        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V;");
+    }
+
+    public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst) {
 
         String name = ((Operand) inst.getFirstArg()).getName();
         String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
@@ -457,38 +483,75 @@ public class MyJasminBackend implements JasminBackend {
         // hardcoded println
         if (name.equals("io") && method.equals("\"println\"")) {
             codeBuilder.append("getstatic java/lang/System/out Ljava/io/PrintStream;\n\t");
-            loadElement(codeBuilder, inst.getListOfOperands().get(0));
-            codeBuilder.append("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V");
-            codeBuilder.append("\n\t; End of call instruction\n");
-            return codeBuilder.toString();
-        } else {
-            System.out.println("Call instruction not supported");
-            System.out.println("NAME: " + name + " method: " + method);
+            loadElement(codeBuilder, inst.getListOfOperands().get(0)); // prints a single element
+            codeBuilder.append("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V;");
+            return;
         }
 
+        // if it's not a println, it's a different method call
+        loadElement(codeBuilder, inst.getFirstArg()); // load object reference
 
-        // 	getstatic java/lang/System/out Ljava/io/PrintStream;
-        //	ldc "Program finished"
-        //	invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V
-
-        // load other arguments
+        // load arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(codeBuilder, arg);
 
-        method = method.substring(1, method.length() - 1); // remove quotes from method name
+        // invoke method
+        codeBuilder.append("invokevirtual ").append(name); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME
+        invokeArgs(codeBuilder, inst, method);
+    }
+
+    public void callInvokeStatic(StringBuilder codeBuilder, CallInstruction inst) {
+        String name = ((Operand) inst.getFirstArg()).getName();
+        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
+
+        // load arguments
+        for (Element arg : inst.getListOfOperands())
+            loadElement(codeBuilder, arg);
 
         // invoke method
-        codeBuilder.append("invokevirtual ").append(name);
+        codeBuilder.append("invokestatic ").append(name);
+        invokeArgs(codeBuilder, inst, method);
+
+    }
+
+    private void callInvokeSpecial(StringBuilder codeBuilder, CallInstruction inst) {
+        String name = ((Operand) inst.getFirstArg()).getName();
+        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
+
+        method = method.substring(1, method.length() - 1); // remove quotes from method name
+
+        codeBuilder.append("invokespecial ").append(method).append("(");
+
+        for (Element arg : inst.getListOfOperands()) {
+            codeBuilder.append(toJasminType(arg.getType().toString()));
+        }
+        codeBuilder.append(")");
+        codeBuilder.append(toJasminType(inst.getReturnType().toString())).append(";");
+
+        // TODO should i force a store here?
+    }
+
+    private void invokeArgs(StringBuilder codeBuilder, CallInstruction inst, String method) {
+
+        method = method.substring(1, method.length() - 1); // remove quotes from method name
+
         if (inst.getSecondArg() != null) codeBuilder.append(".").append(method);
         codeBuilder.append("(");
 
-        for (Element arg : inst.getListOfOperands())
+        for (Element arg : inst.getListOfOperands()) // add arguments types
             codeBuilder.append(toJasminType(arg.getType().toString()));
 
-        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString())).append("\n");
-        codeBuilder.append("\t; End of call instruction\n");
-        return codeBuilder.toString();
+        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString())).append(";");
     }
+
+    public void callArrayLength(StringBuilder codeBuilder, CallInstruction inst) {
+    // todo
+    }
+
+    public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
+          codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: n testei
+    }
+
 
     @Override
     public JasminResult toJasmin(OllirResult ollirResult) {

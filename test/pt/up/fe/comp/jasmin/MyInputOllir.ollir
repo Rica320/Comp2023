@@ -11,6 +11,30 @@ myClass {
     		End:
     		    ret.i32 sum.i32;
     	}
+
+   .method public obj(bk.String).V{
+     a.Foo :=.Foo new(Foo).Foo;
+
+
+
+   }
+
+
+   .method public virt().V{
+
+       invokevirtual(c1.myClass, "put", 2.i32).V;
+       invokestatic(ExMain, "mult", 2.i32, 5.i32).i32;
+
+
+
+       aux1.Fac :=.Fac new(Fac).Fac;
+
+       invokespecial(aux1.Fac,"<init>", 2.i32).V;
+
+
+
+   }
+
 /*
     	.method public check(A.array.classArray, b.String).bool {
     		all.bool :=.bool 0.bool;
@@ -53,6 +77,8 @@ myClass {
 	.method public static main(args.array.String).V {
         s.i32 :=.i32 5.i32;
 	  	// invokestatic(io, "println", s.String).V;
+
+	  	ret.V;
 	}
 }
 
