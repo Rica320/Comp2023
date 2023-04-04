@@ -86,6 +86,7 @@ public class Launcher {
         String jasminCode = jasminResult.getJasminCode();
 
         System.out.println(jasminCode);
+        TestUtils.runJasmin(jasminCode);
 //
         // try {
         //     String output = TestUtils.runJasmin(jasminCode);
