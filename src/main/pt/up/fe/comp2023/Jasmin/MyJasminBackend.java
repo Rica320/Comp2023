@@ -474,7 +474,20 @@ public class MyJasminBackend implements JasminBackend {
 
 
     public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
-        codeBuilder.append("new ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
+        var FirstName = inst.getFirstArg().getType();
+
+        if (FirstName instanceof ArrayType arr) { // New array
+
+            loadElement(codeBuilder, inst.getListOfOperands().get(0)); // load array size
+
+            codeBuilder.append("newarray int"); // we only have arrays of integers
+
+            codeBuilder.append("\n\t");
+            return;
+        }
+
+        // New Object
+        codeBuilder.append("new ").append(((ClassType) FirstName).getName()).append("\n\t");
         codeBuilder.append("dup\n\t");
         codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V");
     }
@@ -550,11 +563,6 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
         codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
-    }
-
-
-    public void createArray(StringBuilder codeBuilder, int arrSize) {
-        codeBuilder.append("ldc ").append(arrSize).append("\n\tnewarray [I\n\t");
     }
 
     public void setArrayElem(StringBuilder codeBuilder, int pos, int val) {
