@@ -84,6 +84,11 @@ public class MyJasminBackend implements JasminBackend {
         boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
         boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
 
+        if (element instanceof ArrayOperand) {
+            arrayAccess(codeBuilder, element);
+            return;
+        }
+
         if (isNumber || isBoolean) {
             if (element.isLiteral()) {
                 LiteralElement literal = (LiteralElement) element;
@@ -223,14 +228,19 @@ public class MyJasminBackend implements JasminBackend {
             // value will be calculated below by the rhs instruction
         }
 
-
         if (instType.equals(InstructionType.BINARYOPER)) {
             addBinaryOperation(codeBuilder, (BinaryOpInstruction) rhs); // Add binary operation loads and calculation
             codeBuilder.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
-            codeBuilder.append("\t");
-            loadElement(codeBuilder, op.getSingleOperand());
+
+            if (op.getSingleOperand() instanceof ArrayOperand) {
+                arrayAccess(codeBuilder, op.getSingleOperand());
+            } else {
+                codeBuilder.append("\t");
+                loadElement(codeBuilder, op.getSingleOperand());
+            }
+
         } else if (instType.equals(InstructionType.GETFIELD)) {
             addGetPutField(codeBuilder, rhs);
         } else if (instType.equals(InstructionType.CALL)) {
@@ -251,13 +261,20 @@ public class MyJasminBackend implements JasminBackend {
         return codeBuilder.toString();
     }
 
+    public void arrayAccess(StringBuilder codeBuilder, Element elem) {
+        codeBuilder.append("\t; Start Array access\n\t");
 
-    public void getArrayElem(StringBuilder codeBuilder, int pos) {
-        // TODO get array from stack with aload k
+        Operand variable = (Operand) elem;
+        String name = variable.getName();
+        codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name); // load array
+        codeBuilder.append("\n\t");
 
-        codeBuilder.append("\nbipush ").append(pos).append("\n\t");
+        loadElement(codeBuilder, ((ArrayOperand) elem).getIndexOperands().get(0)); // load index
         codeBuilder.append("iaload\n\t");
+        codeBuilder.append("; End Array access\n\t");
     }
+
+
 
 
     private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
