@@ -128,10 +128,11 @@ public class MyJasminBackend implements JasminBackend {
 
     private String addHeaders() {
         code += ".class public " + this.classe.getClassName() + "\n";
-        if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
-        else {
+        // TODO: se classe n existir, crasha o jasmin
+        // if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
+        //else {
             code += ".super java/lang/Object\n";
-        }
+        //}
         code += "\n";
         return code;
     }
@@ -142,7 +143,7 @@ public class MyJasminBackend implements JasminBackend {
         if (this.classe.getImports().size() == 0) return "; No imports\n";
 
         for (String imp : this.classe.getImports()) {
-            imports.append(".import ").append(imp).append("\n");
+            imports.append("; .import ").append(imp).append("\n"); // TODO: imports are broken? gpt suggested ldc instead of .import
         }
         return imports.toString();
     }
@@ -150,7 +151,7 @@ public class MyJasminBackend implements JasminBackend {
     public String addFields() {
         StringBuilder codeBuilder = new StringBuilder();
         if (this.classe.getFields().size() == 0) return "; No fields\n";
-        this.classe.getFields().forEach(field -> codeBuilder.append(".field private ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
+        this.classe.getFields().forEach(field -> codeBuilder.append(".field public ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
         return codeBuilder.toString();
     }
 
@@ -293,12 +294,14 @@ public class MyJasminBackend implements JasminBackend {
             case DIV -> codeBuilder.append("idiv\n");
             case LTH -> {
                 String trueL = getNewLabel(), endL = getNewLabel();
+                codeBuilder.append("; Making lth operation\n\t");
                 codeBuilder.append("if_icmplt ").append(trueL).append("\n");
                 codeBuilder.append("\ticonst_0\n"); // false scope
                 codeBuilder.append("\tgoto ").append(endL).append("\n");
                 codeBuilder.append(trueL).append(":\n");
                 codeBuilder.append("\ticonst_1\n"); // true scope
                 codeBuilder.append(endL).append(":\n");
+                codeBuilder.append("; End lth operation\n");
             }
             case AND -> codeBuilder.append("iand\n");
             default -> System.out.println("Binary op error");
