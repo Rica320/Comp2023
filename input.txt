@@ -65,13 +65,13 @@ class Simple {
     }
 
 
- /* ricardo n fez ainda
-    public int lol(int i) {
-        int[] field;
-        field = new int[3];
-        return i+2;
+/*
+    public int lol(int size) {
+        int[] arr;
+        arr = new int[size];
+        return 0;
     }
- */
+*/
 
     public Foo getFoo(){
         Foo foo;
