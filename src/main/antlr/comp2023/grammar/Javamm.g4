@@ -77,7 +77,7 @@ expression
     | expression '.' atribute=ID #AtributeAccess
     | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall
     | '!' expression #Not
-    | 'new' 'int' '[' expression ']' #NewIntArray // TODO
+    | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | expression op=('*'| '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp

@@ -97,14 +97,19 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         // Type type = findTypeVar(arrayName);
         // String olliType = getOllirType(type.getName(), type.isArray());
 
+        return arrLookup(arrayName, index, origin, code, sb);
+    }
+
+    private Pair<String,String> arrLookup(String arrayName, Pair<String, String> index
+            , SymbolOrigin origin, StringBuilder code, StringBuilder sb) {
         switch (origin) { // REFACTOR THIS TODO
             case FIELD: // DA PARA MELHORAR TEMPS
-                String tempName = "t" + temp++ + ".i32";
+                String tempName = "t" + temp++;
                 code.append(tempName).append(".array.i32 :=.array.i32 getfield(this, ").append(arrayName)
                         .append(".array.i32).array.i32;");
 
-                return new Pair<>(code.toString(),sb.append(arrayName).append("[")
-                                .append(index.b).append("].i32").toString());
+                return new Pair<>(code.toString(),sb.append(tempName).append("[")
+                        .append(index.b).append("].i32").toString());
             case PARAMETER:
                 sb.append("$").append(symbolTable.getParameterIndex(arrayName)).append(".").append(arrayName)
                         .append("[").append(index.b).append("].i32");
@@ -128,6 +133,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         String varName = jmmNode.get("var");
         Type type = findTypeVar(varName);
+
+        SymbolOrigin origin = symbolTable.getSymbolOrigin(varName);
+
+
 
         /*
             TODO:::::::: SE FOR UM FIELD
@@ -335,6 +344,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         if (symbolTable.hasImport(varName)) { // Is it an import? ... TODO: always void ?
             return new Type("void", false);
         }
+        System.out.println("Symbol: " + varName);
         return symbol.getType();
     }
 
@@ -428,7 +438,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
     private Pair<String, String> dealWithNewIntArray(JmmNode jmmNode, String s) {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        Pair<String, String> codeSizeTmp = this.visit(jmmNode.getJmmChild(0), " ");
+        sb.append(codeSizeTmp.a).append("\n");
+        String newTemp = "t" + newTemp() + ".array.i32";
+        sb.append(newTemp).append(" :=.array.i32 new(array,").append(codeSizeTmp.b).append(").array.i32;\n");
+        return new Pair<>(sb.toString(), newTemp);
     }
 
     private Pair<String, String> dealWithIdType(JmmNode jmmNode, String s) {
