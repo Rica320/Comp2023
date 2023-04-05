@@ -131,7 +131,7 @@ public class MyJasminBackend implements JasminBackend {
         // TODO: se classe n existir, crasha o jasmin
         // if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
         //else {
-            code += ".super java/lang/Object\n";
+        code += ".super java/lang/Object\n";
         //}
         code += "\n";
         return code;
@@ -256,15 +256,13 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     private void storeElement(StringBuilder codeBuilder, Element dest, Instruction rhs) {
-        if (!(rhs instanceof CallInstruction)) {
-            Operand operand = (Operand) dest;
-            if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
-                codeBuilder.append("i"); // Number
-            else codeBuilder.append("a"); // Generic Object
-            codeBuilder.append("store ");
-        } else {
-            codeBuilder.append("astore ");
-        }
+
+        Operand operand = (Operand) dest;
+        if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
+            codeBuilder.append("i"); // Number
+        else codeBuilder.append("a"); // Generic Object
+        codeBuilder.append("store ");
+
         String name = ((Operand) dest).getName();
         codeBuilder.append(getRegister(name)).append(" ; ").append(name);
     }
@@ -485,19 +483,26 @@ public class MyJasminBackend implements JasminBackend {
 
         // is this only needed to call self methods?
 
-        String name = ((Operand) inst.getFirstArg()).getName();
+        String name = ((ClassType) inst.getFirstArg().getType()).getName();
         String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
 
-        // if it's not a println, it's a different method call
-        loadElement(codeBuilder, inst.getFirstArg()); // load object reference
+        addNewObject(codeBuilder, inst); // load object to call method on
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(codeBuilder, arg);
 
         // invoke method
-        codeBuilder.append("invokevirtual ").append(inst.getFirstArg().getType()); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME?
+        codeBuilder.append("invokevirtual ").append(name); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME?
         invokeArgs(codeBuilder, inst, method);
+    }
+
+    private void addNewObject(StringBuilder codeBuilder, CallInstruction inst) {
+        codeBuilder.append("\n\t; Creating new object\n\t");
+        codeBuilder.append("new ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
+        codeBuilder.append("dup\n\t");
+        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        codeBuilder.append("; End of creating new object\n\n\t");
     }
 
     public void callInvokeStatic(StringBuilder codeBuilder, CallInstruction inst) {

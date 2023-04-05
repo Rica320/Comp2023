@@ -1,28 +1,56 @@
+
 import io;
-import Quicksort;
+import java.lang.System;
+import java.util.Scanner;
 
-SymbolTable extends Quicksort {
+Simple {
 
-	.field public intField.i32;
-	.field public boolField.bool;
+.construct Simple().V {
+invokespecial(this, "<init>").V;
+}
+.method public max(a.i32, b.i32).i32 {
+temp.i32 :=.i32 0.i32;
 
-	.construct SymbolTable().V {
-		invokespecial(this, "<init>").V;
-	}
 
-	.method public method1().i32 {
-		intLocal1.i32 :=.i32 0.i32;
-		boolLocal1.bool :=.bool 1.bool;
 
-		ret.i32 0.i32;
-	}
 
-	.method public method2(intParam1.i32, boolParam1.bool).bool {
-		ret.bool boolParam1.bool;
-	}
+t0.bool :=.bool $2.b.i32 <.bool $1.a.i32;
+if (t0.bool) goto Then0;
 
-	.method public static main(args.array.String).V {
-		ret.V;
-	}
+temp.i32 :=.i32 $2.b.i32;
+
+goto End0;
+Then0:
+
+temp.i32 :=.i32 $1.a.i32;
+
+End0:
+
+
+ret.i32 temp.i32;
+}
+.method public static main(args.array.String).V {
+            a.i32 :=.i32 0.i32;
+            i.i32 :=.i32 0.i32;
+            a.i32 :=.i32 0.i32;
+
+            t1.bool :=.bool 4.i32 <.bool 3.i32;
+            if (t1.bool) goto Then1;
+
+            i.i32 :=.i32 2.i32;
+
+            goto End1;
+    Then1:
+            i.i32 :=.i32 1.i32;
+    End1:
+
+            invokestatic(io, "println", i.i32).V;
+
+            t2.i32 :=.i32 invokevirtual(this,"max", 1.i32, a.i32).i32;
+            a.i32 :=.i32 t2.i32;
+
+            invokestatic(io, "println", a.i32).V;
+            ret.V;
+    }
 
 }
