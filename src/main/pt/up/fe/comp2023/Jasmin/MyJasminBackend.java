@@ -275,8 +275,6 @@ public class MyJasminBackend implements JasminBackend {
     }
 
 
-
-
     private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
         codeBuilder.append("\n\t; Executing unary operation\n\t");
 
@@ -459,14 +457,22 @@ public class MyJasminBackend implements JasminBackend {
 
         codeBuilder.append("\n\t; Executing conditional branch\n\t");
 
-        Element leftOperand = opType.getOperands().get(0);
-        Element rightOperand = opType.getOperands().get(1);
+        if (opType.getOperands().size() != 2) {
 
-        // Load operands if needed to execute binary operation
-        loadElement(codeBuilder, leftOperand);
-        loadElement(codeBuilder, rightOperand);
+            addUnaryOperation(codeBuilder, (UnaryOpInstruction) opType);
+            codeBuilder.append("ifne ").append(label).append("\n");
 
-        codeBuilder.append("if_icmplt ").append(label).append("\n");
+        } else {
+            Element leftOperand = opType.getOperands().get(0);
+            Element rightOperand = opType.getOperands().get(1);
+
+            // Load operands if needed to execute binary operation
+            loadElement(codeBuilder, leftOperand);
+            loadElement(codeBuilder, rightOperand);
+
+            codeBuilder.append("if_icmplt ").append(label).append("\n");
+        }
+
         codeBuilder.append("\t; End of conditional branch");
     }
 

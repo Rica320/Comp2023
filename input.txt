@@ -38,7 +38,7 @@ class Simple {
         return temp;
     }
 
-    public static void main(String[] args){
+    public int func2(){
         int i;
         int a;
         boolean b;
@@ -58,6 +58,26 @@ class Simple {
 
         a = b;
         io.println(a);
+
+        return 0;
+    }
+
+    public static void main(String[] args){
+        int i;
+        int b;
+        int a;
+
+        a = 15;
+
+        b = 0;
+        i = 0;
+
+        while (i < a) {
+            b = b + 1;
+            i = i + 1;
+        }
+
+        io.println(b);
     }
 
 
@@ -76,11 +96,26 @@ class Simple {
         return aux;
     }
 
+    public int whileTest(int a) {
+        int i;
+           int b;
+
+           b = 0;
+           i = 0;
+
+           while (i < a) {
+               b = b + 1;
+               i = i + 1;
+           }
+
+           return b;
+    }
+
 
 /*
     public Foo getFoo(){
         Foo foo;
-        foo = new Foo(); // todo: da problemas...
+        foo = new Foo(); // todo: da problemas... ricardo :/
         return foo;
      }
 
