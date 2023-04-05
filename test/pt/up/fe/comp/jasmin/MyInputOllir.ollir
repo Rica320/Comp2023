@@ -1,7 +1,142 @@
+
+
+Simple {
+.field public i.i32;
+
+.construct Simple().V {
+invokespecial(this, "<init>").V;
+}
+.method public setI(newI.i32).i32 {
+
+
+putfield(this,i.i32, $1.newI.i32).V;
+
+
+ret.i32 0.i32;
+}.method public getI().i32 {
+t0.i32 :=.i32 getfield(this,i.i32).i32;
+
+ret.i32 t0.i32;
+}.method public negative(i.i32).bool {
+
+
+
+t1.bool :=.bool $1.i.i32 <.bool 0.i32;
+ret.bool t1.bool;
+}.method public abs(i.i32).i32 {
+
+
+
+t2.bool :=.bool $1.i.i32 <.bool 0.i32;
+if (t2.bool) goto Then0;
+
+goto End0;
+Then0:
+
+
+t3.i32 :=.i32 0.i32 -.i32 $1.i.i32;
+$1.i.i32 :=.i32 t3.i32;
+
+End0:
+
+
+ret.i32 $1.i.i32;
+}.method public sum(a.i32, b.i32).i32 {
+
+
+
+t4.i32 :=.i32 $1.a.i32 +.i32 $2.b.i32;
+ret.i32 t4.i32;
+}.method public max(a.i32, b.i32).i32 {
+temp.i32 :=.i32 0.i32;
+
+
+
+
+t5.bool :=.bool $2.b.i32 <.bool $1.a.i32;
+if (t5.bool) goto Then1;
+
+temp.i32 :=.i32 $2.b.i32;
+
+goto End1;
+Then1:
+
+temp.i32 :=.i32 $1.a.i32;
+
+End1:
+
+
+ret.i32 temp.i32;
+}
+.method public static main(args.array.String).V {
+a.i32 :=.i32 0.i32;
+i.i32 :=.i32 0.i32;
+
+
+
+a.i32 :=.i32 0.i32;
+
+
+
+t6.bool :=.bool 4.i32 <.bool 3.i32;
+if (t6.bool) goto Then2;
+
+i.i32 :=.i32 2.i32;
+
+goto End2;
+Then2:
+
+i.i32 :=.i32 1.i32;
+
+End2:
+
+
+invokestatic(io, "println", i.i32).V;
+
+
+t7.i32 :=.i32 invokevirtual(this,"max", 1.i32, a.i32).i32;
+a.i32 :=.i32 t7.i32;
+
+
+invokestatic(io, "println", a.i32).V;
+ret.V;
+}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 myClass {
 	// .field private a.i32;
 
-/*
+
 	.method public sum(i.i32).i32 {
 
     		if (i.i32 <.bool 3.i32) goto LTrue;
@@ -83,15 +218,6 @@ myClass {
 
 
 
-
-*/
-
-
-
-
-
-
-
     .method public static main(args.array.String).V {
         a.i32 :=.i32 0.i32;
         i.i32 :=.i32 0.i32;
@@ -114,4 +240,5 @@ myClass {
         ret.V;
     }
 }
+*/
 

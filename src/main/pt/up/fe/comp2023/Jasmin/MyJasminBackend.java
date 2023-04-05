@@ -361,8 +361,7 @@ public class MyJasminBackend implements JasminBackend {
                     addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
                 } else if (instruction instanceof SingleOpCondInstruction inst) {
                     addSingleConditionalBranch(codeBuilder, (SingleOpCondInstruction) instruction);
-                } else
-                    System.out.println("Error in branch instruction");
+                } else System.out.println("Error in branch instruction");
                 return codeBuilder.toString();
             }
             case "GOTO" -> {
@@ -481,16 +480,10 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst) {
 
+        // is this only needed to call self methods?
+
         String name = ((Operand) inst.getFirstArg()).getName();
         String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
-
-        // hardcoded println
-        if (name.equals("io") && method.equals("\"println\"")) {
-            codeBuilder.append("getstatic java/lang/System/out Ljava/io/PrintStream;\n\t");
-            loadElement(codeBuilder, inst.getListOfOperands().get(0)); // prints a single element
-            codeBuilder.append("invokevirtual java/io/PrintStream/println(Ljava/lang/String;)V");
-            return;
-        }
 
         // if it's not a println, it's a different method call
         loadElement(codeBuilder, inst.getFirstArg()); // load object reference
@@ -500,7 +493,7 @@ public class MyJasminBackend implements JasminBackend {
             loadElement(codeBuilder, arg);
 
         // invoke method
-        codeBuilder.append("invokevirtual ").append(name); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME
+        codeBuilder.append("invokevirtual ").append(inst.getFirstArg().getType()); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME?
         invokeArgs(codeBuilder, inst, method);
     }
 
