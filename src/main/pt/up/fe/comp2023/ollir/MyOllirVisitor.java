@@ -364,8 +364,15 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         List<JmmNode> params = jmmNode.getChildren();
         List<Pair<String, String>> codePlace = new ArrayList<>();
         for (int i = 1; i < params.size(); i++) {
-            codePlace.add(this.visit(params.get(i)));
-            sb.append(codePlace.get(i - 1).a).append("\n");
+            Pair<String, String> code = this.visit(params.get(i));
+            sb.append(code.a).append("\n");
+            if (code.b.contains("[")) {  // REFACTOR
+                String newTemp2 = "t" + newTemp() + ".i32";
+                sb.append(newTemp2).append(" :=.i32 ").append(code.b).append(";\n");
+                code = new Pair<>(null, newTemp2); // code does not matter in this case
+            }
+            codePlace.add(code);
+
         }
 
         if (!ollirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
@@ -515,17 +522,19 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         StringBuilder sb = new StringBuilder();
         for (Symbol symbol : symbols) {
             Type type = symbol.getType();
-            sb.append(symbol.getName()).append(".").append(getOllirType(type.getName(), type.isArray())).append(" :=.").append(getOllirType(type.getName(), type.isArray())).append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
+            if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean"))) // TODO: questão do default
+                sb.append(symbol.getName()).append(".")
+                    .append(getOllirType(type.getName(), type.isArray()))
+                    .append(" :=.").append(getOllirType(type.getName(), type.isArray()))
+                    .append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
                     .append(";\n");
         }
         return sb.toString();
     }
 
     private String defaultConstructor() {
-        String sb = ".construct " + symbolTable.getClassName() + "().V {\n" +
+        return ".construct " + symbolTable.getClassName() + "().V {\n" +
                 "invokespecial(this, \"<init>\").V;\n" + "}\n";
-
-        return sb;
     }
 
     private Pair<String, String> dealWithClassDecl(JmmNode jmmNode, String s) {
