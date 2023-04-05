@@ -573,11 +573,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
     private String defaultConstructor() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(".construct ").append(symbolTable.getClassName()).append("().V {\n");
-        sb.append("invokespecial(this, \"<init>\").V;\n").append("}\n");
 
-        return sb.toString();
+        return ".construct " + symbolTable.getClassName() + "().V {\n" +
+                "invokespecial(this, \"<init>\").V;\n" + "}\n";
     }
 
     private Pair<String, String> dealWithClassDecl(JmmNode jmmNode, String s) {
