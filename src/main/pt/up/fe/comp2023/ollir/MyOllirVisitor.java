@@ -129,6 +129,11 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) { // TODO.... a string pode ser um array? no main... ficava mais fácil sem esse
         StringBuilder sb = new StringBuilder();
         Pair<String, String> index = this.visit(jmmNode.getJmmChild(0));
+        if (index.b.split("\\.")[0].matches("\\d+")) { // is a number
+            String tempName = "t" + temp++ + ".i32";
+            sb.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
+            index = new Pair<>(index.a, tempName); // todo: A ORDENACAO ESTA CORRETA?
+        }
         Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
 
         String varName = jmmNode.get("var");
@@ -136,6 +141,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         SymbolOrigin origin = symbolTable.getSymbolOrigin(varName);
 
+        Pair<String, String> la = arrLookup(varName, index, origin, sb, new StringBuilder());
 
 
         /*
@@ -144,9 +150,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array ... que na grammar n pode ser array
 
-        sb.append(index.a).append("\n");
+        // sb.append(index.a).append("\n");
         sb.append(value.a).append("\n"); // TODO: perguntar ao STOR ... e se for um field ????
-        sb.append(varName).append("[").append(index.b).append("].").append(olliType)
+        sb.append(la.b)
                 .append(" :=.").append(olliType).append(" ").append(value.b).append(";\n"); // TODO: temp pode ser melhorado
 
         return new Pair<>(sb.toString(), null);
