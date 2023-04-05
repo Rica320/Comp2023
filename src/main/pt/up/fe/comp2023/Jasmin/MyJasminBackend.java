@@ -359,10 +359,10 @@ public class MyJasminBackend implements JasminBackend {
             case "BRANCH" -> {
                 if (instruction instanceof OpCondInstruction inst) {
                     addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
-                }else if (instruction instanceof SingleOpCondInstruction inst) {
+                } else if (instruction instanceof SingleOpCondInstruction inst) {
                     addSingleConditionalBranch(codeBuilder, (SingleOpCondInstruction) instruction);
-                }
-
+                } else
+                    System.out.println("Error in branch instruction");
                 return codeBuilder.toString();
             }
             case "GOTO" -> {
@@ -374,39 +374,15 @@ public class MyJasminBackend implements JasminBackend {
             }
         }
 
-        // 		invokevirtual(c.Foo,"test",$1.A.array.classArray).V;
-        // CALL Operand: c OBJECTREF, Literal: "test", Operand: A ARRAYREF
-
     }
 
-    private void addSingleConditionalBranch(StringBuilder codeBuilder, SingleOpCondInstruction instruction) {
-        Operand op = (Operand) instruction.getOperands().get(0);
-        String label = instruction.getLabel();
-        String trueL = getNewLabel(), endL = getNewLabel();
-
-        codeBuilder.append("\n\t; Executing conditional branch\n\t");
-
-        loadElement(codeBuilder, op);
-
-        // TODO THIS IS WRONG !!!!! REDOO
-
-        codeBuilder.append("ifeq ").append(trueL).append("\n");
-        codeBuilder.append("\ticonst_0\n"); // false scope
-        codeBuilder.append("\tgoto ").append(endL).append("\n");
-        codeBuilder.append(trueL).append(":\n");
-        codeBuilder.append("\ticonst_1\n"); // true scope
-        codeBuilder.append(endL).append(":\n");
-
-        codeBuilder.append("\t; End conditional branch\n\n");
-    }
 
     private void addGetPutField(StringBuilder codeBuilder, Instruction instruction) {
 
         Operand op1, op2;
-        String typeClass = "";
-
-        // getfiled ClassName/fieldName Type
+        String typeClass = "";      // getfiled ClassName/fieldName Type
         // putfield ClassName/fieldName Type
+
 
         if (instruction instanceof GetFieldInstruction inst) {
             op1 = (Operand) (inst).getFirstOperand();
@@ -439,8 +415,7 @@ public class MyJasminBackend implements JasminBackend {
 
     private void addConditionalBranch(StringBuilder codeBuilder, OpCondInstruction instruction) {
         OpInstruction opType = instruction.getCondition();
-        String trueL = instruction.getLabel(); // should I use instruction.getLabel() or my getNewLabel() like the line below?
-        //String endL = getNewLabel();
+        String label = instruction.getLabel();
 
         codeBuilder.append("\n\t; Executing conditional branch\n\t");
 
@@ -451,8 +426,22 @@ public class MyJasminBackend implements JasminBackend {
         loadElement(codeBuilder, leftOperand);
         loadElement(codeBuilder, rightOperand);
 
-        codeBuilder.append("if_icmplt ").append(trueL).append("\n");
+        codeBuilder.append("if_icmplt ").append(label).append("\n");
         codeBuilder.append("\t; End of conditional branch");
+    }
+
+
+    private void addSingleConditionalBranch(StringBuilder codeBuilder, SingleOpCondInstruction instruction) {
+        Operand op = (Operand) instruction.getCondition().getSingleOperand();
+        String label = instruction.getLabel();
+
+        codeBuilder.append("\n\t; Executing conditional branch\n\t");
+
+        loadElement(codeBuilder, op);
+
+        codeBuilder.append("ifne ").append(label).append("\n");
+
+        codeBuilder.append("\t; End conditional branch\n\n");
     }
 
     private String addCallInstruction(CallInstruction inst) {
@@ -463,7 +452,7 @@ public class MyJasminBackend implements JasminBackend {
 
 
         var callType = (inst.getInvocationType()).toString();
-        switch (callType) { // no need for invoke special ?
+        switch (callType) {
             case "NEW" -> callNew(codeBuilder, inst);
             case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst);
             case "invokestatic" -> callInvokeStatic(codeBuilder, inst);
@@ -479,10 +468,7 @@ public class MyJasminBackend implements JasminBackend {
             }
         }
 
-        codeBuilder.append("\n\t");
-
-
-        codeBuilder.append("; End of call instruction\n\t");
+        codeBuilder.append("\n\t; End of call instruction\n\t");
         return codeBuilder.toString();
     }
 
@@ -562,15 +548,15 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
-        codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: n testei
+        codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
     }
 
 
-    public void createArray(StringBuilder codeBuilder, int arrSize){
+    public void createArray(StringBuilder codeBuilder, int arrSize) {
         codeBuilder.append("ldc ").append(arrSize).append("\n\tnewarray [I\n\t");
     }
 
-    public void setArrayElem(StringBuilder codeBuilder, int pos, int val){
+    public void setArrayElem(StringBuilder codeBuilder, int pos, int val) {
         // TODO get array from stack with aload k
 
         codeBuilder.append("\nbipush ").append(pos).append("\n\t");
@@ -578,7 +564,7 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append("iastore\n\t");
     }
 
-    public void getArrayElem(StringBuilder codeBuilder, int pos){
+    public void getArrayElem(StringBuilder codeBuilder, int pos) {
         // TODO get array from stack with aload k
 
         codeBuilder.append("\nbipush ").append(pos).append("\n\t");

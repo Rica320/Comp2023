@@ -5,7 +5,7 @@ class Simple {
         a = 0;
 
 
-        if (true < false ) {
+        if (4 < 3 ) {
             i = 1;
         }else{}
 
