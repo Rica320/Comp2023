@@ -244,7 +244,7 @@ public class MyJasminBackend implements JasminBackend {
         } else if (instType.equals(InstructionType.GETFIELD)) {
             addGetPutField(codeBuilder, rhs);
         } else if (instType.equals(InstructionType.CALL)) {
-            codeBuilder.append(addCallInstruction((CallInstruction) rhs));
+            codeBuilder.append(addCallInstruction(((CallInstruction) rhs), true));
         } else {
             // Unary operation
             UnaryOpInstruction op = (UnaryOpInstruction) rhs;
@@ -369,7 +369,6 @@ public class MyJasminBackend implements JasminBackend {
                     return codeBuilder.toString();
                 }
 
-
                 loadElement(codeBuilder, inst.getOperand());
 
                 switch (inst.getReturnType().toString()) {
@@ -380,7 +379,7 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "CALL" -> {
-                return codeBuilder + addCallInstruction((CallInstruction) instruction);
+                return codeBuilder.append(addCallInstruction(((CallInstruction) instruction), false)).toString();
             }
             case "GETFIELD", "PUTFIELD" -> {
                 addGetPutField(codeBuilder, instruction);
@@ -490,23 +489,25 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append("\t; End conditional branch\n\n");
     }
 
-    private String addCallInstruction(CallInstruction inst) {
+
+    private String addCallInstruction(CallInstruction inst, boolean isAssignment) {
 
         // load arguments
         StringBuilder codeBuilder = new StringBuilder();
         codeBuilder.append("\t; Making a call instruction\n\t");
 
-
         var callType = (inst.getInvocationType()).toString();
         switch (callType) {
             case "NEW" -> callNew(codeBuilder, inst);
-            case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst);
-            case "invokestatic" -> callInvokeStatic(codeBuilder, inst);
+            case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst, isAssignment);
+            case "invokestatic" -> callInvokeStatic(codeBuilder, inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(codeBuilder, inst);
-            case "ldc" -> callLDC(codeBuilder, inst);
-            case "arraylength" -> { // t1.i32 :=.i32 arraylength($1.A.array.i32).i32;
-                // perguntar ao ricardo cm funciona
-                codeBuilder.append("arraylength"); // TODO should i store the result in a local variable?
+            case "ldc" -> {
+                codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
+            }
+            case "arraylength" -> {
+                loadElement(codeBuilder, inst.getFirstArg());
+                codeBuilder.append("\n\tarraylength ");
             }
             default -> {
                 System.out.println("Call instruction not supported");
@@ -520,53 +521,66 @@ public class MyJasminBackend implements JasminBackend {
 
 
     public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
-        var FirstName = inst.getFirstArg().getType();
 
-        if (FirstName instanceof ArrayType arr) { // New array
+        Element firstArg = inst.getFirstArg();
 
-            loadElement(codeBuilder, inst.getListOfOperands().get(0)); // load array size
+        if (firstArg.getType() instanceof ArrayType) {
 
-            codeBuilder.append("newarray int"); // we only have arrays of integers
+            Operand operand = (Operand) firstArg;
 
-            codeBuilder.append("\n\t");
+            // load arguments
+            for (Element arg : inst.getListOfOperands())
+                loadElement(codeBuilder, arg);
+
+            // create new array (only int arrays are supported)
+            codeBuilder.append("\n\t newarray int");
             return;
         }
 
-        // New Object
-        codeBuilder.append("new ").append(((ClassType) FirstName).getName()).append("\n\t");
+        // create new object
+        codeBuilder.append("\n\t; Creating new object\n\t");
+        codeBuilder.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
         codeBuilder.append("dup\n\t");
-        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V");
+        //  codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        codeBuilder.append("; End of creating new object\n\t");
     }
 
-    public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst) {
+    public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
 
-        // is this only needed to call self methods?
+        //if (inst.getFirstArg().getType().getTypeOfElement().equals(ElementType.THIS)) codeBuilder.append("aload_0");
+        //else
+        loadElement(codeBuilder, inst.getFirstArg());
 
-        String name = ((ClassType) inst.getFirstArg().getType()).getName();
-        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
-
-        addNewObject(codeBuilder, inst); // load object to call method on
+        //addNewObject(codeBuilder, inst); // load object to call method on
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(codeBuilder, arg);
 
         // invoke method
-        codeBuilder.append("invokevirtual ").append(name); // TODO: HERE THE NAME IS WRONG! SHOULD BE CLASS NAME?
-        invokeArgs(codeBuilder, inst, method);
+        codeBuilder.append("invokevirtual ").append(((ClassType) inst.getFirstArg().getType()).getName());
+
+        invokeArgs(codeBuilder, inst, isAssignment);
     }
 
-    private void addNewObject(StringBuilder codeBuilder, CallInstruction inst) {
-        codeBuilder.append("\n\t; Creating new object\n\t");
-        codeBuilder.append("new ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
-        codeBuilder.append("dup\n\t");
-        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
-        codeBuilder.append("; End of creating new object\n\n\t");
+
+    private void invokeArgs(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
+        codeBuilder.append(".").append(((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "")).append("(");
+
+        // add arguments types
+        for (Element arg : inst.getListOfOperands())
+            codeBuilder.append(toJasminType(arg.getType().toString()));
+
+        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString()));
+
+        // if it is not an assign , just ignore the non-void return
+        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID))
+            codeBuilder.append("\n\tpop");
     }
 
-    public void callInvokeStatic(StringBuilder codeBuilder, CallInstruction inst) {
+    public void callInvokeStatic(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
+
         String name = ((Operand) inst.getFirstArg()).getName();
-        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
@@ -574,41 +588,42 @@ public class MyJasminBackend implements JasminBackend {
 
         // invoke method
         codeBuilder.append("invokestatic ").append(name);
-        invokeArgs(codeBuilder, inst, method);
 
+        invokeArgs(codeBuilder, inst, isAssignment);
     }
 
     private void callInvokeSpecial(StringBuilder codeBuilder, CallInstruction inst) {
-        String method = ((LiteralElement) inst.getSecondArg()).getLiteral();
 
-        method = method.substring(1, method.length() - 1); // remove quotes from method name
+        Element firstArg = inst.getFirstArg();
 
-        codeBuilder.append("invokespecial ").append(method).append("(");
+        boolean isThis = firstArg.getType().getTypeOfElement().equals(ElementType.THIS);
 
-        for (Element arg : inst.getListOfOperands()) {
+        if (isThis) codeBuilder.append("\n\taload_0");
+
+        // load arguments
+        for (Element arg : inst.getListOfOperands())
+            loadElement(codeBuilder, arg);
+
+        codeBuilder.append("\n\tinvokespecial ");
+
+        // choose the classe name to use
+        codeBuilder.append(isThis ? classe.getClassName() : ((ClassType) firstArg.getType()).getName());
+
+        // making the init call
+
+        codeBuilder.append(".<init>(");
+
+        // define argument types
+        for (Element arg : inst.getListOfOperands())
             codeBuilder.append(toJasminType(arg.getType().toString()));
+
+        codeBuilder.append(")V");
+
+        if (!isThis) {
+            codeBuilder.append("\n\tastore ");
+            String varName = ((Operand) firstArg).getName();
+            codeBuilder.append(getRegister(varName)).append("; ").append(varName);
         }
-        codeBuilder.append(")");
-        codeBuilder.append(toJasminType(inst.getReturnType().toString()));
-
-        // TODO should i force a store here?
-    }
-
-    private void invokeArgs(StringBuilder codeBuilder, CallInstruction inst, String method) {
-
-        method = method.substring(1, method.length() - 1); // remove quotes from method name
-
-        if (inst.getSecondArg() != null) codeBuilder.append(".").append(method);
-        codeBuilder.append("(");
-
-        for (Element arg : inst.getListOfOperands()) // add arguments types
-            codeBuilder.append(toJasminType(arg.getType().toString()));
-
-        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString()));
-    }
-
-    public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
-        codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
     }
 
 
