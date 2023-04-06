@@ -7,72 +7,21 @@ class Simple {
         return i < 0;
     }
 
-
-    public int abs(int i){
-        if (i < 0) {
-            i = 0 - i;
-        }else{}
-        return i;
-    }
-
-
-    public int sum(int a, int b){
-        return a + b;
-    }
-
-
-    public int max(int a, int b){
-        int temp;
-        if (b < a) {
-            temp = a;
-        }else{
-            temp = b;
-        }
-        return temp;
-    }
-
-
     public static void main(String[] args) {
 
-        int maxRes;
-        int sumRes;
-        int absRes;
-        int negRes;
-        
+        int x;
+        int[] a;
         Simple s;
          
         s = new Simple();
 
-        maxRes = s.max(5,14);
-        io.println(maxRes); // 14
+        s.negative(1);
 
-        maxRes = s.max(35,21);
-        io.println(maxRes); // 35
+        x = s.negative(1);
 
-        maxRes = s.max(0-35,0-21);
-        io.println(maxRes); // -21
+        a[0] = s.negative(1);
 
-        // ======================
-
-        absRes = s.abs(5);
-        io.println(absRes); // 5
-
-        absRes = s.abs(0-4);
-        io.println(absRes); // 4
-
-        absRes = s.abs(0);
-        io.println(absRes); // 0
-
-        // ======================
-
-        sumRes = s.sum(5,14);
-        io.println(sumRes); // 19
-
-        sumRes = s.sum(35,21);
-        io.println(sumRes); // 56
-
-        sumRes = s.sum(0-35,0-21);
-        io.println(sumRes); // -56
+        //a[0] = s.negative(1) + 1;
 
     }
 

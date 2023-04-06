@@ -364,6 +364,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return symbol.getReturnType(); // TODO: é suposto assumir que é void ???
     }
 
+    public static boolean placeVariable (JmmNode node) {
+        return !node.getJmmParent().getKind().equals("ExpressionStmt"); // TODO; ver melhor
+    }
+
     // TODO ::: VER ISTO ... t4.V :=.V invokestatic(io, "println", c.i32).V;
     private Pair<String, String> dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
@@ -403,7 +407,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         }
 
-        if (!ollirType.equals("V")) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
+        if (!ollirType.equals("V") && placeVariable(jmmNode)) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
             newTemp = "t" + newTemp() + "." + ollirType;
             sb.append(newTemp).append(" :=.").append(ollirType).append(" ");
         }
