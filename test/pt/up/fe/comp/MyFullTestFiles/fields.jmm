@@ -7,9 +7,12 @@ class Simple {
     public static void main(String[] args) {
 
         int val;
-        val = this.setI(5);
+        Simple s;
 
-        val = this.getI();
+        s = new Simple();
+        val = s.setI(5);
+
+        val = s.getI();
 
         io.println(val);
 

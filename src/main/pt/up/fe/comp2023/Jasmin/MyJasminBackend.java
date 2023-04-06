@@ -13,6 +13,8 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
+    boolean ignoreNextInstruction = false; // used to ignore the next instruction when a new instruction is added to the code
+
     ClassUnit classe;
     String code = "";
 
@@ -172,7 +174,6 @@ public class MyJasminBackend implements JasminBackend {
             currVarTable = method.getVarTable();
             this.currentMethod = method;
 
-
             if (method.getMethodName().equals("main"))
                 codeBuilder.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
@@ -191,7 +192,12 @@ public class MyJasminBackend implements JasminBackend {
             codeBuilder.append("\t.limit locals 30\n\n");
 
             // add instructions
-            method.getInstructions().forEach(instruction -> codeBuilder.append(addInstruction(instruction)).append("\n"));
+            method.getInstructions().forEach(instruction -> {
+                if (!ignoreNextInstruction)
+                    codeBuilder.append(addInstruction(instruction)).append("\n");
+                else
+                    ignoreNextInstruction = false;
+            });
 
             currVarTable = null;
 
@@ -417,9 +423,7 @@ public class MyJasminBackend implements JasminBackend {
     private void addGetPutField(StringBuilder codeBuilder, Instruction instruction) {
 
         Operand op1, op2;
-        String typeClass = "";      // getfiled ClassName/fieldName Type
-        // putfield ClassName/fieldName Type
-
+        String typeClass = "";
 
         if (instruction instanceof GetFieldInstruction inst) {
             op1 = (Operand) (inst).getFirstOperand();
@@ -519,7 +523,6 @@ public class MyJasminBackend implements JasminBackend {
         return codeBuilder.toString();
     }
 
-
     public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
 
         Element firstArg = inst.getFirstArg();
@@ -541,7 +544,8 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append("\n\t; Creating new object\n\t");
         codeBuilder.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
         codeBuilder.append("dup\n\t");
-        //  codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        ignoreNextInstruction = true;
         codeBuilder.append("; End of creating new object\n\t");
     }
 
@@ -622,7 +626,7 @@ public class MyJasminBackend implements JasminBackend {
         if (!isThis) {
             codeBuilder.append("\n\tastore ");
             String varName = ((Operand) firstArg).getName();
-            codeBuilder.append(getRegister(varName)).append("; ").append(varName);
+            codeBuilder.append(getRegister(varName)).append(" ; ").append(varName);
         }
     }
 

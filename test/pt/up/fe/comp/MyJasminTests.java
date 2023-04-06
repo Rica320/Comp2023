@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class MyJasminTests {
 
-    String fileJasmin = "pt/up/fe/comp/jasmin/MyInputJasmin.j";
+
     String fileOllir = "pt/up/fe/comp/jasmin/MyInputOllir.ollir";
 
     @Test
@@ -18,12 +18,7 @@ public class MyJasminTests {
         OllirResult ollirResult = new OllirResult(ollirCode, new HashMap<>());
         var jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         var jasminCode = jasminResult.getJasminCode();
-
-        try {
-            var output = TestUtils.runJasmin(jasminCode);
-        } catch (Exception e) {
-            System.out.println("Count not run Jasmin code: " + e.getMessage());
-        }
+        var output = TestUtils.runJasmin(jasminCode);
 
         //assertEquals("120", SpecsStrings.normalizeFileContents(output).trim());
     }
