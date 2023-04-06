@@ -79,8 +79,13 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("AtributeAccess", this::dealWithAtributeAccess);
         addVisit("Not", this::dealWithNot);
         addVisit("ArrayLookup", this::dealWithArrayLookup);
+        addVisit("This", this::dealWithThis);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Pair<String, String> dealWithThis(JmmNode jmmNode, String s) {
+        return new Pair<>("", "this");
     }
 
     private Pair<String, String> dealWithArrayLookup(JmmNode jmmNode, String s) {
@@ -153,7 +158,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array ... que na grammar n pode ser array
 
-        // sb.append(index.a).append("\n");
+        sb.append(index.a).append("\n");
         sb.append(value.a).append("\n"); // TODO: perguntar ao STOR ... e se for um field ????
         sb.append(la.b).append(" :=.").append(olliType).append(" ").append(value.b).append(";\n"); // TODO: temp pode ser melhorado
 
@@ -354,7 +359,18 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
-        String varName = jmmNode.getJmmChild(0).getKind().equals("This") ? null : jmmNode.getJmmChild(0).get("var");
+        Pair<String, String> codePlace1 = this.visit(jmmNode.getJmmChild(0));
+
+        String varName = codePlace1.b.equals("This") ? null : codePlace1.b;
+        String typeVar = codePlace1.b.equals("This") ? "this" : codePlace1.b.split("\\.")[0];
+        sb.append(codePlace1.a).append("\n");
+
+        if (varName != null) {
+            int isParam = codePlace1.b.charAt(0) == '$' ? 1 : 0;
+            varName = codePlace1.b.split("\\.")[isParam];
+            typeVar = codePlace1.b.split("\\.")[isParam + 1];
+        }
+
         String methodName = jmmNode.get("method");
 
         Type type = findRetMethod(methodName);
@@ -379,12 +395,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             newTemp = "t" + newTemp() + "." + ollirType;
             sb.append(newTemp).append(" :=.").append(ollirType).append(" ");
         }
-        if (symbolTable.isVariable(varName) || varName == null) {
+        if (varName == null || typeVar.equals(symbolTable.getClassName())) {
             if (varName == null) {
                 sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
             } else {
-                Type typeVar = findTypeVar(varName);
-                sb.append("invokevirtual(").append(varName).append(".").append(getOllirType(typeVar.getName(), typeVar.isArray())).append(", \"").append(methodName).append("\"");
+                //Type typeVar = findTypeVar(varName);
+                sb.append("invokevirtual(").append(varName).append(".").append(getOllirType(typeVar, false)).append(", \"").append(methodName).append("\"");
             }
         } else {
             sb.append("invokestatic(").append(varName).append(", \"").append(methodName).append("\"");

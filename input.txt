@@ -1,99 +1,35 @@
+import io;
 class Simple {
 
     int field_1;
     Foo mc;
     int[] ll;
 
-    public int setI(int newI){
-        field_1 = newI;
-        return 0;
+    public static void main(String[] args) {
+    Foo lc;
+    Simple s;
+    io.println(new Simple().lol(10));
+
+        //field_1 = this.lol(1);
+        //field_1 = s.lol(1);
+        //io.println(this.lol(1));
+        //io.println(mc);
+        //io.println(lc);
     }
 
-    public int getI(){
-        return field_1;
-    }
+   public int lol(int pos) {
+           int[] arr;
+           int aux;
 
-    public boolean negative(int i){
-        return i < 0;
-    }
+           arr = new int[10];
+           arr[pos] = 3;
 
-    public int abs(int i){
-        if (i < 0) {
-            i = 0 - i;
-        }else{}
-        return i;
-    }
+           aux = arr[pos];
 
-    public int sum(int a, int b){
-        return a + b;
-    }
+           arr[pos + 1] = arr[pos-1] * 3  ;
 
-    public int max(int a, int b){
-        int temp;
-        if (b < a) {
-            temp = a;
-        }else{
-            temp = b;
-        }
-        return temp;
-    }
+           return aux;
+   }
 
-    public static void main(String[] args){
-        int i;
-        int a;
-        boolean b;
-
-        b = true;
-        a = 0;
-
-        if (4 < 3 ) {
-            i = 1;
-        }else{
-            i = 2;
-        }
-
-        a = this.max(i,0);
-
-        io.println(a);
-
-        a = b;
-        io.println(a);
-    }
-
-
-
-    public int lol(int pos) {
-        int[] arr;
-        arr = new int[10];
-        arr[pos] = 3;
-        return 0;
-    }
-
-
-/*
-    public Foo getFoo(){
-        Foo foo;
-        foo = new Foo(); // todo: da problemas...
-        return foo;
-     }
-
-    public int main7() {
-        int i;
-        int[] b;
-       //  b = new int[10];
-       // i = b[i];
-       ll[i] = 1;
-       // io.println(ll[i]); ... vai se ter que criar uma temp
-    }
-
-    public int foo(int[] d) {
-        int[] c;
-        d[0] = 1;
-        ll[0] = 1;
-        //c = new int[10];
-        //c[0] = 1;
-        return c;
-    }
-  */
 }
 
