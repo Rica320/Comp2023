@@ -115,7 +115,16 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return arrLookup(arrayName, index, origin, code, sb);
     }
 
+    private boolean isConstant(String s) {
+        return s.split("\\.")[0].matches("\\d+");
+    }
+
     private Pair<String, String> arrLookup(String arrayName, Pair<String, String> index, SymbolOrigin origin, StringBuilder code, StringBuilder sb) {
+        if (isConstant(index.b)) {
+            String tempName = "t" + newTemp() + ".i32";
+            code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
+            index = new Pair<>("", tempName);
+        }
         switch (origin) { // REFACTOR THIS TODO
             case FIELD: // DA PARA MELHORAR TEMPS
                 String tempName = "t" + temp++;
