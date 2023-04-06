@@ -539,18 +539,14 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         for (Symbol symbol : symbols) {
             Type type = symbol.getType();
             if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean"))) // TODO: questão do default
-                sb.append(symbol.getName()).append(".")
-                    .append(getOllirType(type.getName(), type.isArray()))
-                    .append(" :=.").append(getOllirType(type.getName(), type.isArray()))
-                    .append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
-                    .append(";\n");
+                sb.append(symbol.getName()).append(".").append(getOllirType(type.getName(), type.isArray())).append(" :=.").append(getOllirType(type.getName(), type.isArray())).append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
+                        .append(";\n");
         }
         return sb.toString();
     }
 
     private String defaultConstructor() {
-        return ".construct " + symbolTable.getClassName() + "().V {\n" +
-                "invokespecial(this, \"<init>\").V;\n" + "}\n";
+        return ".construct " + symbolTable.getClassName() + "().V {\n" + "invokespecial(this, \"<init>\").V;\n" + "}\n";
     }
 
     private Pair<String, String> dealWithClassDecl(JmmNode jmmNode, String s) {

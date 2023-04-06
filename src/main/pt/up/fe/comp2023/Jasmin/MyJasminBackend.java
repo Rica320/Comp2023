@@ -84,6 +84,11 @@ public class MyJasminBackend implements JasminBackend {
         boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
         boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
 
+        if (element instanceof ArrayOperand) {
+            arrayAccess(codeBuilder, element);
+            return;
+        }
+
         if (isNumber || isBoolean) {
             if (element.isLiteral()) {
                 LiteralElement literal = (LiteralElement) element;
@@ -94,16 +99,10 @@ public class MyJasminBackend implements JasminBackend {
                 codeBuilder.append(value);
                 codeBuilder.append("\n\t");
                 return;
-            } else { // variable
-
-                // TODO ricardo disse q n preciso true and false
-                if (isBoolean && (((Operand) element).getName().equals("true") || ((Operand) element).getName().equals("false"))) {
-                    String boolVal = ((Operand) element).getName();
-                    codeBuilder.append(boolVal.equals("true") ? "iconst_1" : "iconst_0");
-                    codeBuilder.append(" ; ").append(boolVal).append("\n\t");
-                    return;
-                }
-                codeBuilder.append("iload ").append(getRegister(((Operand) element).getName()));
+            } else {
+                Operand variable = (Operand) element;
+                String name = variable.getName();
+                codeBuilder.append("iload ").append(getRegister(name)).append(" ; ").append(name);
                 codeBuilder.append("\n\t");
                 return;
             }
@@ -113,7 +112,7 @@ public class MyJasminBackend implements JasminBackend {
             return;
         }
 
-        // variable or array
+        // array or object reference
         Operand variable = (Operand) element;
         String name = variable.getName();
         codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name);
@@ -211,13 +210,37 @@ public class MyJasminBackend implements JasminBackend {
         Instruction rhs = instruction.getRhs();
         InstructionType instType = rhs.getInstType();
 
+        if (dest instanceof ArrayOperand) {
+            // arr, index, value, iastore
+
+            codeBuilder.append("\t; Start Array assign\n\t");
+
+            // load array (cant use loadElement because IDK)
+            Operand variable = (Operand) dest;
+            String name = variable.getName();
+            codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name);
+            codeBuilder.append("\n\t");
+
+            // get index
+            loadElement(codeBuilder, ((ArrayOperand) dest).getIndexOperands().get(0));
+            codeBuilder.deleteCharAt(codeBuilder.length() - 1); // delete last character (new line)
+
+            // value will be calculated below by the rhs instruction
+        }
+
         if (instType.equals(InstructionType.BINARYOPER)) {
             addBinaryOperation(codeBuilder, (BinaryOpInstruction) rhs); // Add binary operation loads and calculation
             codeBuilder.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
-            codeBuilder.append("\t");
-            loadElement(codeBuilder, op.getSingleOperand());
+
+            if (op.getSingleOperand() instanceof ArrayOperand) {
+                arrayAccess(codeBuilder, op.getSingleOperand());
+            } else {
+                codeBuilder.append("\t");
+                loadElement(codeBuilder, op.getSingleOperand());
+            }
+
         } else if (instType.equals(InstructionType.GETFIELD)) {
             addGetPutField(codeBuilder, rhs);
         } else if (instType.equals(InstructionType.CALL)) {
@@ -230,12 +253,27 @@ public class MyJasminBackend implements JasminBackend {
         }
 
         // Storing final value in variable
-        storeElement(codeBuilder, dest, rhs);
+        if (dest instanceof ArrayOperand) codeBuilder.append("iastore\n\t; End Array Assign\n\t");
+        else storeElement(codeBuilder, dest, rhs);
 
         codeBuilder.append("\n\t; End Assign Instruction\n\n");
 
         return codeBuilder.toString();
     }
+
+    public void arrayAccess(StringBuilder codeBuilder, Element elem) {
+        codeBuilder.append("\t; Start Array access\n\t");
+
+        Operand variable = (Operand) elem;
+        String name = variable.getName();
+        codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name); // load array
+        codeBuilder.append("\n\t");
+
+        loadElement(codeBuilder, ((ArrayOperand) elem).getIndexOperands().get(0)); // load index
+        codeBuilder.append("iaload\n\t");
+        codeBuilder.append("; End Array access\n\t");
+    }
+
 
     private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
         codeBuilder.append("\n\t; Executing unary operation\n\t");
@@ -419,14 +457,22 @@ public class MyJasminBackend implements JasminBackend {
 
         codeBuilder.append("\n\t; Executing conditional branch\n\t");
 
-        Element leftOperand = opType.getOperands().get(0);
-        Element rightOperand = opType.getOperands().get(1);
+        if (opType.getOperands().size() != 2) {
 
-        // Load operands if needed to execute binary operation
-        loadElement(codeBuilder, leftOperand);
-        loadElement(codeBuilder, rightOperand);
+            addUnaryOperation(codeBuilder, (UnaryOpInstruction) opType);
+            codeBuilder.append("ifne ").append(label).append("\n");
 
-        codeBuilder.append("if_icmplt ").append(label).append("\n");
+        } else {
+            Element leftOperand = opType.getOperands().get(0);
+            Element rightOperand = opType.getOperands().get(1);
+
+            // Load operands if needed to execute binary operation
+            loadElement(codeBuilder, leftOperand);
+            loadElement(codeBuilder, rightOperand);
+
+            codeBuilder.append("if_icmplt ").append(label).append("\n");
+        }
+
         codeBuilder.append("\t; End of conditional branch");
     }
 
@@ -563,21 +609,6 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callLDC(StringBuilder codeBuilder, CallInstruction inst) {
         codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
-    }
-
-    public void setArrayElem(StringBuilder codeBuilder, int pos, int val) {
-        // TODO get array from stack with aload k
-
-        codeBuilder.append("\nbipush ").append(pos).append("\n\t");
-        codeBuilder.append("bipush ").append(val).append("\n\t");
-        codeBuilder.append("iastore\n\t");
-    }
-
-    public void getArrayElem(StringBuilder codeBuilder, int pos) {
-        // TODO get array from stack with aload k
-
-        codeBuilder.append("\nbipush ").append(pos).append("\n\t");
-        codeBuilder.append("iaload\n\t");
     }
 
 
