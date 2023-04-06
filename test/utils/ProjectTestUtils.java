@@ -90,8 +90,7 @@ public class ProjectTestUtils {
             throw new RuntimeException("Instruction not found");
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Exception while looking for instruction " + bytecodeInstruction + " in code:\n\n" + jasminCode);
+            throw new RuntimeException("Exception while looking for instruction " + bytecodeInstruction + " in code:\n\n" + jasminCode);
         }
     }
 
@@ -117,8 +116,7 @@ public class ProjectTestUtils {
             throw new RuntimeException("Instruction not found");
 
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Exception while looking for instruction " + instructionPrefix + " in code:\n\n" + jasminCode);
+            throw new RuntimeException("Exception while looking for instruction " + instructionPrefix + " in code:\n\n" + jasminCode);
         }
     }
 
@@ -171,8 +169,7 @@ public class ProjectTestUtils {
                 return objectRef.getName();
             case ARRAYREF:
                 var arrayType = (ArrayType) ollirType;
-                return arrayType.getTypeOfElement().toString()
-                        + SpecsStrings.buildLine("[]", arrayType.getNumDimensions());
+                return arrayType.getTypeOfElement().toString() + SpecsStrings.buildLine("[]", arrayType.getNumDimensions());
             default:
                 throw new NotImplementedException(elementType);
         }
@@ -296,8 +293,7 @@ public class ProjectTestUtils {
             throw new RuntimeException("Exception while extracting main file from Gradle file", e);
         }
 
-        throw new RuntimeException(
-                "Could not find main class in Gradle build file '" + gradleFile.getAbsolutePath() + "'");
+        throw new RuntimeException("Could not find main class in Gradle build file '" + gradleFile.getAbsolutePath() + "'");
     }
 
     /**
@@ -323,9 +319,7 @@ public class ProjectTestUtils {
             return;
         }
 
-        assertEquals(
-                "Jasmin execution, expected '" + expected + "', got '" + output + "':\n" + jasminResult.getJasminCode(),
-                expected, output);
+        assertEquals("Jasmin execution, expected '" + expected + "', got '" + output + "':\n" + jasminResult.getJasminCode(), expected, output);
     }
 
     public static List<Node> getOllirNodes(ClassUnit classUnit, Predicate<Node> filter) {
@@ -368,12 +362,9 @@ public class ProjectTestUtils {
     }
 
     public static void findInvoke(OllirResult ollirResult, CallType invokeType) {
-        var nodes = getOllirNodes(ollirResult.getOllirClass(),
-                inst -> inst instanceof CallInstruction &&
-                        ((CallInstruction) inst).getInvocationType() == invokeType);
+        var nodes = getOllirNodes(ollirResult.getOllirClass(), inst -> inst instanceof CallInstruction && ((CallInstruction) inst).getInvocationType() == invokeType);
 
-        assertEquals("Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n"
-                + ollirResult.getOllirCode(), 1, nodes.size());
+        assertEquals("Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n" + ollirResult.getOllirCode(), 1, nodes.size());
     }
 
     /*

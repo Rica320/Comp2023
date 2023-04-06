@@ -1,29 +1,26 @@
 package pt.up.fe.comp;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.Collections;
-import java.util.HashMap;
-
 import org.junit.Test;
 import org.specs.comp.ollir.ArrayType;
 import org.specs.comp.ollir.ClassType;
 import org.specs.comp.ollir.ElementType;
 import org.specs.comp.ollir.Type;
-
-import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.specs.util.SpecsIo;
 
+import java.util.HashMap;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 /**
  * Copyright 2022 SPeCS.
- * 
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
- * 
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * <p>
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License. under the License.
@@ -80,28 +77,28 @@ public class OllirTest {
         // result.getOllirClass().get
 
         var methodName = getOllirResult("myclass1.ollir")
-                        .getOllirClass().getMethod(1).getMethodName();
+                .getOllirClass().getMethod(1).getMethodName();
         assertEquals("sum", methodName);
     }
 
     @Test
     public void testMyclass2() {
         var className = getOllirResult("myclass2.ollir")
-                        .getOllirClass().getClassName();
+                .getOllirClass().getClassName();
         assertEquals("myClass", className);
     }
 
     @Test
     public void testMyclass3() {
         var className = getOllirResult("myclass3.ollir")
-                        .getOllirClass().getClassName();
+                .getOllirClass().getClassName();
         assertEquals("myClass", className);
     }
 
     @Test
     public void testMyclass4() {
         var className = getOllirResult("myclass4.ollir")
-                        .getOllirClass().getClassName();
+                .getOllirClass().getClassName();
         assertEquals("myClass", className);
     }
 
@@ -167,10 +164,9 @@ public class OllirTest {
     @Test
     public void testClassArray() {
         var method = getOllirResult("MyInputOllir.ollir")
-                        .getOllirClass().getMethod(1);
+                .getOllirClass().getMethod(1);
         assertEquals("classArray", ((ArrayType) method.getParam(0).getType()).getElementClass());
     }
-
 
 
 }

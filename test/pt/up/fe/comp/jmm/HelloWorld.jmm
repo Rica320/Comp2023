@@ -1,6 +1,7 @@
-import ioPlus;
-class HelloWorld {
+import io;
+
+class MyProgram {
 	public static void main(String[] args) {
-		ioPlus.printHelloWorld();
+		io.println(5);
 	}
 }

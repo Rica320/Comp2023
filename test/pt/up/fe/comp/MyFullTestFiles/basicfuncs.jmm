@@ -1,0 +1,85 @@
+import io;
+
+class Simple {
+
+    
+    public boolean negative(int i){
+        return i < 0;
+    }
+
+
+    public int abs(int i){
+        if (i < 0) {
+            i = 0 - i;
+        }else{}
+        return i;
+    }
+
+
+    public int sum(int a, int b){
+        return a + b;
+    }
+
+
+    public int max(int a, int b){
+        int temp;
+        if (b < a) {
+            temp = a;
+        }else{
+            temp = b;
+        }
+        return temp;
+    }
+
+
+    public static void main(String[] args) {
+
+        int maxRes;
+        int sumRes;
+        int absRes;
+        int negRes;
+
+        negRes = this.negative(5);
+        io.println(negRes); // false (0)
+
+        negRes = this.negative(0-4);
+        io.println(negRes); // true (1)
+
+        // ======================
+
+        maxRes = this.max(5,14);
+        io.println(maxRes); // 14
+
+        maxRes = this.max(35,21);
+        io.println(maxRes); // 35
+
+        maxRes = this.max(0-35,0-21);
+        io.println(maxRes); // -21
+
+        // ======================
+
+        absRes = this.abs(5);
+        io.println(absRes); // 5
+
+        absRes = this.abs(0-4);
+        io.println(absRes); // 4
+
+        absRes = this.abs(0);
+        io.println(absRes); // 0
+
+        // ======================
+
+        sumRes = this.sum(5,14);
+        io.println(sumRes); // 19
+
+        sumRes = this.sum(35,21);
+        io.println(sumRes); // 56
+
+        sumRes = this.sum(0-35,0-21);
+        io.println(sumRes); // -56
+
+    }
+
+
+}
+

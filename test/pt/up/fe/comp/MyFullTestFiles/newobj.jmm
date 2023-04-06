@@ -1,0 +1,22 @@
+import io;
+
+class MyClass {
+
+    public static void main(String[] args){
+        int a;
+        int b;
+        int c;
+
+        Simple s;
+
+        a = 20;
+        b = 10;
+        s = new Simple();
+
+        c = s.add(a,b);
+
+        io.println(c);
+    }
+
+}
+

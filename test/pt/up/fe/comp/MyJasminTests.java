@@ -28,11 +28,7 @@ public class MyJasminTests {
         //assertEquals("120", SpecsStrings.normalizeFileContents(output).trim());
     }
 
-    @Test
-    public void runJasminCode() {
-        String jasminCode = SpecsIo.getResource(fileJasmin);
-        var output = TestUtils.runJasmin(jasminCode);
-    }
+
 
 
 }

@@ -30,6 +30,8 @@ public class Launcher {
         // Parse arguments as a map with predefined options
         var config = parseArgs(args);
 
+        System.out.println("Config: " + config);
+
         // Get input file
         File inputFile = new File(config.get("inputFile"));
 
