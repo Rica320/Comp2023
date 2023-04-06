@@ -380,7 +380,7 @@ public class MyJasminBackend implements JasminBackend {
                 return codeBuilder.toString();
             }
             case "CALL" -> {
-                return codeBuilder + addCallInstruction((CallInstruction) instruction);
+                return codeBuilder.append(addCallInstruction((CallInstruction) instruction)).toString();
             }
             case "GETFIELD", "PUTFIELD" -> {
                 addGetPutField(codeBuilder, instruction);
