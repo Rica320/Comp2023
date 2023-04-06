@@ -26,7 +26,4 @@ class Simple {
     public int getI() {
         return field_1;
     }
-
-
 }
-

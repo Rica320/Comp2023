@@ -7,15 +7,21 @@ class MyClass {
         int b;
         int c;
 
-        Simple s;
+        MyClass s;
 
         a = 20;
         b = 10;
-        s = new Simple();
+        s = new MyClass();
 
         c = s.add(a,b);
 
         io.println(c);
+    }
+
+    public int add(int a, int b){
+        int c;
+        c = a + b;
+        return c;
     }
 
 }

@@ -24,10 +24,10 @@ class Simple {
 
         io.println(new Simple().lol(10+12*2) + 3);
 
-        i = s2.lol(1);
-        i = s.lol(1);
-        this.lol(1);
-        mc.lol(1);
+        i = s2.add(1, 2);
+        i = s.add(1, 2);
+        this.add(1, 2);
+        mc.add(1, 2);
 
     }
 
