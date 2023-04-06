@@ -361,8 +361,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> codePlace1 = this.visit(jmmNode.getJmmChild(0));
 
-        String varName = codePlace1.b.equals("This") ? null : codePlace1.b;
-        String typeVar = codePlace1.b.equals("This") ? "this" : codePlace1.b.split("\\.")[0];
+        String varName = codePlace1.b.equals("this") ? null : codePlace1.b;
+        String typeVar = codePlace1.b.equals("this") ? "this" : codePlace1.b.split("\\.")[0];
         sb.append(codePlace1.a).append("\n");
 
         if (varName != null) {
