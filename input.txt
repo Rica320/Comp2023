@@ -3,15 +3,18 @@ class Simple {
 
     int field_1;
     Foo mc;
+    Simple s2;
     int[] ll;
 
     public static void main(String[] args) {
     Foo lc;
     int i;
     Simple s;
-    io.println(new Simple().lol(10));
+    io.println(new Simple().lol(10+12*2) + 3);
+    i = s2.lol(1);
     i = s.lol(1);
-    i = this.lol(1);
+    this.lol(1);
+    mc.lol(1);
 
         //field_1 = this.lol(1);
         //field_1 = s.lol(1);
@@ -20,10 +23,10 @@ class Simple {
         //io.println(lc);
     }
 
-   public int lol(int pos) {
+   public int lol(int pos, Simple s) {
            int[] arr;
            int aux;
-
+            s.lol(1);
            arr = new int[10];
            arr[pos] = 3;
 

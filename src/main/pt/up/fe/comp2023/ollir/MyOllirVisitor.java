@@ -365,9 +365,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String typeVar = codePlace1.b.equals("this") ? "this" : codePlace1.b.split("\\.")[0];
         sb.append(codePlace1.a).append("\n");
 
-        if (varName != null) {
+        if (varName != null) { // TODO: refactor
             int isParam = codePlace1.b.charAt(0) == '$' ? 1 : 0;
-            varName = codePlace1.b.split("\\.")[isParam];
+            varName = "";
+            if (isParam == 1)
+                varName = codePlace1.b.split("\\.")[0] + ".";
+            varName += codePlace1.b.split("\\.")[isParam];
             typeVar = codePlace1.b.split("\\.")[isParam + 1];
         }
 
