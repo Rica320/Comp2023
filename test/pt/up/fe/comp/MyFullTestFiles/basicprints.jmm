@@ -18,7 +18,7 @@ class MyClass {
         c = new int[10];
 
         c[3] = 5;
-        c[5] = 4:
+        c[5] = 4;
 
         io.println(c[3] * c[5]); // 20
 

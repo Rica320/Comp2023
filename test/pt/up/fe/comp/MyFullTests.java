@@ -1,23 +1,8 @@
 package pt.up.fe.comp;
 
 import org.junit.Test;
-import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
-import pt.up.fe.comp.jmm.jasmin.JasminResult;
-import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp.jmm.parser.JmmParserResult;
-import pt.up.fe.comp2023.Jasmin.MyJasminBackend;
-import pt.up.fe.comp2023.JmmSemanticAnalyser;
-import pt.up.fe.comp2023.SimpleParser;
-import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
-import pt.up.fe.specs.util.SpecsStrings;
 import utils.ProjectTestUtils;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.HashMap;
-
-import static org.junit.Assert.assertEquals;
 
 public class MyFullTests {
 
@@ -32,7 +17,7 @@ public class MyFullTests {
 
     @Test
     public void testHelloWorld() {
-        test( "HelloWorld.jmm", "Hello, World!");
+        test("HelloWorld.jmm", "Hello, World!");
     }
 
     @Test
@@ -67,17 +52,17 @@ public class MyFullTests {
 
     @Test
     public void testNewObj() {
-        test("newobj.jmm", ""); // TODO
+        test("newobj.jmm", "30");
     }
 
     @Test
     public void testHard1() {
-        test("hard1.jmm", "");  // TODO
+        test("hard1.jmm", "38");
     }
 
     @Test
     public void testReturnObj() {
-        test("returnobj.jmm", "");  // TODO
+        test("returnobj.jmm", "");
     }
 
     @Test
@@ -97,12 +82,12 @@ public class MyFullTests {
 
     @Test
     public void testIfHell() {
-        test("ifhell.jmm", "3\n5\n99");
+        test("ifhell.jmm", "4\n6\n99");
     }
 
     @Test
     public void testCallHell() {
-        test("callhell.jmm", "75");
+        test("callhell.jmm", "30\n10\n21\n70");
     }
 
 }

@@ -18,19 +18,8 @@ class Simple {
     }
 
     public static void main(String[] args) {
-        Foo lc;
-        int i;
-        Simple s;
-
-        io.println(new Simple().lol(10+12*2) + 3);
-
-        i = s2.add(1, 2);
-        i = s.add(1, 2);
-        this.add(1, 2);
-        mc.add(1, 2);
-
+        io.println((new Simple()).add(10+12*2, 3) + 3);
     }
-
 
 
 

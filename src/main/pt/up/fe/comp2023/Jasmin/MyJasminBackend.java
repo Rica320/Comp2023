@@ -188,8 +188,8 @@ public class MyJasminBackend implements JasminBackend {
             }
 
             // in this phase we don't need to worry about locals and stack limits
-            codeBuilder.append("\t.limit stack 30\n");
-            codeBuilder.append("\t.limit locals 30\n\n");
+            codeBuilder.append("\t.limit stack 99\n");
+            codeBuilder.append("\t.limit locals 99\n\n");
 
             // add instructions
             method.getInstructions().forEach(instruction -> {

@@ -1,4 +1,5 @@
 import io;
+import Foo;
 
 class MyClass {
 
@@ -8,12 +9,13 @@ class MyClass {
         return foo;
      }
 
-
     public static void main(String[] args) {
 
         Foo foo;
+        MyClass myClass;
+        myClass = new MyClass();
 
-        foo = this.getFoo();
+        foo = s.getFoo();
 
     }
 

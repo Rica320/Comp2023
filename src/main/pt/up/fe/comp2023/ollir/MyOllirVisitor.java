@@ -314,7 +314,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
             case PARAMETER: // already checks STATIC
                 return new Pair<>("", "$" + symbolTable.getParameterIndex(varName) + "." + varName + "." + getOllirType(type.getName(), type.isArray()));
-            case IMPORT:
+            case IMPORT:// TODO: IMPORTS
             case LOCAL:
                 return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
             case FIELD:

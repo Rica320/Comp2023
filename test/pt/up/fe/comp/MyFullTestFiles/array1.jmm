@@ -1,6 +1,6 @@
 import io;
 
-class MyClass {
+class Simple {
 
     public int updatePos(int pos, Simple s) {
         int[] arr;
@@ -24,7 +24,7 @@ class MyClass {
         Simple s;
         s = new Simple();
 
-        val = this.updatePos(5, s);
+        val = s.updatePos(5, s);
 
         io.println(val); // 3
 
