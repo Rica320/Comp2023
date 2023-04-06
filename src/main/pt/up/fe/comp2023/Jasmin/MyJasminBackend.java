@@ -217,7 +217,6 @@ public class MyJasminBackend implements JasminBackend {
         InstructionType instType = rhs.getInstType();
 
         if (dest instanceof ArrayOperand) {
-            // arr, index, value, iastore
 
             codeBuilder.append("\t; Start Array assign\n\t");
 
@@ -305,10 +304,14 @@ public class MyJasminBackend implements JasminBackend {
         if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
             codeBuilder.append("i"); // Number
         else codeBuilder.append("a"); // Generic Object
-        codeBuilder.append("store ");
 
         String name = ((Operand) dest).getName();
-        codeBuilder.append(getRegister(name)).append(" ; ").append(name);
+        int reg = Integer.parseInt(getRegister(name));
+
+        if (reg < 4) codeBuilder.append("store_").append(reg);
+        else codeBuilder.append("store ").append(reg);
+
+        codeBuilder.append(" ; ").append(name);
     }
 
     private void addBinaryOperation(StringBuilder codeBuilder, BinaryOpInstruction opInstruction) {
@@ -624,9 +627,13 @@ public class MyJasminBackend implements JasminBackend {
         codeBuilder.append(")V");
 
         if (!isThis) {
-            codeBuilder.append("\n\tastore ");
             String varName = ((Operand) firstArg).getName();
-            codeBuilder.append(getRegister(varName)).append(" ; ").append(varName);
+            int reg = Integer.parseInt(getRegister(varName));
+
+            if (reg < 4) codeBuilder.append("\n\tastore_").append(reg);
+            else codeBuilder.append("\n\tastore ").append(reg);
+
+            codeBuilder.append(" ; ").append(varName);
         }
     }
 
