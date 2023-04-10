@@ -2,16 +2,36 @@ import io;
 
 class Simple {
 
+    int[] a;
 
+    public int func() {
+        a = new int[10];
+
+        a[0] = 1;
+
+        io.println(a[0]);
+
+        return 0;
+    }
 
     public static void main(String[] args) {
 
+        int x;
         int[] a;
 
-         a = new int[10];
+        Simple s;
+        Simple s2;
 
+        s = new Simple();
 
-        io.println(a.length * 3);
+        s.negative(1);
+
+        x = s.negative(1);
+
+        a[0] = s.negative(1);
+
+        //a[0] = s.negative(1) + 1;
+
 
     }
 
