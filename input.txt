@@ -2,36 +2,16 @@ import io;
 
 class Simple {
 
-    int[] a;
-
-    public int func() {
-        a = new int[10];
-
-        a[0] = 1;
-
-        io.println(a[0]);
-
-        return 0;
-    }
-
-    public int print() {
-        io.println(a);
-        return 0;
-    }
 
 
     public static void main(String[] args) {
 
-        Simple s;
-        Simple s2;
+        int[] a;
 
-        s = new Simple();
+         a = new int[10];
 
-        s.func();
 
-        s2 = new Simple();
-
-        s2.print();
+        io.println(a.length * 3);
 
     }
 

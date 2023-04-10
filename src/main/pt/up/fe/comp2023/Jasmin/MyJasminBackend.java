@@ -166,7 +166,6 @@ public class MyJasminBackend implements JasminBackend {
                 """;
     }
 
-
     private String addMethods() {
         StringBuilder codeBuilder = new StringBuilder();
         this.classe.getMethods().forEach(method -> {
@@ -662,4 +661,5 @@ public class MyJasminBackend implements JasminBackend {
     }
 
 }
+
 
