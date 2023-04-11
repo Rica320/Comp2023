@@ -90,4 +90,9 @@ public class MyFullTests {
         test("callhell.jmm", "30\n10\n21\n70");
     }
 
+    @Test
+    public void testThisRet() {
+        test("thisRet.jmm", "50");
+    }
+
 }
