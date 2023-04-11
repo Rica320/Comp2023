@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 // • Assignments
 //• Arithmetic operations (with correct precedence)
@@ -130,10 +131,9 @@ public class MyJasminBackend implements JasminBackend {
     private String addHeaders() {
         code += ".class public " + this.classe.getClassName() + "\n";
         // TODO: se classe n existir, crasha o jasmin
-        // if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
-        //else {
-        code += ".super java/lang/Object\n";
-        //}
+        if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
+        else
+            code += ".super java/lang/Object\n";
         code += "\n";
         return code;
     }
@@ -668,7 +668,11 @@ public class MyJasminBackend implements JasminBackend {
         code += "\n; Fields\n";
         code += this.addFields();
         code += "\n; Constructor";
-        code += this.addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
+        if (!Objects.equals(classe.getSuperClass(), ""))
+            code += this.addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
+        else
+            System.out.println("No constructor found: "+ classe.getSuperClass());
+        // if there's an extend, the constructor must be ignored and no call to super()?
         code += this.addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");

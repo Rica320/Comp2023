@@ -1,34 +1,13 @@
 import io;
+import GetterAndSetter;
+import MathUtils;
 
 
-class Simple {
-
-    public Simple func(){
-
-        Simple s;
-         s = new Simple();
-
-        return s;
-    }
-
-    public int func2(int x) {
-
-        return x;
-
-    }
+class methodDeclarationClass extends MathUtils {
 
     public static void main(String[] args) {
-
-        Simple test;
-        test = new Simple().func();
-
-        io.println(test.func2(5));
-
+        io.println(4);
     }
-
-
-
-
 }
 
 

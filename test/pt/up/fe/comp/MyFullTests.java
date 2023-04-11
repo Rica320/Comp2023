@@ -95,4 +95,9 @@ public class MyFullTests {
         test("thisRet.jmm", "50");
     }
 
+    @Test
+    public void testCrazyObj() {
+        test("crazyobj.jmm", "5");
+    }
+
 }
