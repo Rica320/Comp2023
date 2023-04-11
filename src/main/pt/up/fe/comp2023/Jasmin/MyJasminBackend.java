@@ -668,11 +668,9 @@ public class MyJasminBackend implements JasminBackend {
         code += "\n; Fields\n";
         code += this.addFields();
         code += "\n; Constructor";
-        if (!Objects.equals(classe.getSuperClass(), ""))
+        if (classe.getSuperClass() == null)
             code += this.addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
-        else
-            System.out.println("No constructor found: "+ classe.getSuperClass());
-        // if there's an extend, the constructor must be ignored and no call to super()?
+        // TODO: if there's an extend, the constructor must be ignored and no call to super()?
         code += this.addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");

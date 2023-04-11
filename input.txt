@@ -3,7 +3,7 @@ import GetterAndSetter;
 import MathUtils;
 
 
-class methodDeclarationClass extends MathUtils {
+class methodDeclarationClass {
 
     public static void main(String[] args) {
         io.println(4);
