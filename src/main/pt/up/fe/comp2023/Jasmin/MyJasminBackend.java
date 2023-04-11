@@ -182,7 +182,21 @@ public class MyJasminBackend implements JasminBackend {
                 method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
 
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
-                String returnType = method.getReturnType().toString();
+                String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple como return devia ser usado pq da problema!
+
+                System.out.println("RETURN TYPE: " + method.getReturnType().toString());
+
+                // PROBLEMA AQUI PQ O RETURN TYPE É Ljava/lang/Object, MAS O JASMIN N ACEITA, TEM DE SER LSimple;
+                // 	new Simple
+                //	dup
+                //	invokespecial Simple/<init>()V
+                //
+                //
+                //	invokevirtual Simple.func()Ljava/lang/Object;
+                //	iconst_5
+                //	invokevirtual Simple.func2(I)I
+                //    pop
+
                 codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
             }
 
@@ -553,9 +567,14 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
 
+
+
         //if (inst.getFirstArg().getType().getTypeOfElement().equals(ElementType.THIS)) codeBuilder.append("aload_0");
         //else
         loadElement(codeBuilder, inst.getFirstArg());
+
+        // make sure object cast is correct
+        codeBuilder.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
 
         //addNewObject(codeBuilder, inst); // load object to call method on
 
