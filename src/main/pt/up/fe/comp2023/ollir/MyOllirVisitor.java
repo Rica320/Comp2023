@@ -392,6 +392,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Type type = findRetMethod(methodName);
         String ollirType = getOllirType(type.getName(), type.isArray());
 
+        SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
+
         String newTemp = null;
         List<JmmNode> params = jmmNode.getChildren();
         List<Pair<String, String>> codePlace = new ArrayList<>();
@@ -411,7 +413,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             newTemp = "t" + newTemp() + "." + ollirType;
             sb.append(newTemp).append(" :=.").append(ollirType).append(" ");
         }
-        if (varName == null || typeVar.equals(symbolTable.getClassName())) {
+        if (varName == null || symbolOrign != SymbolOrigin.IMPORT) {
             if (varName == null) {
                 sb.append("invokevirtual(").append("this,\"").append(methodName).append("\"");
             } else {
