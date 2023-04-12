@@ -85,7 +85,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
     private Pair<String, String> dealWithThis(JmmNode jmmNode, String s) {
-        return new Pair<>("", "this");
+        return new Pair<>("", "$0.this." + symbolTable.getClassName());
     }
 
     private Pair<String, String> dealWithArrayLookup(JmmNode jmmNode, String s) {
@@ -374,8 +374,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> codePlace1 = this.visit(jmmNode.getJmmChild(0));
 
-        String varName = codePlace1.b.equals("this") ? null : codePlace1.b;
-        String typeVar = codePlace1.b.equals("this") ? "this" : codePlace1.b.split("\\.")[0];
+        String varName = jmmNode.getJmmChild(0).getKind().equals("This") ? null : codePlace1.b;
+        String typeVar = jmmNode.getJmmChild(0).getKind().equals("This") ? "this" : codePlace1.b.split("\\.")[0];
         sb.append(codePlace1.a).append("\n");
 
         if (varName != null) { // TODO: refactor
