@@ -1,12 +1,22 @@
 import io;
-import GetterAndSetter;
-import MathUtils;
+class Simple {
 
+    int a;
+    public Simple newS() {
+        return this;
+    }
 
-class methodDeclarationClass {
+    public int getA() {
+        return a;
+    }
+
+    public Simple setA(int e) {
+        a = e;
+        return this;
+    }
 
     public static void main(String[] args) {
-        io.println(4);
+        io.println(new Simple().setA(3).newS().getA());
     }
 }
 

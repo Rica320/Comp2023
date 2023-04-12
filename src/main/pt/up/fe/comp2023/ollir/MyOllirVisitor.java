@@ -85,7 +85,11 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
     private Pair<String, String> dealWithThis(JmmNode jmmNode, String s) {
-        return new Pair<>("", "$0.this." + symbolTable.getClassName());
+        String tempName = "t" + newTemp() + "." + symbolTable.getClassName();
+        String sb = tempName + " :=." + symbolTable.getClassName() +
+                " $0.this." + symbolTable.getClassName() + ";\n";
+
+        return new Pair<>(sb, tempName);
     }
 
     private Pair<String, String> dealWithArrayLookup(JmmNode jmmNode, String s) {
