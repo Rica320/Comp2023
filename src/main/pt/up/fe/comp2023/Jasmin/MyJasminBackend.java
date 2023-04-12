@@ -137,7 +137,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n; Constructor");
         code.append("\n.method public <init>()V");
         code.append("\n\taload_0");
-        code.append("\n\tinvokenonvirtual ").append(this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass()).append("/<init>()V");
+        code.append("\n\tinvokespecial ").append(this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass()).append("/<init>()V");
         code.append("\n\treturn");
         code.append("\n.end method\n\n");
     }
