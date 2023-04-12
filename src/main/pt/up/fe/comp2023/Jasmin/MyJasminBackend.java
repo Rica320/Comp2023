@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 // • Assignments
 //• Arithmetic operations (with correct precedence)
@@ -130,10 +131,9 @@ public class MyJasminBackend implements JasminBackend {
     private String addHeaders() {
         code += ".class public " + this.classe.getClassName() + "\n";
         // TODO: se classe n existir, crasha o jasmin
-        // if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
-        //else {
-        code += ".super java/lang/Object\n";
-        //}
+        if (this.classe.getSuperClass() != null) code += ".super " + this.classe.getSuperClass() + "\n";
+        else
+            code += ".super java/lang/Object\n";
         code += "\n";
         return code;
     }
@@ -182,7 +182,21 @@ public class MyJasminBackend implements JasminBackend {
                 method.getParams().forEach(param -> codeBuilder.append(toJasminType(param.getType().toString())));
 
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
-                String returnType = method.getReturnType().toString();
+                String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple como return devia ser usado pq da problema!
+
+                System.out.println("RETURN TYPE: " + method.getReturnType().toString());
+
+                // PROBLEMA AQUI PQ O RETURN TYPE É Ljava/lang/Object, MAS O JASMIN N ACEITA, TEM DE SER LSimple;
+                // 	new Simple
+                //	dup
+                //	invokespecial Simple/<init>()V
+                //
+                //
+                //	invokevirtual Simple.func()Ljava/lang/Object;
+                //	iconst_5
+                //	invokevirtual Simple.func2(I)I
+                //    pop
+
                 codeBuilder.append(")").append(toJasminType(returnType)).append("\n");
             }
 
@@ -553,9 +567,14 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
 
+
+
         //if (inst.getFirstArg().getType().getTypeOfElement().equals(ElementType.THIS)) codeBuilder.append("aload_0");
         //else
         loadElement(codeBuilder, inst.getFirstArg());
+
+        // make sure object cast is correct
+        codeBuilder.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
 
         //addNewObject(codeBuilder, inst); // load object to call method on
 
@@ -649,7 +668,9 @@ public class MyJasminBackend implements JasminBackend {
         code += "\n; Fields\n";
         code += this.addFields();
         code += "\n; Constructor";
-        code += this.addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
+        if (classe.getSuperClass() == null)
+            code += this.addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
+        // TODO: if there's an extend, the constructor must be ignored and no call to super()?
         code += this.addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");

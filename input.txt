@@ -1,28 +1,13 @@
 import io;
+import GetterAndSetter;
+import MathUtils;
 
 
-class Simple {
-
-    public Simple func() {
-        return this;
-    }
+class methodDeclarationClass {
 
     public static void main(String[] args) {
-
-        Simple s;
-        Simple d;
-
-        s = new Simple();
-
-        d = s.func();
-
-        io.println(50);
-
+        io.println(4);
     }
-
-
-
-
 }
 
 
