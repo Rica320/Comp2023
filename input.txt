@@ -1,22 +1,24 @@
 import io;
-class Simple {
 
-    int a;
-    public Simple newS() {
-        return this;
+class Simple extends io {
+
+    Simple s;
+
+    public int func(Simple newS) {
+
+        s = newS;
+
+        return 0;
     }
 
-    public int getA() {
-        return a;
-    }
-
-    public Simple setA(int e) {
-        a = e;
-        return this;
-    }
 
     public static void main(String[] args) {
-        io.println(new Simple().setA(3).newS().getA());
+        Simple s;
+        s = new Simple();
+
+        s.func(s);
+
+        io.println(10);
     }
 }
 

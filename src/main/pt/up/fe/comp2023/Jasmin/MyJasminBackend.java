@@ -127,18 +127,19 @@ public class MyJasminBackend implements JasminBackend {
             code.append("; No fields\n");
             return;
         }
-        this.classe.getFields().forEach(field -> code.append(".field public ").append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n"));
+        this.classe.getFields().forEach(field -> {
+            code.append(".field public ");
+            code.append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
+        });
     }
 
     public void addConstructor() {
         code.append("\n; Constructor");
-        code.append("""
-                \n.method public <init>()V
-                \taload_0
-                \tinvokenonvirtual java/lang/Object/<init>()V
-                \treturn
-                .end method
-                """);
+        code.append("\n.method public <init>()V");
+        code.append("\n\taload_0");
+        code.append("\n\tinvokenonvirtual ").append(this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass()).append("/<init>()V");
+        code.append("\n\treturn");
+        code.append("\n.end method\n\n");
     }
 
     private void addMethods() {
@@ -580,11 +581,7 @@ public class MyJasminBackend implements JasminBackend {
         addHeaders();
         addImports();
         addFields();
-
-        // TODO: how to handle multiple constructors? --> they dont exist in ollir?
-        // TODO: if there's an extend, the constructor must be ignored and no call to super()? --> how do extended classes work?
-        if (classe.getSuperClass() == null) addConstructor();
-
+        addConstructor();
         addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");
