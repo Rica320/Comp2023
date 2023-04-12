@@ -159,8 +159,6 @@ public class MyJasminBackend implements JasminBackend {
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
                 String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple --> casting é suposto ?
 
-                System.out.println("RETURN TYPE: " + method.getReturnType().toString());
-
                 code.append(")").append(toJasminType(returnType)).append("\n");
             }
 
@@ -477,11 +475,13 @@ public class MyJasminBackend implements JasminBackend {
             return;
         }
 
+        String className = ((ClassType) firstArg.getType()).getName();
+
         // create new object
         code.append("\n\t; Creating new object\n\t");
-        code.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
+        code.append("new ").append(className).append("\n\t");
         code.append("dup\n\t");
-        code.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        code.append("invokespecial ").append(className).append("/<init>()V\n\t");
         ignoreNextInstruction = true; // TODO: TALK TO TEACHER ABOUT THIS ASAP --> this is a hack to ignore the next ollir instruction (invokespecial) because it breaks the code
         code.append("; End of creating new object\n\t");
     }

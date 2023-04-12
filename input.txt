@@ -1,24 +1,23 @@
 import io;
+import GetterAndSetter;
 
-class Simple extends io {
+class Simple extends GetterAndSetter{
 
-    Simple s;
-
-    public int func(Simple newS) {
-
-        s = newS;
-
-        return 0;
+    public int func(int x) {
+        return 4;
     }
-
 
     public static void main(String[] args) {
         Simple s;
+        int k;
+
         s = new Simple();
 
-        s.func(s);
+        k = s.func(5);
 
         io.println(10);
+
+
     }
 }
 
