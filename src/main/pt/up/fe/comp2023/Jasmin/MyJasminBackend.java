@@ -59,35 +59,13 @@ public class MyJasminBackend implements JasminBackend {
         }
     }
 
-    private void showClass() {
-        System.out.println("\n<CLASS>");
-        System.out.println("\tNAME: " + this.classe.getClassName());
-        System.out.println("\tEXTENDS: " + this.classe.getSuperClass());
-        System.out.println("\tFIELDS: " + this.classe.getFields());
-        System.out.println("<END CLASS/>\n");
 
-        this.classe.getMethods().forEach(method -> {
-            System.out.println("\n<METHOD>");
-            System.out.println("\tMETHOD: " + method.getMethodName());
-            System.out.println("\tPARAMS: " + method.getParams());
-            System.out.println("\tRETURN TYPE: " + method.getReturnType());
-            System.out.println("\t===================INSTRUCTIONS===================");
-            method.getInstructions().forEach(instruction -> {
-                System.out.println("\t\t");
-                instruction.show();
-            });
-            System.out.println("\t===================<INSTRUCTIONS/>===================");
-            System.out.println("<END METHOD/>");
-        });
-    }
-
-
-    private void loadElement(StringBuilder codeBuilder, Element element) {
+    private void loadElement(Element element) {
         boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
         boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
 
         if (element instanceof ArrayOperand) {
-            arrayAccess(codeBuilder, element);
+            arrayAccess(element);
             return;
         }
 
@@ -95,30 +73,28 @@ public class MyJasminBackend implements JasminBackend {
             if (element.isLiteral()) {
                 LiteralElement literal = (LiteralElement) element;
                 int value = Integer.parseInt(literal.getLiteral());
-                if (value < 6) codeBuilder.append("iconst_");  // more efficient than bipush
-                else if (value < 128) codeBuilder.append("bipush ");
-                else codeBuilder.append("ldc ");
-                codeBuilder.append(value);
-                codeBuilder.append("\n\t");
-                return;
+                if (value < 6) code.append("iconst_");  // more efficient than bipush
+                else if (value < 128) code.append("bipush ");
+                else code.append("ldc ");
+                code.append(value);
             } else {
                 Operand variable = (Operand) element;
                 String name = variable.getName();
-                codeBuilder.append("iload ").append(getRegister(name)).append(" ; ").append(name);
-                codeBuilder.append("\n\t");
-                return;
+                code.append("iload ").append(getRegister(name)).append(" ; ").append(name);
             }
+            code.append("\n\t");
+            return;
         } else if (element.isLiteral()) { // string
-            codeBuilder.append("ldc ").append(((LiteralElement) element).getLiteral());
-            codeBuilder.append("\n\t");
+            code.append("ldc ").append(((LiteralElement) element).getLiteral());
+            code.append("\n\t");
             return;
         }
 
         // array or object reference
         Operand variable = (Operand) element;
         String name = variable.getName();
-        codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name);
-        codeBuilder.append("\n\t");
+        code.append("aload ").append(getRegister(name)).append(" ; ").append(name);
+        code.append("\n\t");
 
     }
 
@@ -192,8 +168,10 @@ public class MyJasminBackend implements JasminBackend {
 
             // add instructions
             method.getInstructions().forEach(instruction -> {
-                if (!ignoreNextInstruction) code.append(addInstruction(instruction)).append("\n");
-                else ignoreNextInstruction = false;
+                if (!ignoreNextInstruction) {
+                    addInstruction(instruction);
+                    code.append("\n");
+                } else ignoreNextInstruction = false;
             });
 
             currVarTable = null;
@@ -203,10 +181,8 @@ public class MyJasminBackend implements JasminBackend {
     }
 
 
-    private String addInstructionAssign(AssignInstruction instruction) {
-        StringBuilder codeBuilder = new StringBuilder();
-
-        codeBuilder.append("\n\t; Assign Instruction\n");
+    private void addInstructionAssign(AssignInstruction instruction) {
+        code.append("\n\t; Assign Instruction\n");
 
         Element dest = instruction.getDest(); // instruction type <=> inst.getTypeOfAssign()
         Instruction rhs = instruction.getRhs();
@@ -214,226 +190,200 @@ public class MyJasminBackend implements JasminBackend {
 
         if (dest instanceof ArrayOperand) {
 
-            codeBuilder.append("\t; Start Array assign\n\t");
+            code.append("\t; Start Array assign\n\t");
 
             // load array (cant use loadElement because IDK)
             Operand variable = (Operand) dest;
             String name = variable.getName();
-            codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name);
-            codeBuilder.append("\n\t");
+            code.append("aload ").append(getRegister(name)).append(" ; ").append(name);
+            code.append("\n\t");
 
             // get index
-            loadElement(codeBuilder, ((ArrayOperand) dest).getIndexOperands().get(0));
-            codeBuilder.deleteCharAt(codeBuilder.length() - 1); // delete last character (new line)
+            loadElement(((ArrayOperand) dest).getIndexOperands().get(0));
+            code.deleteCharAt(code.length() - 1); // delete last character (new line)
 
             // value will be calculated below by the rhs instruction
         }
 
         if (instType.equals(InstructionType.BINARYOPER)) {
-            addBinaryOperation(codeBuilder, (BinaryOpInstruction) rhs); // Add binary operation loads and calculation
-            codeBuilder.append("\t");
+            addBinaryOperation((BinaryOpInstruction) rhs); // Add binary operation loads and calculation
+            code.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
             if (op.getSingleOperand() instanceof ArrayOperand) {
-                arrayAccess(codeBuilder, op.getSingleOperand());
+                arrayAccess(op.getSingleOperand());
             } else {
-                codeBuilder.append("\t");
-                loadElement(codeBuilder, op.getSingleOperand());
+                code.append("\t");
+                loadElement(op.getSingleOperand());
             }
 
         } else if (instType.equals(InstructionType.GETFIELD)) {
-            addGetPutField(codeBuilder, rhs);
+            addGetPutField(rhs);
         } else if (instType.equals(InstructionType.CALL)) {
-            codeBuilder.append(addCallInstruction(((CallInstruction) rhs), true));
+            addCallInstruction(((CallInstruction) rhs), true);
         } else {
             // Unary operation
             UnaryOpInstruction op = (UnaryOpInstruction) rhs;
-            addUnaryOperation(codeBuilder, op);
-            codeBuilder.append("\t");
+            addUnaryOperation(op);
+            code.append("\t");
         }
 
         // Storing final value in variable
-        if (dest instanceof ArrayOperand) codeBuilder.append("iastore\n\t; End Array Assign\n\t");
-        else storeElement(codeBuilder, dest, rhs);
+        if (dest instanceof ArrayOperand) code.append("iastore\n\t; End Array Assign\n\t");
+        else storeElement(dest);
 
-        codeBuilder.append("\n\t; End Assign Instruction\n\n");
+        code.append("\n\t; End Assign Instruction\n\n");
 
-        return codeBuilder.toString();
     }
 
-    public void arrayAccess(StringBuilder codeBuilder, Element elem) {
-        codeBuilder.append("\t; Start Array access\n\t");
+    public void arrayAccess(Element elem) {
+        code.append("\t; Start Array access\n\t");
 
         Operand variable = (Operand) elem;
         String name = variable.getName();
-        codeBuilder.append("aload ").append(getRegister(name)).append(" ; ").append(name); // load array
-        codeBuilder.append("\n\t");
+        code.append("aload ").append(getRegister(name)).append(" ; ").append(name); // load array
+        code.append("\n\t");
 
-        loadElement(codeBuilder, ((ArrayOperand) elem).getIndexOperands().get(0)); // load index
-        codeBuilder.append("iaload\n\t");
-        codeBuilder.append("; End Array access\n\t");
+        loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
+        code.append("iaload\n\t");
+        code.append("; End Array access\n\t");
     }
 
 
-    private void addUnaryOperation(StringBuilder codeBuilder, UnaryOpInstruction op) {
-        codeBuilder.append("\n\t; Executing unary operation\n\t");
+    private void addUnaryOperation(UnaryOpInstruction op) {
+        code.append("\n\t; Executing unary operation\n\t");
 
         // Load operand if needed to execute unary operation
-        loadElement(codeBuilder, op.getOperand());
+        loadElement(op.getOperand());
 
         // Execute unary operation
-        if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            codeBuilder.append("iconst_1\n");
-            codeBuilder.append("\tixor\n");
-        } else if (op.getOperation().getOpType().equals(OperationType.SUB)) {
-            codeBuilder.append("ineg\n");
-        }
+        if (op.getOperation().getOpType().equals(OperationType.NOTB)) code.append("iconst_1\n\tixor\n");
+        else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
-        codeBuilder.append("\t; End unary operation\n\n");
-
+        code.append("\t; End unary operation\n\n");
     }
 
-    private void storeElement(StringBuilder codeBuilder, Element dest, Instruction rhs) {
+    private void storeElement(Element dest) {
 
         Operand operand = (Operand) dest;
         if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
-            codeBuilder.append("i"); // Number
-        else codeBuilder.append("a"); // Generic Object
+            code.append("i"); // Number
+        else code.append("a"); // Generic Object
 
         String name = ((Operand) dest).getName();
         int reg = Integer.parseInt(getRegister(name));
 
-        if (reg < 4) codeBuilder.append("store_").append(reg);
-        else codeBuilder.append("store ").append(reg);
+        if (reg < 4) code.append("store_").append(reg);
+        else code.append("store ").append(reg);
 
-        codeBuilder.append(" ; ").append(name);
+        code.append(" ; ").append(name);
     }
 
-    private void addBinaryOperation(StringBuilder codeBuilder, BinaryOpInstruction opInstruction) {
+    private void addBinaryOperation(BinaryOpInstruction opInstruction) {
 
         OperationType opType = opInstruction.getOperation().getOpType();
 
-        codeBuilder.append("\n\t; Executing binary operation\n\t");
+        code.append("\n\t; Executing binary operation\n\t");
 
         // Load operands
-        loadElement(codeBuilder, opInstruction.getLeftOperand());
-        loadElement(codeBuilder, opInstruction.getRightOperand());
+        loadElement(opInstruction.getLeftOperand());
+        loadElement(opInstruction.getRightOperand());
 
         // execute operation
-        BinaryOpInstAux(codeBuilder, opType);
+        BinaryOpInstAux(opType);
 
-        codeBuilder.append("\t; End binary operation\n\n ");
+        code.append("\t; End binary operation\n\n ");
     }
 
-    private void BinaryOpInstAux(StringBuilder codeBuilder, OperationType opType) {
+    private void BinaryOpInstAux(OperationType opType) {
 
         switch (opType) {
-            case ADD -> codeBuilder.append("iadd\n");
-            case SUB -> codeBuilder.append("isub\n");
-            case MUL -> codeBuilder.append("imul\n");
-            case DIV -> codeBuilder.append("idiv\n");
+            case ADD -> code.append("iadd\n");
+            case SUB -> code.append("isub\n");
+            case MUL -> code.append("imul\n");
+            case DIV -> code.append("idiv\n");
             case LTH -> {
                 String trueL = getNewLabel(), endL = getNewLabel();
-                codeBuilder.append("; Making lth operation\n\t");
-                codeBuilder.append("if_icmplt ").append(trueL).append("\n");
-                codeBuilder.append("\ticonst_0\n"); // false scope
-                codeBuilder.append("\tgoto ").append(endL).append("\n");
-                codeBuilder.append(trueL).append(":\n");
-                codeBuilder.append("\ticonst_1\n"); // true scope
-                codeBuilder.append(endL).append(":\n");
-                codeBuilder.append("; End lth operation\n");
+                code.append("; Making lth operation\n\t");
+                code.append("if_icmplt ").append(trueL).append("\n");
+                code.append("\ticonst_0\n"); // false scope
+                code.append("\tgoto ").append(endL).append("\n");
+                code.append(trueL).append(":\n");
+                code.append("\ticonst_1\n"); // true scope
+                code.append(endL).append(":\n");
+                code.append("; End lth operation\n");
             }
-            case AND -> codeBuilder.append("iand\n");
+            case AND -> code.append("iand\n");
             default -> System.out.println("Binary op error");
         }
     }
 
-    private String addInstruction(Instruction instruction) {
+    private void addInstruction(Instruction instruction) {
 
-        StringBuilder codeBuilder = new StringBuilder();
         String instType = instruction.getInstType().toString();
 
         // add label to instruction if needed
         var labels = currentMethod.getLabels(instruction);
 
         for (String label : labels)
-            codeBuilder.append(label).append(":\n");
-
+            code.append(label).append(":\n");
 
         switch (instType) {
-            case "ASSIGN" -> {
-                return codeBuilder + addInstructionAssign((AssignInstruction) instruction);
-            }
+            case "ASSIGN" -> addInstructionAssign((AssignInstruction) instruction);
+            case "CALL" -> addCallInstruction(((CallInstruction) instruction), false);
+            case "GETFIELD", "PUTFIELD" -> addGetPutField(instruction);
+            case "UNARYOPER" -> addUnaryOperation((UnaryOpInstruction) instruction);
+            case "BINARYOPER" -> addBinaryOperation((BinaryOpInstruction) instruction);
+            case "GOTO" -> code.append("\n\tgoto ").append(((GotoInstruction) instruction).getLabel()).append("\n");
+
             case "RETURN" -> {
                 ReturnInstruction inst = (ReturnInstruction) instruction;
-                codeBuilder.append("\t");
+                code.append("\t");
 
                 if (inst.getReturnType().toString().equals("VOID")) {
-                    codeBuilder.append("return");
-                    return codeBuilder.toString();
+                    code.append("return");
+                    return;
                 }
 
-                loadElement(codeBuilder, inst.getOperand());
+                loadElement(inst.getOperand());
 
                 switch (inst.getReturnType().toString()) {
-                    case "INT32", "BOOLEAN" -> codeBuilder.append("ireturn");
-                    default -> codeBuilder.append("areturn"); // ARRAYREF or OBJECTREF
+                    case "INT32", "BOOLEAN" -> code.append("ireturn");
+                    default -> code.append("areturn"); // ARRAYREF or OBJECTREF
                 }
 
-                return codeBuilder.toString();
             }
-            case "CALL" -> {
-                return codeBuilder.append(addCallInstruction(((CallInstruction) instruction), false)).toString();
-            }
-            case "GETFIELD", "PUTFIELD" -> {
-                addGetPutField(codeBuilder, instruction);
-                return codeBuilder.toString();
-            }
-            case "UNARYOPER" -> {
-                System.out.println("HERE:" + instruction.getInstType());
-                addUnaryOperation(codeBuilder, (UnaryOpInstruction) instruction);
-                return codeBuilder.toString();
-            }
-            case "BINARYOPER" -> {
-                addBinaryOperation(codeBuilder, (BinaryOpInstruction) instruction);
-                return codeBuilder.toString();
-            }
+
             case "BRANCH" -> {
-                if (instruction instanceof OpCondInstruction inst) {
-                    addConditionalBranch(codeBuilder, (OpCondInstruction) instruction);
-                } else if (instruction instanceof SingleOpCondInstruction inst) {
-                    addSingleConditionalBranch(codeBuilder, (SingleOpCondInstruction) instruction);
-                } else System.out.println("Error in branch instruction");
-                return codeBuilder.toString();
+                if (instruction instanceof OpCondInstruction inst) addConditionalBranch(inst);
+                else if (instruction instanceof SingleOpCondInstruction inst) addSingleConditionalBranch(inst);
+                else System.out.println("Error in branch instruction");
             }
-            case "GOTO" -> {
-                GotoInstruction inst = (GotoInstruction) instruction;
-                return codeBuilder + "\n\tgoto " + inst.getLabel() + "\n";
-            }
-            default -> {
-                return "error";
-            }
+
+
+            default -> System.out.println("Error in instruction: " + instType);
+
         }
 
     }
 
 
-    private void addGetPutField(StringBuilder codeBuilder, Instruction instruction) {
+    private void addGetPutField(Instruction instruction) {
 
         Operand op1, op2;
-        String typeClass = "";
+        String typeClass;
 
         if (instruction instanceof GetFieldInstruction inst) {
             op1 = (Operand) (inst).getFirstOperand();
             op2 = (Operand) (inst).getSecondOperand();
             typeClass = ((ClassType) op1.getType()).getName();
 
-            codeBuilder.append("\t");
-            loadElement(codeBuilder, op1);
-            codeBuilder.append("getfield").append(" ").append(typeClass).append("/");
-            codeBuilder.append(op2.getName()).append(" ").append(toJasminType(op2.getType().toString()));
-            codeBuilder.append("\n\t");
+            code.append("\t");
+            loadElement(op1);
+            code.append("getfield").append(" ").append(typeClass).append("/");
+            code.append(op2.getName()).append(" ").append(toJasminType(op2.getType().toString()));
+            code.append("\n\t");
             return;
         }
 
@@ -444,73 +394,72 @@ public class MyJasminBackend implements JasminBackend {
         Element op3 = (inst).getThirdOperand(); // value to be stored
         typeClass = ((ClassType) op1.getType()).getName();
 
-        codeBuilder.append("\t");
-        loadElement(codeBuilder, op1);
-        loadElement(codeBuilder, op3);
-        codeBuilder.append("putfield").append(" ").append(typeClass).append("/");
-        codeBuilder.append(op2.getName()).append(" ").append(toJasminType(op3.getType().toString()));
-        codeBuilder.append("\n\t");
+        code.append("\t");
+        loadElement(op1);
+        loadElement(op3);
+        code.append("putfield").append(" ").append(typeClass).append("/");
+        code.append(op2.getName()).append(" ").append(toJasminType(op3.getType().toString()));
+        code.append("\n\t");
 
     }
 
-    private void addConditionalBranch(StringBuilder codeBuilder, OpCondInstruction instruction) {
+    private void addConditionalBranch(OpCondInstruction instruction) {
         OpInstruction opType = instruction.getCondition();
         String label = instruction.getLabel();
 
-        codeBuilder.append("\n\t; Executing conditional branch\n\t");
+        code.append("\n\t; Executing conditional branch\n\t");
 
         if (opType.getOperands().size() != 2) {
 
-            addUnaryOperation(codeBuilder, (UnaryOpInstruction) opType);
-            codeBuilder.append("ifne ").append(label).append("\n");
+            addUnaryOperation((UnaryOpInstruction) opType);
+            code.append("ifne ").append(label).append("\n");
 
         } else {
             Element leftOperand = opType.getOperands().get(0);
             Element rightOperand = opType.getOperands().get(1);
 
             // Load operands if needed to execute binary operation
-            loadElement(codeBuilder, leftOperand);
-            loadElement(codeBuilder, rightOperand);
+            loadElement(leftOperand);
+            loadElement(rightOperand);
 
-            codeBuilder.append("if_icmplt ").append(label).append("\n");
+            code.append("if_icmplt ").append(label).append("\n");
         }
 
-        codeBuilder.append("\t; End of conditional branch");
+        code.append("\t; End of conditional branch");
     }
 
 
-    private void addSingleConditionalBranch(StringBuilder codeBuilder, SingleOpCondInstruction instruction) {
+    private void addSingleConditionalBranch(SingleOpCondInstruction instruction) {
         Operand op = (Operand) instruction.getCondition().getSingleOperand();
         String label = instruction.getLabel();
 
-        codeBuilder.append("\n\t; Executing conditional branch\n\t");
+        code.append("\n\t; Executing conditional branch\n\t");
 
-        loadElement(codeBuilder, op);
+        loadElement(op);
 
-        codeBuilder.append("ifne ").append(label).append("\n");
+        code.append("ifne ").append(label).append("\n");
 
-        codeBuilder.append("\t; End conditional branch\n\n");
+        code.append("\t; End conditional branch\n\n");
     }
 
 
-    private String addCallInstruction(CallInstruction inst, boolean isAssignment) {
+    private void addCallInstruction(CallInstruction inst, boolean isAssignment) {
 
         // load arguments
-        StringBuilder codeBuilder = new StringBuilder();
-        codeBuilder.append("\t; Making a call instruction\n\t");
+        code.append("\t; Making a call instruction\n\t");
 
         var callType = (inst.getInvocationType()).toString();
         switch (callType) {
-            case "NEW" -> callNew(codeBuilder, inst);
-            case "invokevirtual" -> callInvokeVirtual(codeBuilder, inst, isAssignment);
-            case "invokestatic" -> callInvokeStatic(codeBuilder, inst, isAssignment);
-            case "invokespecial" -> callInvokeSpecial(codeBuilder, inst);
-            case "ldc" -> {
-                codeBuilder.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct
-            }
+            case "NEW" -> callNew(inst);
+            case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
+            case "invokestatic" -> callInvokeStatic(inst, isAssignment);
+            case "invokespecial" -> callInvokeSpecial(inst);
+            case "ldc" ->
+                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct and necessary
+
             case "arraylength" -> {
-                loadElement(codeBuilder, inst.getFirstArg());
-                codeBuilder.append("\n\tarraylength ");
+                loadElement(inst.getFirstArg());
+                code.append("\n\tarraylength ");
             }
             default -> {
                 System.out.println("Call instruction not supported");
@@ -518,122 +467,115 @@ public class MyJasminBackend implements JasminBackend {
             }
         }
 
-        codeBuilder.append("\n\t; End of call instruction\n\t");
-        return codeBuilder.toString();
+        code.append("\n\t; End of call instruction\n\t");
+
     }
 
-    public void callNew(StringBuilder codeBuilder, CallInstruction inst) {
+    public void callNew(CallInstruction inst) {
 
         Element firstArg = inst.getFirstArg();
 
         if (firstArg.getType() instanceof ArrayType) {
 
-            Operand operand = (Operand) firstArg;
-
             // load arguments
             for (Element arg : inst.getListOfOperands())
-                loadElement(codeBuilder, arg);
+                loadElement(arg);
 
             // create new array (only int arrays are supported)
-            codeBuilder.append("\n\t newarray int");
+            code.append("\n\t newarray int");
             return;
         }
 
         // create new object
-        codeBuilder.append("\n\t; Creating new object\n\t");
-        codeBuilder.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
-        codeBuilder.append("dup\n\t");
-        codeBuilder.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
-        ignoreNextInstruction = true;
-        codeBuilder.append("; End of creating new object\n\t");
+        code.append("\n\t; Creating new object\n\t");
+        code.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
+        code.append("dup\n\t");
+        code.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
+        ignoreNextInstruction = true; // TODO: TALK TO TEACHER ABOUT THIS ASAP
+        code.append("; End of creating new object\n\t");
     }
 
-    public void callInvokeVirtual(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
+    public void callInvokeVirtual(CallInstruction inst, boolean isAssignment) {
 
-
-        //if (inst.getFirstArg().getType().getTypeOfElement().equals(ElementType.THIS)) codeBuilder.append("aload_0");
-        //else
-        loadElement(codeBuilder, inst.getFirstArg());
+        loadElement(inst.getFirstArg());
 
         // make sure object cast is correct (needed for some reason)
-        codeBuilder.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
+        code.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
 
-        //addNewObject(codeBuilder, inst); // load object to call method on
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
-            loadElement(codeBuilder, arg);
+            loadElement(arg);
 
         // invoke method
-        codeBuilder.append("invokevirtual ").append(((ClassType) inst.getFirstArg().getType()).getName());
+        code.append("invokevirtual ").append(((ClassType) inst.getFirstArg().getType()).getName());
 
-        invokeArgs(codeBuilder, inst, isAssignment);
+        invokeArgs(inst, isAssignment);
     }
 
 
-    private void invokeArgs(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
-        codeBuilder.append(".").append(((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "")).append("(");
+    private void invokeArgs(CallInstruction inst, boolean isAssignment) {
+        code.append(".").append(((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "")).append("(");
 
         // add arguments types
         for (Element arg : inst.getListOfOperands())
-            codeBuilder.append(toJasminType(arg.getType().toString()));
+            code.append(toJasminType(arg.getType().toString()));
 
-        codeBuilder.append(")").append(toJasminType(inst.getReturnType().toString()));
+        code.append(")").append(toJasminType(inst.getReturnType().toString()));
 
         // if it is not an assign , just ignore the non-void return
-        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID))
-            codeBuilder.append("\n\tpop");
+        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) code.append("\n\tpop");
     }
 
-    public void callInvokeStatic(StringBuilder codeBuilder, CallInstruction inst, boolean isAssignment) {
+    public void callInvokeStatic(CallInstruction inst, boolean isAssignment) {
 
         String name = ((Operand) inst.getFirstArg()).getName();
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
-            loadElement(codeBuilder, arg);
+            loadElement(arg);
 
         // invoke method
-        codeBuilder.append("invokestatic ").append(name);
+        code.append("invokestatic ").append(name);
 
-        invokeArgs(codeBuilder, inst, isAssignment);
+        invokeArgs(inst, isAssignment);
     }
 
-    private void callInvokeSpecial(StringBuilder codeBuilder, CallInstruction inst) {
+    private void callInvokeSpecial(CallInstruction inst) {
 
         Element firstArg = inst.getFirstArg();
 
         boolean isThis = firstArg.getType().getTypeOfElement().equals(ElementType.THIS);
 
-        if (isThis) codeBuilder.append("\n\taload_0");
+        if (isThis) code.append("\n\taload_0");
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
-            loadElement(codeBuilder, arg);
+            loadElement(arg);
 
-        codeBuilder.append("\n\tinvokespecial ");
+        code.append("\n\tinvokespecial ");
 
         // choose the classe name to use
-        codeBuilder.append(isThis ? classe.getClassName() : ((ClassType) firstArg.getType()).getName());
+        code.append(isThis ? classe.getClassName() : ((ClassType) firstArg.getType()).getName());
 
         // making the init call
 
-        codeBuilder.append(".<init>(");
+        code.append(".<init>(");
 
         // define argument types
         for (Element arg : inst.getListOfOperands())
-            codeBuilder.append(toJasminType(arg.getType().toString()));
+            code.append(toJasminType(arg.getType().toString()));
 
-        codeBuilder.append(")V");
+        code.append(")V");
 
         if (!isThis) {
             String varName = ((Operand) firstArg).getName();
             int reg = Integer.parseInt(getRegister(varName));
 
-            if (reg < 4) codeBuilder.append("\n\tastore_").append(reg);
-            else codeBuilder.append("\n\tastore ").append(reg);
+            if (reg < 4) code.append("\n\tastore_").append(reg);
+            else code.append("\n\tastore ").append(reg);
 
-            codeBuilder.append(" ; ").append(varName);
+            code.append(" ; ").append(varName);
         }
     }
 
