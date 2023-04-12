@@ -115,7 +115,7 @@ public class MyJasminBackend implements JasminBackend {
             return;
         }
 
-        // TODO: imports are broken? gpt suggested ldc instead of .import
+        // TODO: imports are broken? gpt suggested ldc instead of .import --> or just ignore them as they are not used in the tests and the code works either way?
         for (String imp : this.classe.getImports())
             code.append("; .import ").append(imp).append("\n");
 
@@ -131,6 +131,7 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     public void addConstructor() {
+        code.append("\n; Constructor");
         code.append("""
                 \n.method public <init>()V
                 \taload_0
@@ -155,7 +156,7 @@ public class MyJasminBackend implements JasminBackend {
                 method.getParams().forEach(param -> code.append(toJasminType(param.getType().toString())));
 
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
-                String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple como return devia ser usado pq da problema!
+                String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple --> casting é suposto ?
 
                 System.out.println("RETURN TYPE: " + method.getReturnType().toString());
 
@@ -418,7 +419,7 @@ public class MyJasminBackend implements JasminBackend {
             Element leftOperand = opType.getOperands().get(0);
             Element rightOperand = opType.getOperands().get(1);
 
-            // Load operands if needed to execute binary operation
+            // Load operands needed to execute binary operation
             loadElement(leftOperand);
             loadElement(rightOperand);
 
@@ -434,41 +435,30 @@ public class MyJasminBackend implements JasminBackend {
         String label = instruction.getLabel();
 
         code.append("\n\t; Executing conditional branch\n\t");
-
         loadElement(op);
-
         code.append("ifne ").append(label).append("\n");
-
         code.append("\t; End conditional branch\n\n");
     }
 
 
     private void addCallInstruction(CallInstruction inst, boolean isAssignment) {
 
-        // load arguments
         code.append("\t; Making a call instruction\n\t");
-
-        var callType = (inst.getInvocationType()).toString();
-        switch (callType) {
+        switch ((inst.getInvocationType()).toString()) {
             case "NEW" -> callNew(inst);
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
             case "ldc" ->
-                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // todo: check if this is correct and necessary
-
+                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // TODO: necessary?
             case "arraylength" -> {
                 loadElement(inst.getFirstArg());
                 code.append("\n\tarraylength ");
             }
-            default -> {
-                System.out.println("Call instruction not supported");
-                System.out.println("NAME: " + callType);
-            }
+            default -> System.out.println("Call instruction not supported");
+
         }
-
         code.append("\n\t; End of call instruction\n\t");
-
     }
 
     public void callNew(CallInstruction inst) {
@@ -491,7 +481,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("new ").append(((ClassType) firstArg.getType()).getName()).append("\n\t");
         code.append("dup\n\t");
         code.append("invokespecial ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("/<init>()V\n\t");
-        ignoreNextInstruction = true; // TODO: TALK TO TEACHER ABOUT THIS ASAP
+        ignoreNextInstruction = true; // TODO: TALK TO TEACHER ABOUT THIS ASAP --> this is a hack to ignore the next ollir instruction (invokespecial) because it breaks the code
         code.append("; End of creating new object\n\t");
     }
 
@@ -502,7 +492,6 @@ public class MyJasminBackend implements JasminBackend {
         // make sure object cast is correct (needed for some reason)
         code.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
 
-
         // load arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(arg);
@@ -510,11 +499,13 @@ public class MyJasminBackend implements JasminBackend {
         // invoke method
         code.append("invokevirtual ").append(((ClassType) inst.getFirstArg().getType()).getName());
 
+        // add arguments names and types
         invokeArgs(inst, isAssignment);
     }
 
 
     private void invokeArgs(CallInstruction inst, boolean isAssignment) {
+
         code.append(".").append(((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "")).append("(");
 
         // add arguments types
@@ -538,6 +529,7 @@ public class MyJasminBackend implements JasminBackend {
         // invoke method
         code.append("invokestatic ").append(name);
 
+        // add arguments names and types
         invokeArgs(inst, isAssignment);
     }
 
@@ -558,7 +550,7 @@ public class MyJasminBackend implements JasminBackend {
         // choose the classe name to use
         code.append(isThis ? classe.getClassName() : ((ClassType) firstArg.getType()).getName());
 
-        // making the init call
+        // ================ making the init call ================
 
         code.append(".<init>(");
 
@@ -584,25 +576,23 @@ public class MyJasminBackend implements JasminBackend {
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
-        //this.showClass(); // debug print class
 
         addHeaders();
         addImports();
         addFields();
-        code.append("\n; Constructor");
-        if (classe.getSuperClass() == null)
-            addConstructor(); // TODO: how to handle multiple constructors? --> they dont exist in ollir?
-        // TODO: if there's an extend, the constructor must be ignored and no call to super()?
+
+        // TODO: how to handle multiple constructors? --> they dont exist in ollir?
+        // TODO: if there's an extend, the constructor must be ignored and no call to super()? --> how do extended classes work?
+        if (classe.getSuperClass() == null) addConstructor();
+
         addMethods();
 
         System.out.println("\n======================JASMIN CODE======================\n");
         System.out.println(code.toString());
         System.out.println("======================================================");
 
-
         return new JasminResult(code.toString());
     }
 
 }
-
 
