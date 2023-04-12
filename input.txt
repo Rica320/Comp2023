@@ -1,12 +1,19 @@
 import io;
-import GetterAndSetter;
-import MathUtils;
 
+class Simple {
 
-class methodDeclarationClass {
+    public int func2(Simple s, int b) {
+        return b;
+    }
+
+    public int func() {
+        int var;
+        var = this.func2(this, 1);
+        return var;
+    }
 
     public static void main(String[] args) {
-        io.println(4);
+        io.println(new Simple().func());
     }
 }
 
