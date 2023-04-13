@@ -48,7 +48,7 @@ public class MyJasminBackend implements JasminBackend {
             case "OBJECTREF" -> {
                 if (type instanceof ClassType classType) return "L" + classType.getName() + ";";
                 else if (type instanceof ArrayType arrayType) return "L" + (arrayType).getElementType() + ";";
-                else return toJasminType(type);
+                return "Ljava/lang/Object;";
             }
             case "STRING" -> {
                 return "Ljava/lang/String;";
