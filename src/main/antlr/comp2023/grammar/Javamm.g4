@@ -23,7 +23,7 @@ classDeclaration
     ;
 
 varDeclaration
-    : type var=ID';' #varDcl
+    : type var=ID';' #VarDcl
     ;
 
 
