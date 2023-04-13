@@ -266,6 +266,21 @@ public class MySymbolTable implements SymbolTable {
 
         return String.valueOf(parameters.indexOf(methodScope.getParameter(varName)) + curIsNotStatic());
     }
+
+    public Type findTypeVar(String varName) {
+        Symbol symbol = this.getCurrentMethodScope().getLocalVariable(varName); // Is it a local variable?
+        if (symbol == null) {
+            symbol = this.getField(varName); // Is it a field?
+        }
+        if (symbol == null) {
+            symbol = this.getCurrentMethodScope().getParameter(varName); // Is it a parameter ?
+        }
+        if (this.hasImport(varName)) { // Is it an import? ... TODO: always void ?
+            return new Type("void", false);
+        }
+        System.out.println("Symbol: " + varName);
+        return symbol.getType();
+    }
 }
 
 

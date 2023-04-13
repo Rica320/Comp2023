@@ -28,8 +28,14 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         addVisit("While", this::dealWithConditional);
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
         addVisit("Assign", this::dealWithAssign);
-        //addVisit("ArrayAssign", this::dealWithArrayAssign);
+        addVisit("ArrayAssign", this::dealWithArrayAssign);
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Type dealWithArrayAssign(JmmNode jmmNode, String s) {
+        jmmNode.getJmmChild(0).put("expType", jmmNode.get("var"));
+
+        return null;
     }
 
     private Type defaultVisit(JmmNode jmmNode, String s){
@@ -68,6 +74,10 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
                 return visitResult;
             }
         }
+        jmmNode.getJmmChild(0).put("expType", jmmNode.get("var"));
+
+
+
 
         if (jmmNode.getNumChildren() == 2) {
             JmmNode leftChild = jmmNode.getJmmChild(0);

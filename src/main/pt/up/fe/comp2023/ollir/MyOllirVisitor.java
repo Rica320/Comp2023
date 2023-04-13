@@ -32,7 +32,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return switch (type) {
             case "int" -> sb.append("i32").toString();
             case "boolean" -> sb.append("bool").toString();
-            case "void", ".Any" -> sb.append("V").toString();
+            case "void" -> sb.append("V").toString();
             default -> sb.append(type).toString();
         };
     }
@@ -158,7 +158,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
 
         String varName = jmmNode.get("var");
-        Type type = findTypeVar(varName);
+        Type type = symbolTable.findTypeVar(varName);
 
         SymbolOrigin origin = symbolTable.getSymbolOrigin(varName);
 
@@ -285,7 +285,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = findTypeVar(varName); // TODO: e se n for local ...
+        Type type = symbolTable.findTypeVar(varName); // TODO: e se n for local ...
         String ollirType = getOllirType(type.getName(), type.isArray());
 
         // TODO: we can improve the number of temps by modifying the code bellow ... a := 2 + 1 instead of t1 := 2 + 1; a := t1
@@ -313,7 +313,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
 
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = findTypeVar(varName); // TODO: assumindo que a semantica esta bem
+        Type type = symbolTable.findTypeVar(varName); // TODO: assumindo que a semantica esta bem
 
         switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
             case PARAMETER: // already checks STATIC
@@ -345,20 +345,6 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return new Pair<>(sb.append(";\n").toString(), null);
     }
 
-    public Type findTypeVar(String varName) {
-        Symbol symbol = symbolTable.getCurrentMethodScope().getLocalVariable(varName); // Is it a local variable?
-        if (symbol == null) {
-            symbol = symbolTable.getField(varName); // Is it a field?
-        }
-        if (symbol == null) {
-            symbol = symbolTable.getCurrentMethodScope().getParameter(varName); // Is it a parameter ?
-        }
-        if (symbolTable.hasImport(varName)) { // Is it an import? ... TODO: always void ?
-            return new Type("void", false);
-        }
-        System.out.println("Symbol: " + varName);
-        return symbol.getType();
-    }
 
     public Type findRetMethod(String methodName) {
         MethodScope symbol = symbolTable.getMethod(methodName);
