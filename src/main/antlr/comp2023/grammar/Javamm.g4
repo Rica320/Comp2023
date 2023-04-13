@@ -23,7 +23,7 @@ classDeclaration
     ;
 
 varDeclaration
-    : type var=ID';' #varDcl
+    : type var=ID';' #VarDcl
     ;
 
 
@@ -64,7 +64,7 @@ while_block : statement #WhileBlock
 statement
     : '{' (statement)* '}' #Scope
     | 'if' '(' expression ')' then_block 'else' else_block #IfClause
-    | 'while' '(' expression ')' while_block #While //statement
+    | 'while' '(' expression ')' while_block #While
     | expression ';' #ExpressionStmt
     | var=ID '=' expression ';' #Assign
     | var=ID '[' expression ']' '=' expression ';' #ArrayAssign
@@ -73,16 +73,15 @@ statement
 expression
     : '(' expression ')' #Paren
     | expression '[' expression ']' #ArrayLookup
-    //| var=ID '[' expression ']' #ArrayLookup //?
-    | expression '.' atribute=ID #AttributeAccess //?
+    | expression '.' atribute=ID #AttributeAccess
     | expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall
     | '!' expression #Not
     | 'new' 'int' '[' expression ']' #NewIntArray
     | 'new' objClass=ID '(' ')' #NewObject
     | expression op=('*'| '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
-    | expression op='<' expression #BinaryComp //BinaryOp?
-    | expression op='&&' expression #BinaryBool //BinaryBool?
+    | expression op='<' expression #BinaryComp
+    | expression op='&&' expression #BinaryBool
     | 'this' #This
     | var=ID #Var
     | val=BooleanLiteral #Boolean
