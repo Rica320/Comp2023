@@ -6,7 +6,8 @@ import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
-import pt.up.fe.comp2023.SemanticVisitors.ReturnTypeVisitor;
+import pt.up.fe.comp2023.SemanticVisitors.ExpressionVisitor;
+import pt.up.fe.comp2023.SemanticVisitors.ProgramVisitor;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
@@ -45,9 +46,9 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
             reports.add(report);
         }
 
-        //ReturnTypeVisitor returnTypeVisitor = new ReturnTypeVisitor(st);
-        //returnTypeVisitor.visit(jmmParserResult.getRootNode());
-        //List<Report> temp = returnTypeVisitor.getReports();
+        ProgramVisitor arrayOperationVisitor = new ProgramVisitor(st, reports);
+        arrayOperationVisitor.visit(jmmParserResult.getRootNode());
+        //List<Report> temp = arrayOperationVisitor.getReports();
         //reports.addAll(temp);
 
 
