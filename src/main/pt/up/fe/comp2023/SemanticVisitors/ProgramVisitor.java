@@ -4,6 +4,8 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.ReportType;
+import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 
@@ -27,7 +29,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         addVisit("ProgramRoot", this::dealWithProgram);
         addVisit("ImportDecl", this::dealWithImport);
         addVisit("ClassDecl", this::dealWithClass);
-        //addVisit("varDcl", this::dealWithVarDecl); ???
+        addVisit("VarDcl", this::dealWithVarDecl);
         //addVisit("MainMethod", this::dealWithMethodDecl);
         //addVisit("MethodDecl", this::dealWithMethodDecl);
         //addVisit("MethodArgs", this::dealWithMethodArgs);
@@ -60,6 +62,31 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         }
         return new Type("null", false);
     }
+
+    private Type dealWithVarDecl(JmmNode jmmNode, String s) {
+        System.out.println("VarDeclaration:" + jmmNode.get("var"));
+        visit(jmmNode.getJmmChild(0), "");
+        return new Type("null", false);
+    }
+
+    /*private Type dealWithMethodDecl(JmmNode jmmNode, String s) {
+        for(JmmNode child: jmmNode.getChildren()){
+            if(child.getKind().equals("MethodArgs")){
+                visit(child, "");
+            }
+        }
+        return new Type("null", false);
+    }*/
+
+    /*private Type dealWithReturn(JmmNode jmmNode, String s) {
+        JmmNode expression = jmmNode.getJmmChild(0);
+        Type exprType = visit(expression, "");
+        if(!exprType.equals(st.getReturnType())){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type"));
+        }
+        //se não for igual ver se o 1 pertence a um import, se sim aceitar
+        return new Type("null", false);
+    }*/
 
 
 }
