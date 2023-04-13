@@ -3,6 +3,7 @@ package pt.up.fe.comp2023.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
+import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
 
@@ -268,6 +269,10 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public Type findTypeVar(String varName) {
+        return findTypeVar(varName, null);
+    }
+
+    public Type findTypeVar(String varName, JmmNode node) {
         Symbol symbol = this.getCurrentMethodScope().getLocalVariable(varName); // Is it a local variable?
         if (symbol == null) {
             symbol = this.getField(varName); // Is it a field?
@@ -277,6 +282,14 @@ public class MySymbolTable implements SymbolTable {
         }
         if (this.hasImport(varName)) { // Is it an import? ... TODO: always void ?
             return new Type("void", false);
+        }
+        if (symbol == null && this.hasSuperClass()) {
+            if (node == null) {
+                return new Type("i32", false); // NOTA: o professor disse que este caso nunca acontece, terá de estar sempre a ser "dito" o tipo
+            }
+            if (node.hasAttribute("expType")) {
+                return new Type(node.get("expType"), node.get("expType").contains("["));
+            }
         }
         System.out.println("Symbol: " + varName);
         return symbol.getType();

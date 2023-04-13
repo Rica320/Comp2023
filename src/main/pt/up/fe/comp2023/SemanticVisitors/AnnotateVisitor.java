@@ -83,7 +83,7 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithArrayAssign(JmmNode jmmNode, String s) {
         jmmNode.getJmmChild(0).put("expType", "int");
-        jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("name")).getName());
+        jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("var")).getName());
         defaultVisit(jmmNode, s);
 
         return null;

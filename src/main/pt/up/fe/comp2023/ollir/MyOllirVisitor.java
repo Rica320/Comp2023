@@ -158,7 +158,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
 
         String varName = jmmNode.get("var");
-        Type type = symbolTable.findTypeVar(varName);
+        Type type = symbolTable.findTypeVar(varName, jmmNode);
 
         SymbolOrigin origin = symbolTable.getSymbolOrigin(varName);
 
@@ -285,7 +285,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = symbolTable.findTypeVar(varName); // TODO: e se n for local ...
+        Type type = symbolTable.findTypeVar(varName, jmmNode); // TODO: e se n for local ...
         String ollirType = getOllirType(type.getName(), type.isArray());
 
         // TODO: we can improve the number of temps by modifying the code bellow ... a := 2 + 1 instead of t1 := 2 + 1; a := t1
@@ -313,7 +313,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
 
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = symbolTable.findTypeVar(varName); // TODO: assumindo que a semantica esta bem
+        Type type = symbolTable.findTypeVar(varName, jmmNode); // TODO: assumindo que a semantica esta bem
 
         switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
             case PARAMETER: // already checks STATIC
@@ -322,6 +322,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             case LOCAL:
                 return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
             case FIELD:
+            case UNKNOWN:
                 StringBuilder sb = new StringBuilder();
                 String ollirType = getOllirType(type.getName(), type.isArray());
                 String newTemp = "t" + newTemp() + "." + ollirType;
