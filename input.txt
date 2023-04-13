@@ -3,19 +3,15 @@ import GetterAndSetter;
 
 class Simple extends GetterAndSetter{
 
-    public int func(int x) {
-        return x+1;
-    }
-
-    public static void main(String[] args) {
+    public Simple func() {
         Simple s;
-        int k;
 
         s = new Simple();
 
-        k = s.func(5);
+        return s;
+    }
 
-        io.println(k);
+    public static void main(String[] args) {
 
 
     }

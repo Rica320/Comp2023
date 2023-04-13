@@ -46,7 +46,8 @@ public class MyJasminBackend implements JasminBackend {
                 return "[I";
             }
             case "OBJECTREF" -> {
-                return "Ljava/lang/Object;";
+                ClassType classType = (ClassType) currentMethod.getReturnType();
+                return "L" + classType.getName() + ";";
             }
             case "STRING" -> {
                 return "Ljava/lang/String;";
@@ -140,9 +141,8 @@ public class MyJasminBackend implements JasminBackend {
                 method.getParams().forEach(param -> code.append(toJasminType(param.getType().toString())));
 
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
-                String returnType = method.getReturnType().toString(); // TODO: Perguntar ao prof se LSimple --> casting é suposto ?
 
-                code.append(")").append(toJasminType(returnType)).append("\n");
+                code.append(")").append(toJasminType(method.getReturnType().toString())).append("\n");
             }
 
             // in this phase we don't need to worry about locals and stack limits
