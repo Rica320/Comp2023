@@ -1,19 +1,32 @@
 import io;
-import GetterAndSetter;
 
-class Simple extends GetterAndSetter{
 
-    public Simple func() {
+class Simple {
+
+    public Simple func(){
+
         Simple s;
-
-        s = new Simple();
+         s = new Simple();
 
         return s;
     }
 
-    public static void main(String[] args) {
+    public int func2(int x) {
 
+        return x;
 
     }
+
+    public static void main(String[] args) {
+
+        io.println(new Simple().func().func2(5));
+
+    }
+
+
+
+
 }
+
+
 

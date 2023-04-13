@@ -31,8 +31,8 @@ public class MyJasminBackend implements JasminBackend {
         return "label_" + labelCounter++;
     }
 
-    private String toJasminType(String type) {
-        switch (type) {
+    private String toJasminType(Type type) {
+        switch (type.toString()) {
             case "VOID" -> {
                 return "V";
             }
@@ -46,8 +46,9 @@ public class MyJasminBackend implements JasminBackend {
                 return "[I";
             }
             case "OBJECTREF" -> {
-                ClassType classType = (ClassType) currentMethod.getReturnType();
-                return "L" + classType.getName() + ";";
+                if (type instanceof ClassType classType) return "L" + classType.getName() + ";";
+                else if (type instanceof ArrayType arrayType) return "L" + (arrayType).getElementType() + ";";
+                else return toJasminType(type);
             }
             case "STRING" -> {
                 return "Ljava/lang/String;";
@@ -113,7 +114,7 @@ public class MyJasminBackend implements JasminBackend {
         }
         this.classe.getFields().forEach(field -> {
             code.append(".field public ");
-            code.append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType().toString())).append("\n");
+            code.append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType())).append("\n");
         });
     }
 
@@ -138,11 +139,11 @@ public class MyJasminBackend implements JasminBackend {
             else code.append("\n.method public ").append(method.getMethodName()).append("(");
 
             if (!method.getMethodName().equals("main"))
-                method.getParams().forEach(param -> code.append(toJasminType(param.getType().toString())));
+                method.getParams().forEach(param -> code.append(toJasminType(param.getType())));
 
             if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
 
-                code.append(")").append(toJasminType(method.getReturnType().toString())).append("\n");
+                code.append(")").append(toJasminType(method.getReturnType())).append("\n");
             }
 
             // in this phase we don't need to worry about locals and stack limits
@@ -317,36 +318,32 @@ public class MyJasminBackend implements JasminBackend {
             case "UNARYOPER" -> addUnaryOperation((UnaryOpInstruction) instruction);
             case "BINARYOPER" -> addBinaryOperation((BinaryOpInstruction) instruction);
             case "GOTO" -> code.append("\n\tgoto ").append(((GotoInstruction) instruction).getLabel()).append("\n");
-
-            case "RETURN" -> {
-                ReturnInstruction inst = (ReturnInstruction) instruction;
-                code.append("\t");
-
-                if (inst.getReturnType().toString().equals("VOID")) {
-                    code.append("return");
-                    return;
-                }
-
-                loadElement(inst.getOperand());
-
-                switch (inst.getReturnType().toString()) {
-                    case "INT32", "BOOLEAN" -> code.append("ireturn");
-                    default -> code.append("areturn"); // ARRAYREF or OBJECTREF
-                }
-
-            }
-
-            case "BRANCH" -> {
-                if (instruction instanceof OpCondInstruction inst) addConditionalBranch(inst);
-                else if (instruction instanceof SingleOpCondInstruction inst) addSingleConditionalBranch(inst);
-                else System.out.println("Error in branch instruction");
-            }
-
-
+            case "RETURN" -> addReturnInstruction((ReturnInstruction) instruction);
+            case "BRANCH" -> addBranchInstruction(instruction);
             default -> System.out.println("Error in instruction: " + instType);
+        }
+    }
 
+    private void addBranchInstruction(Instruction instruction) {
+        if (instruction instanceof OpCondInstruction inst) addConditionalBranch(inst);
+        else if (instruction instanceof SingleOpCondInstruction inst) addSingleConditionalBranch(inst);
+        else System.out.println("Error in branch instruction");
+    }
+
+    private void addReturnInstruction(ReturnInstruction inst) {
+        code.append("\t");
+
+        if (inst.getReturnType().toString().equals("VOID")) {
+            code.append("return");
+            return;
         }
 
+        loadElement(inst.getOperand());
+
+        switch (inst.getReturnType().toString()) {
+            case "INT32", "BOOLEAN" -> code.append("ireturn");
+            default -> code.append("areturn"); // ARRAYREF or OBJECTREF
+        }
     }
 
 
@@ -363,7 +360,7 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t");
             loadElement(op1);
             code.append("getfield").append(" ").append(typeClass).append("/");
-            code.append(op2.getName()).append(" ").append(toJasminType(op2.getType().toString()));
+            code.append(op2.getName()).append(" ").append(toJasminType(op2.getType()));
             code.append("\n\t");
             return;
         }
@@ -379,7 +376,7 @@ public class MyJasminBackend implements JasminBackend {
         loadElement(op1);
         loadElement(op3);
         code.append("putfield").append(" ").append(typeClass).append("/");
-        code.append(op2.getName()).append(" ").append(toJasminType(op3.getType().toString()));
+        code.append(op2.getName()).append(" ").append(toJasminType(op3.getType()));
         code.append("\n\t");
 
     }
@@ -469,9 +466,6 @@ public class MyJasminBackend implements JasminBackend {
 
         loadElement(inst.getFirstArg());
 
-        // make sure object cast is correct (needed for some reason)
-        code.append("checkcast ").append(((ClassType) inst.getFirstArg().getType()).getName()).append("\n\t");
-
         // load arguments
         for (Element arg : inst.getListOfOperands())
             loadElement(arg);
@@ -490,9 +484,9 @@ public class MyJasminBackend implements JasminBackend {
 
         // add arguments types
         for (Element arg : inst.getListOfOperands())
-            code.append(toJasminType(arg.getType().toString()));
+            code.append(toJasminType(arg.getType()));
 
-        code.append(")").append(toJasminType(inst.getReturnType().toString()));
+        code.append(")").append(toJasminType(inst.getReturnType()));
 
         // if it is not an assign , just ignore the non-void return
         if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) code.append("\n\tpop");
@@ -538,7 +532,7 @@ public class MyJasminBackend implements JasminBackend {
 
         // define argument types
         for (Element arg : inst.getListOfOperands())
-            code.append(toJasminType(arg.getType().toString()));
+            code.append(toJasminType(arg.getType()));
 
         code.append(")V");
 
