@@ -4,7 +4,7 @@ import GetterAndSetter;
 class Simple extends GetterAndSetter{
 
     public int func(int x) {
-        return 4;
+        return x+1;
     }
 
     public static void main(String[] args) {
@@ -15,7 +15,7 @@ class Simple extends GetterAndSetter{
 
         k = s.func(5);
 
-        io.println(10);
+        io.println(k);
 
 
     }
