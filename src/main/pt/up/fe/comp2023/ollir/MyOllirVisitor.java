@@ -76,7 +76,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         addVisit("BinaryComp", this::dealWithBinaryComp);
         addVisit("BinaryBool", this::dealWithBinaryComp);
         addVisit("Paren", this::dealWithParen);
-        addVisit("AtributeAccess", this::dealWithAtributeAccess);
+        addVisit("AttributeAccess", this::dealWithAtributeAccess);
         addVisit("Not", this::dealWithNot);
         addVisit("ArrayLookup", this::dealWithArrayLookup);
         addVisit("This", this::dealWithThis);
