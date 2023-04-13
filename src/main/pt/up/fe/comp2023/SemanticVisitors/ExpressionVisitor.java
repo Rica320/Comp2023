@@ -80,7 +80,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type rightType = visit(right, "");
 
         if(!leftType.isArray()) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), left.get("value") + " is not an array"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), " is not an array"));
             return new Type("error", false);
         }
 
