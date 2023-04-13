@@ -35,16 +35,20 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         addVisit("NewIntArray", this::dealWithNewIntArray);
         addVisit("NewObject", this::dealWithNewObject);
         addVisit("BinaryOp", this::dealWithBinaryOp);
-        //addVisit("BinaryComp", this::dealWithBinaryComp); ???
+        addVisit("BinaryComp", this::dealWithBinaryOp);
+        addVisit("BinaryBool", this::dealWithBinaryOp);
         addVisit("This", this::dealWithThis);
         //addVisit("Var", this::dealWithVar);
         addVisit("Boolean", this::dealWithBoolean);
         addVisit("Int", this::dealWithInt);
-        //setDefaultVisit(this::defaultVisit);
+        setDefaultVisit(this::defaultVisit);
     }
 
-    private String defaultVisit(JmmNode jmmNode, String s) {
-        return "DEFAULT_VISIT";
+    private Type defaultVisit(JmmNode jmmNode, String s) {
+        for(JmmNode child : jmmNode.getChildren()){
+            visit(child, "");
+        }
+        return new Type("null", false);
     }
 
     private Type dealWithParentheses(JmmNode jmmNode, String s) {
@@ -166,7 +170,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects boolean"));
         } else {
             switch (op) {
-                case "+", "-", "*", "/":
+                case "+", "-", "*", "/", "<":
                     return new Type("int", false);
                 case "&&":
                     return new Type("boolean", false);
@@ -181,7 +185,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         JmmNode parent = jmmNode.getJmmParent();
 
         if(parent.getKind().equals("MethodDecl")) {
-            if(parent.get("MainMethod") == "main") {
+            if(parent.get("MainMethod").equals("main")) {
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
             }
         }

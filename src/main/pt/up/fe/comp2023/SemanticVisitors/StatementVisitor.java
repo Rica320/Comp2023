@@ -22,20 +22,19 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     @Override
     protected void buildVisitor() {
 
-        addVisit("Scope", this::dealWithScope);
         addVisit("IfClause", this::dealWithIfClause);
         //addVisit("While", this::dealWithWhile);
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
         //addVisit("Assign", this::dealWithAssign);
         //addVisit("ArrayAssign", this::dealWithArrayAssign);
-        //setDefaultVisit(this::defaultVisit);
+        setDefaultVisit(this::defaultVisit);
     }
 
-    private Type dealWithScope(JmmNode jmmNode, String s){
+    private Type defaultVisit(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){
             visit(child, "");
         }
-        return null;
+        return new Type("null", false);
     }
 
     private Type dealWithIfClause(JmmNode jmmNode, String s){
