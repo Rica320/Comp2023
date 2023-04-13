@@ -91,6 +91,7 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
         jmmNode.put("expType", st.findTypeVar(jmmNode.get("var")).getName());
+        System.out.println("Assign: " + jmmNode.get("var") + " " + jmmNode.get("expType"));
         defaultVisit(jmmNode, s);
 
         return null;
@@ -99,6 +100,7 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
     private void propagateDown(JmmNode jmmNode) {
         if (jmmNode.hasAttribute("expType")) {
             for (JmmNode child : jmmNode.getChildren()) {
+                System.out.println("Propagate: " + child.getKind() + " " + jmmNode.get("expType"));
                 child.put("expType", jmmNode.get("expType"));
             }
         }

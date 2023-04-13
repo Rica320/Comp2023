@@ -4,7 +4,8 @@ import GetterAndSetter;
 class Simple extends GetterAndSetter {
 
     public Simple func(){
-        this.setA(5);
+        int x;
+        x = this.getA(5);
 
         return this;
     }

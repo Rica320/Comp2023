@@ -347,10 +347,13 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
 
-    public Type findRetMethod(String methodName) {
+    public Type findRetMethod(String methodName, JmmNode node) {
         MethodScope symbol = symbolTable.getMethod(methodName);
         if (symbol == null) {
-            return new Type("void", false);
+            if (!node.hasAttribute("expType")) {
+                return new Type("void", false);
+            }
+            return new Type(node.get("expType"), node.get("expType").contains("["));
         }
         return symbol.getReturnType(); // TODO: é suposto assumir que é void ???
     }
@@ -380,7 +383,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         String methodName = jmmNode.get("method");
 
-        Type type = findRetMethod(methodName);
+        Type type = findRetMethod(methodName, jmmNode);
         String ollirType = getOllirType(type.getName(), type.isArray());
 
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
