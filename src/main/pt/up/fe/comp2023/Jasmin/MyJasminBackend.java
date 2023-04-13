@@ -13,8 +13,6 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
-    boolean ignoreNextInstruction = false; // used to ignore the next instruction when a new instruction is added to the code
-
     ClassUnit classe;
     StringBuilder code = new StringBuilder();
 
@@ -106,21 +104,6 @@ public class MyJasminBackend implements JasminBackend {
 
     }
 
-    private void addImports() {
-
-        code.append("\n; Imports\n");
-
-        if (this.classe.getImports().size() == 0) {
-            code.append("; No imports\n");
-            return;
-        }
-
-        // TODO: imports are broken? gpt suggested ldc instead of .import --> or just ignore them as they are not used in the tests and the code works either way?
-        for (String imp : this.classe.getImports())
-            code.append("; .import ").append(imp).append("\n");
-
-    }
-
     public void addFields() {
         code.append("\n; Fields\n");
         if (this.classe.getFields().size() == 0) {
@@ -168,10 +151,8 @@ public class MyJasminBackend implements JasminBackend {
 
             // add instructions
             method.getInstructions().forEach(instruction -> {
-                if (!ignoreNextInstruction) {
-                    addInstruction(instruction);
-                    code.append("\n");
-                } else ignoreNextInstruction = false;
+                addInstruction(instruction);
+                code.append("\n");
             });
 
             currVarTable = null;
@@ -481,8 +462,6 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n\t; Creating new object\n\t");
         code.append("new ").append(className).append("\n\t");
         code.append("dup\n\t");
-        code.append("invokespecial ").append(className).append("/<init>()V\n\t");
-        ignoreNextInstruction = true; // TODO: TALK TO TEACHER ABOUT THIS ASAP --> this is a hack to ignore the next ollir instruction (invokespecial) because it breaks the code
         code.append("; End of creating new object\n\t");
     }
 
@@ -538,9 +517,11 @@ public class MyJasminBackend implements JasminBackend {
 
         Element firstArg = inst.getFirstArg();
 
+
         boolean isThis = firstArg.getType().getTypeOfElement().equals(ElementType.THIS);
 
         if (isThis) code.append("\n\taload_0");
+        else loadElement(firstArg);
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
@@ -579,7 +560,6 @@ public class MyJasminBackend implements JasminBackend {
         this.classe = ollirResult.getOllirClass();
 
         addHeaders();
-        addImports();
         addFields();
         addConstructor();
         addMethods();
