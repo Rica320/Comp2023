@@ -7,10 +7,8 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
-import pt.up.fe.comp2023.SymbolTable.MethodScope;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ExpressionVisitor extends AJmmVisitor<String, Type> {

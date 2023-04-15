@@ -1,18 +1,17 @@
 import io;
+import GetterAndSetter;
 
-
-class Simple {
+class Simple extends GetterAndSetter {
 
     public Simple func(){
+        int x;
+        x = this.getA(5);
 
-        Simple s;
-         s = new Simple();
-
-        return s;
+        return this;
     }
 
     public int func2(int x) {
-
+        x = a;
         return x;
 
     }
