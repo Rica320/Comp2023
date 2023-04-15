@@ -48,7 +48,7 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
             reports.add(report);
         }
 
-
+    /*
         AnnotateVisitor annotateVisitor = new AnnotateVisitor(st);
         annotateVisitor.visit(jmmParserResult.getRootNode());
 
@@ -63,7 +63,7 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
 
         //List<Report> temp = arrayOperationVisitor.getReports();
         //reports.addAll(temp);
-
+*/
 
         // ... more semantic analysis
         return new JmmSemanticsResult(jmmParserResult, st, reports);
