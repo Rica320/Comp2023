@@ -8,6 +8,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+import pt.up.fe.comp2023.SymbolTable.SymbolOrigin;
 
 import java.util.List;
 
@@ -122,8 +123,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
-
-         //   expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall
 
         String method = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
@@ -242,6 +241,17 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
         try {
+
+            if (st.getCurrentMethod().equals("main")) {
+                SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
+                if (origin == SymbolOrigin.FIELD) {
+                    reports.add(
+                            new Report(ReportType.ERROR, Stage.SEMANTIC,
+                                    Integer.parseInt(jmmNode.get("lineStart")),
+                                    Integer.parseInt(jmmNode.get("colStart")), "Field in main"));
+                }
+            }
+
             return st.findTypeVar(jmmNode.get("var"));
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
