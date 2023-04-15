@@ -7,7 +7,9 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+import pt.up.fe.comp2023.SymbolTable.SymbolOrigin;
 
+import java.awt.*;
 import java.util.List;
 
 //Type verification
@@ -23,6 +25,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
+        addVisit("MainMethod", this::dealWithMain);
+        addVisit("MethodDecl", this::dealWithMethod);
 
         addVisit("IfClause", this::dealWithConditional);
         addVisit("While", this::dealWithConditional);
@@ -32,6 +36,19 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         setDefaultVisit(this::defaultVisit);
     }
 
+    private Type dealWithMethod(JmmNode jmmNode, String s) {
+        st.setCurrentMethod(jmmNode.get("name"));
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        return null;
+    }
+
+    private Type dealWithMain(JmmNode jmmNode, String s) {
+        st.setCurrentMethod("main");
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        return null;
+    }
 
     private Type defaultVisit(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){
@@ -63,14 +80,19 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     private Type dealWithAssign(JmmNode jmmNode, String s){
         Type leftT = st.findTypeVar(jmmNode.get("var"));
 
-        JmmNode right = jmmNode.getJmmChild(0);
-        Type rightType = visit(right, "");
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
+        Type rightType = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
 
-        if (!leftT.equals(rightType)) {
+        boolean lIsImp = st.hasImport(leftT.getName());
+        boolean rIsImp = st.hasImport(rightType.getName());
+
+        boolean extendsClass = (rightType.getName().equals(st.getClassName()) && leftT.getName().equals(st.getSuper()));
+
+        if (!(leftT.equals(rightType) || extendsClass) && !(lIsImp && rIsImp)) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                     Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")),
-                    "Attempting to assign two different types"));
+                    "Attempting to assign two different types: " + leftT.getName() + "," + rightType.getName()));
             return new Type("error", false);
         }
         return new Type("null", false);

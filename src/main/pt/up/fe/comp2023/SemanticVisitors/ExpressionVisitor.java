@@ -73,7 +73,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithAttributeAccess(JmmNode jmmNode, String s) {
         JmmNode left = jmmNode.getJmmChild(0);
-        String right = jmmNode.get("attribute");
+        String right = jmmNode.get("atribute");
         Type leftType = visit(left, "");
 
         if(!(right.equals("length"))) {
@@ -107,40 +107,80 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         return new Type("int",false);
     }
 
+    private boolean checkArgsTyps(JmmNode jmmNode, String method) {
+        List<Symbol> methodParams = st.getParameters(method);
+        for (int i = 1; i < jmmNode.getNumChildren(); i++) {
+            Type argType = visit(jmmNode.getJmmChild(i), "");
+            // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
+            if (!methodParams.get(i - 1).getType().equals(argType)) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
+
+         //   expression '.' method=ID '(' (expression (',' expression)*)? ')' #MethodCall
+
         String method = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
         Type classType = visit(classCall, "");
 
-        if(classType.getName().equals(st.getClassName())) {
-            //verify if method exists
-            if (st.getMethods().contains(method)) {
-                //verify arguments type
-                List<Symbol> methodParams = st.getParameters(method);
-                for (int i = 1; i < jmmNode.getNumChildren(); i++) {
+        if(classType == null){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " null"));
+            return new Type("error", false);
+        }
+
+        //check if class is imported
+        if (st.getImports().contains(classType.getName())) {
+            return new Type(classType.getName(), false);
+        }
+
+        // check if is extended
+        if (st.getSuper().equals(classType.getName())) {
+            return new Type(classType.getName(), false);
+        }
+
+        if (classType.getName().equals(st.getClassName()) && st.hasSuperClass()) {
+            return new Type(classType.getName(), false);
+        }
+
+        // verify if class exists
+        if ( classType.getName().equals(st.getClassName())) {
+            // verify if method exists
+            if (!st.hasMethod(method) ) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " does not exist"));
+                return new Type("error", false);
+            }
+
+            // verify number of args
+            if (jmmNode.getChildren().size() != st.getMethod(method).getParameters().size() + 1) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().size() + " arguments"));
+                return new Type("error", false);
+            }
+
+            // verify types of args
+            if (jmmNode.getChildren().size() > 1) {
+                for (int i = 1; i < jmmNode.getChildren().size(); i++) {
                     Type argType = visit(jmmNode.getJmmChild(i), "");
-                    // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
-                    if (!methodParams.get(i - 1).getType().equals(argType)) {
-                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument" + jmmNode.getJmmChild(i).get("arg") + "type"));
+                    if (!argType.getName().equals(st.getMethod(method).getParameters().get(i - 1).getType().toString())) {
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i));
                         return new Type("error", false);
                     }
                 }
             }
-            //check if extends a superclass
-            else if (!(st.getSuper() != null && st.getImports().contains(st.getSuper()))) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " does not exist"));
-                return new Type("error", false);
-            }
-        }
-        else {
-            //check if class is imported
-            if (!st.getImports().contains(classType.getName())) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class not imported"));
-                return new Type("error", false);
-            }
-        }
-        return st.getReturnType(method);
 
+        }
+
+
+        try{
+            return st.getReturnType(method);
+        }catch (Exception e){
+            return new Type("null", false);
+        }
     }
 
     private Type dealWithNot(JmmNode jmmNode, String s) {
@@ -200,7 +240,14 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
-        return st.findTypeVar(jmmNode.get("var"));
+        try {
+            return st.findTypeVar(jmmNode.get("var"));
+        } catch (Exception e) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")), e.toString()));
+            return null;
+        }
+
     }
 
     private Type dealWithBoolean(JmmNode jmmNode, String s) {

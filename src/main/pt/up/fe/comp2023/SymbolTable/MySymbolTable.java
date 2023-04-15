@@ -296,9 +296,3 @@ public class MySymbolTable implements SymbolTable {
     }
 }
 
-
-
-
-
-
-
