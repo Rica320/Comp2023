@@ -11,13 +11,10 @@ import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.List;
 
-//Type verification
-//Array access index is an expression of type integer
-
 public class ProgramVisitor extends AJmmVisitor<String, Type> {
 
-    private MySymbolTable st;
-    private List<Report> reports;
+    private final MySymbolTable st;
+    private final List<Report> reports;
 
     public ProgramVisitor(MySymbolTable table, List<Report> reports){
         this.st = table;
@@ -27,17 +24,21 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     @Override
     protected void buildVisitor() {
         addVisit("ProgramRoot", this::dealWithProgram);
-        addVisit("ImportDecl", this::dealWithImport);
         addVisit("ClassDecl", this::dealWithClass);
-        addVisit("VarDcl", this::dealWithVarDecl);
         addVisit("MainMethod", this::dealWithMethodDecl);
         addVisit("MethodDecl", this::dealWithMethodDecl);
-        //addVisit("ReturnStmt", this::dealWithReturn);
+        addVisit("ReturnStmt", this::dealWithReturn);
 
-        //defaultVisit(this::defaultVisit);
+        setDefaultVisit(this::defaultVisit);
     }
 
-    //private String defaultVisit(JmmNode jmmNode, String s) {return "DEFAULT_VISIT";}
+
+    private Type defaultVisit(JmmNode jmmNode, String s) {
+        for(JmmNode node: jmmNode.getChildren()) {
+            visit(node);
+        }
+        return null;
+    }
 
     private Type dealWithProgram(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){
@@ -45,11 +46,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
                 visit(child, "");
             }
         }
-        return new Type("null", false);
-    }
-
-    private Type dealWithImport(JmmNode jmmNode, String s){
-        return new Type("null", false);
+        return null;
     }
 
     private Type dealWithClass(JmmNode jmmNode, String s) {
@@ -58,42 +55,35 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
                 visit(child, "");
             }
         }
-        return new Type("null", false);
+        return null;
     }
 
-    private Type dealWithVarDecl(JmmNode jmmNode, String s) {
-        //System.out.println("VarDeclaration:" + jmmNode.get("var"));
-        visit(jmmNode.getJmmChild(0), "");
-        return new Type("null", false);
-    }
 
     private Type dealWithMethodDecl(JmmNode jmmNode, String s) {
         for(JmmNode child: jmmNode.getChildren()){
             switch (child.getKind()) {
-                case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign":
+                case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign" -> {
                     StatementVisitor statementVisitor = new StatementVisitor(st, reports);
                     Type childType = statementVisitor.visit(child, "");
-                    break;
-                case "ReturnStmt":
-                    visit(child, "");
-                    break;
+                }
+                case "ReturnStmt" -> visit(child, "");
             }
         }
-        return new Type("null", false);
+        return null;
     }
 
+    private Type dealWithReturn(JmmNode jmmNode, String s) {
 
-    /*private Type dealWithReturn(JmmNode jmmNode, String s) {
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
-        Type childType = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
-        JmmNode expression = jmmNode.getJmmChild(0);
-        Type exprType = visit(expression, "");
-        if(!exprType.equals(st.getReturnType())){
+
+        Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
+
+        if(!retType.equals(st.getCurrentMethodScope().getReturnType())){
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type"));
         }
-        //se não for igual ver se o 1 pertence a um import, se sim aceitar
+
         return new Type("null", false);
-    }*/
+    }
 
 
 }

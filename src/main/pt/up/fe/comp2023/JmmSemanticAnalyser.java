@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SemanticVisitors.AnnotateVisitor;
 import pt.up.fe.comp2023.SemanticVisitors.ExpressionVisitor;
 import pt.up.fe.comp2023.SemanticVisitors.ProgramVisitor;
+import pt.up.fe.comp2023.SemanticVisitors.StatementVisitor;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
@@ -47,16 +48,19 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
             reports.add(report);
         }
 
-<<<<<<< HEAD
-        ProgramVisitor operationVisitor = new ProgramVisitor(st, reports);
-        operationVisitor.visit(jmmParserResult.getRootNode());
-=======
-        ProgramVisitor arrayOperationVisitor = new ProgramVisitor(st, reports);
-        arrayOperationVisitor.visit(jmmParserResult.getRootNode());
 
         AnnotateVisitor annotateVisitor = new AnnotateVisitor(st);
         annotateVisitor.visit(jmmParserResult.getRootNode());
->>>>>>> 069f5699ae3381bcd8e9a34456a7ff14f8a5ccb2
+
+        ProgramVisitor operationVisitor = new ProgramVisitor(st, reports);
+        operationVisitor.visit(jmmParserResult.getRootNode(),"");
+
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
+        expressionVisitor.visit(jmmParserResult.getRootNode(), "");
+
+        StatementVisitor statementVisitor = new StatementVisitor(st, reports);
+        statementVisitor.visit(jmmParserResult.getRootNode(), "");
+
         //List<Report> temp = arrayOperationVisitor.getReports();
         //reports.addAll(temp);
 

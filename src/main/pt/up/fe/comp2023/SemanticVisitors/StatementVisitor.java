@@ -14,7 +14,7 @@ import java.util.List;
 //Array access is done over an array
 public class StatementVisitor extends AJmmVisitor<String, Type> {
     private final MySymbolTable st;
-    private List<Report> reports;
+    private final List<Report> reports;
 
     public StatementVisitor(MySymbolTable table, List<Report> reports){
         this.st = table;
@@ -32,11 +32,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         setDefaultVisit(this::defaultVisit);
     }
 
-    private Type dealWithArrayAssign(JmmNode jmmNode, String s) {
-        jmmNode.getJmmChild(0).put("expType", jmmNode.get("var"));
-
-        return null;
-    }
 
     private Type defaultVisit(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){
@@ -62,50 +57,58 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     private Type dealWithExpressionStmt(JmmNode jmmNode, String s){
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
         expressionVisitor.visit(jmmNode.getJmmChild(0), "");
-        return null;
+        return new Type("null", false);
     }
 
     private Type dealWithAssign(JmmNode jmmNode, String s){
-        Type visitResult;
-        for (int i = 0; i < jmmNode.getNumChildren(); ++i) {
-            JmmNode childNode = jmmNode.getJmmChild(i);
-            visitResult = visit(childNode);
-            if (visitResult.getName().equals("error")) {
-                return visitResult;
-            }
+        Type leftT = st.findTypeVar(jmmNode.get("var"));
+
+        JmmNode right = jmmNode.getJmmChild(0);
+        Type rightType = visit(right, "");
+
+        if (!leftT.equals(rightType)) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                    Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Attempting to assign two different types"));
+            return new Type("error", false);
         }
-        jmmNode.getJmmChild(0).put("expType", jmmNode.get("var"));
+        return new Type("null", false);
+    }
 
+    private Type dealWithArrayAssign(JmmNode jmmNode, String s) {
 
+        boolean isArr = st.findTypeVar(jmmNode.get("var")).isArray();
 
-
-        if (jmmNode.getNumChildren() == 2) {
-            JmmNode leftChild = jmmNode.getJmmChild(0);
-            Type leftType = visit(leftChild, "");
-
-            JmmNode rightChild = jmmNode.getJmmChild(1);
-            Type rightType = visit(rightChild, "");
-
-            //check if its a variable
-            //jmmNode.getKind().equals(AstTypes.IDENTIFIER.toString()) || jmmNode.getKind().equals(AstTypes.ARRAY_EXPR.toString());
-
-            /*if (!this.isVariable(leftChild)) {
-                this.reports.add(Report.newError(Stage.SEMANTIC, Integer.parseInt(leftChild.get("lineStart")), Integer.parseInt(leftChild.get("colStart")),
-                        "Attempting to assign a value to a '" + leftChild.getKind() + "' .",
-                        null));
-                return new Type("error", false);
-            } else if (!leftType.equals(rightType)) {
-                this.reports.add(Report.newError(Stage.SEMANTIC, Integer.parseInt(leftChild.get("lineStart")), Integer.parseInt(leftChild.get("colStart")),
-                        "Attempting to assign value of type " + rightType + " to a variable of type " + leftType, null));
-                return new Type("error", false);
-            }*/
-
-            rightChild.put("type", rightType.getName());
-
-            return rightType;
+        if (!isArr) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                    Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Attempting to assign a value to a non-array variable" ));
+            return new Type("error", false);
         }
 
-        throw new RuntimeException("Illegal number of children in node " + "." + jmmNode.getKind());
+        JmmNode left = jmmNode.getJmmChild(0);
+        Type leftType = visit(left);
 
+        if (leftType.getName().equals("int")) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                    Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Index must be an int" ));
+            return new Type("error", false);
+        }
+
+        JmmNode right = jmmNode.getJmmChild(1);
+        Type rightType = visit(right, "");
+
+        if (!rightType.getName().equals("int")) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                    Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Attempting to assign a value that is not a int"));
+            return new Type("error", false);
+        }
+        return new Type("null", false);
     }
 }

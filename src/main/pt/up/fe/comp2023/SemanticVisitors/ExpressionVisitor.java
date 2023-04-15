@@ -14,7 +14,7 @@ import java.util.List;
 public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private final MySymbolTable st;
-    private List<Report> reports;
+    private final List<Report> reports;
 
     public ExpressionVisitor(MySymbolTable table, List<Report> reports) {
         this.st = table;
@@ -24,6 +24,9 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
+
+        addVisit("MainMethod", this::dealWithMain);
+        addVisit("MethodDecl", this::dealWithMethod);
 
         addVisit("Paren", this::dealWithParentheses);
         addVisit("ArrayLookup", this::dealWithArrayLookup);
@@ -36,14 +39,27 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         addVisit("BinaryComp", this::dealWithBinaryOp);
         addVisit("BinaryBool", this::dealWithBinaryOp);
         addVisit("This", this::dealWithThis);
-        //addVisit("Var", this::dealWithVar);
+        addVisit("Var", this::dealWithVar);
         addVisit("Boolean", this::dealWithBoolean);
         addVisit("Int", this::dealWithInt);
         setDefaultVisit(this::defaultVisit);
     }
 
+    private Type dealWithMethod(JmmNode jmmNode, String s) {
+        st.setCurrentMethod(jmmNode.get("name"));
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        return null;
+    }
+
+    private Type dealWithMain(JmmNode jmmNode, String s) {
+        st.setCurrentMethod("main");
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        return null;
+    }
+
     private Type defaultVisit(JmmNode jmmNode, String s) {
-        System.out.println("aqui");
         for(JmmNode child : jmmNode.getChildren()){
             visit(child, "");
         }
@@ -167,41 +183,32 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         } else if (!left.getName().equals("boolean") && (op.equals("&&"))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects boolean"));
         } else {
-            switch (op) {
-                case "+", "-", "*", "/", "<":
-                    return new Type("int", false);
-                case "&&":
-                    return new Type("boolean", false);
-                default:
-                    return new Type("void", false);
-            }
+            return switch (op) {
+                case "+", "-", "*", "/", "<" -> new Type("int", false);
+                case "&&" -> new Type("boolean", false);
+                default -> new Type("void", false);
+            };
         }
         return new Type("void", false);
     }
 
     private Type dealWithThis(JmmNode jmmNode, String s) {
-        JmmNode parent = jmmNode.getJmmParent();
-        while(!parent.getKind().equals("mainMethod")) {
-            parent = parent.getJmmParent();
-        }
-        if(parent.getKind().equals("mainMethod")) {
+        if(st.getCurrentMethod().equals("main")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
         }
         return new Type(this.st.getClassName(),false);
     }
-    /*private Type dealWithVar(JmmNode jmmNode, String s) {
-        return new Type(jmmNode.get("var"),false);
-    }*/
+
+    private Type dealWithVar(JmmNode jmmNode, String s) {
+        return st.findTypeVar(jmmNode.get("var"));
+    }
+
     private Type dealWithBoolean(JmmNode jmmNode, String s) {
         return new Type("boolean",false);
     }
     private Type dealWithInt(JmmNode jmmNode, String s) {
         return new Type("int",false);
     }
-
-
-
-
 
 
 }
