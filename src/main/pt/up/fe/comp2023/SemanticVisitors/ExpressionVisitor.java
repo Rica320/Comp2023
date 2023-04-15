@@ -136,16 +136,17 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
         //check if class is imported
         if (st.getImports().contains(classType.getName())) {
-            return new Type(classType.getName(), false);
+            return classType;
         }
 
         // check if is extended
         if (st.getSuper().equals(classType.getName())) {
-            return new Type(classType.getName(), false);
+            return classType;
         }
 
+        // super relation to extended class
         if (classType.getName().equals(st.getClassName()) && st.hasSuperClass()) {
-            return new Type(classType.getName(), false);
+            return classType;
         }
 
         // verify if class exists
