@@ -46,8 +46,8 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
             reports.add(report);
         }
 
-        ProgramVisitor arrayOperationVisitor = new ProgramVisitor(st, reports);
-        arrayOperationVisitor.visit(jmmParserResult.getRootNode());
+        ProgramVisitor operationVisitor = new ProgramVisitor(st, reports);
+        operationVisitor.visit(jmmParserResult.getRootNode());
         //List<Report> temp = arrayOperationVisitor.getReports();
         //reports.addAll(temp);
 

@@ -30,10 +30,8 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         addVisit("ImportDecl", this::dealWithImport);
         addVisit("ClassDecl", this::dealWithClass);
         addVisit("VarDcl", this::dealWithVarDecl);
-        //addVisit("MainMethod", this::dealWithMethodDecl);
-        //addVisit("MethodDecl", this::dealWithMethodDecl);
-        //addVisit("MethodArgs", this::dealWithMethodArgs);
-        //addVisit("ParamDecl", this::dealWithParamDecl);
+        addVisit("MainMethod", this::dealWithMethodDecl);
+        addVisit("MethodDecl", this::dealWithMethodDecl);
         //addVisit("ReturnStmt", this::dealWithReturn);
 
         //defaultVisit(this::defaultVisit);
@@ -64,21 +62,30 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithVarDecl(JmmNode jmmNode, String s) {
-        System.out.println("VarDeclaration:" + jmmNode.get("var"));
+        //System.out.println("VarDeclaration:" + jmmNode.get("var"));
         visit(jmmNode.getJmmChild(0), "");
         return new Type("null", false);
     }
 
-    /*private Type dealWithMethodDecl(JmmNode jmmNode, String s) {
+    private Type dealWithMethodDecl(JmmNode jmmNode, String s) {
         for(JmmNode child: jmmNode.getChildren()){
-            if(child.getKind().equals("MethodArgs")){
-                visit(child, "");
+            switch (child.getKind()) {
+                case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign":
+                    StatementVisitor statementVisitor = new StatementVisitor(st, reports);
+                    Type childType = statementVisitor.visit(child, "");
+                    break;
+                case "ReturnStmt":
+                    visit(child, "");
+                    break;
             }
         }
         return new Type("null", false);
-    }*/
+    }
+
 
     /*private Type dealWithReturn(JmmNode jmmNode, String s) {
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
+        Type childType = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
         JmmNode expression = jmmNode.getJmmChild(0);
         Type exprType = visit(expression, "");
         if(!exprType.equals(st.getReturnType())){

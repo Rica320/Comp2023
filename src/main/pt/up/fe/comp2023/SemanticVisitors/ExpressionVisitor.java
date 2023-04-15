@@ -38,13 +38,14 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         addVisit("BinaryComp", this::dealWithBinaryOp);
         addVisit("BinaryBool", this::dealWithBinaryOp);
         addVisit("This", this::dealWithThis);
-        addVisit("Var", this::dealWithVar);
+        //addVisit("Var", this::dealWithVar);
         addVisit("Boolean", this::dealWithBoolean);
         addVisit("Int", this::dealWithInt);
         setDefaultVisit(this::defaultVisit);
     }
 
     private Type defaultVisit(JmmNode jmmNode, String s) {
+        System.out.println("aqui");
         for(JmmNode child : jmmNode.getChildren()){
             visit(child, "");
         }
@@ -150,7 +151,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithNewObject(JmmNode jmmNode, String s) {
-        return new Type(jmmNode.get("name"), false);
+        return new Type(jmmNode.get("objClass"), false);
     }
 
     private Type dealWithBinaryOp(JmmNode jmmNode, String s) {
@@ -158,7 +159,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type right = visit(jmmNode.getChildren().get(1));
 
         String op = jmmNode.get("op");
-
+        System.out.println(left.getName() + " " + op + " " + right.getName());
         if (!left.getName().equals(right.getName())) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Binary operation between different types in " + op + "operation" ));
         } else if (left.isArray() || right.isArray()) {
@@ -182,19 +183,17 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithThis(JmmNode jmmNode, String s) {
         JmmNode parent = jmmNode.getJmmParent();
-        while(!parent.getKind().equals("main")) {
+        while(!parent.getKind().equals("mainMethod")) {
             parent = parent.getJmmParent();
         }
-        if(parent.getKind().equals("name")) {
-            if(parent.getKind().equals("main")) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
-            }
+        if(parent.getKind().equals("mainMethod")) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
         }
         return new Type(this.st.getClassName(),false);
     }
-    private Type dealWithVar(JmmNode jmmNode, String s) {
+    /*private Type dealWithVar(JmmNode jmmNode, String s) {
         return new Type(jmmNode.get("var"),false);
-    }
+    }*/
     private Type dealWithBoolean(JmmNode jmmNode, String s) {
         return new Type("boolean",false);
     }
