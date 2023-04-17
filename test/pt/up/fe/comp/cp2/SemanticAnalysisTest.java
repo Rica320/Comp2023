@@ -2,6 +2,7 @@ package pt.up.fe.comp.cp2;
 
 import org.junit.Test;
 import pt.up.fe.comp.TestUtils;
+import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.specs.util.SpecsIo;
 
 public class SemanticAnalysisTest {

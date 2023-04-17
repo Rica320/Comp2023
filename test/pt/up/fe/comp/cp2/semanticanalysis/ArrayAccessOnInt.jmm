@@ -10,4 +10,5 @@ class ArrayAccessOnInt {
 
         return a[10];
     }
+
 }

@@ -95,14 +95,15 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type leftType = visit(left, "");
         Type rightType = visit(right, "");
 
-        if(!leftType.isArray()) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), " is not an array"));
-            return new Type("error", false);
+
+        //Check if type of left is not array
+        if(!leftType.isArray()){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error, " + left.get("var") + " is not an array"));
         }
 
-        if(!rightType.getName().equals("int")) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Index is not int"));
-            return new Type("error", false);
+        //Check if type of index is not int
+        if(!rightType.getName().equals("int")){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error,index is not int"));
         }
 
         return new Type("int",false);
@@ -244,7 +245,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
             if (st.getCurrentMethod().equals("main")) {
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
-                if (origin == SymbolOrigin.FIELD) {
+                if (origin == SymbolOrigin.FIELD ) { // e se super
                     reports.add(
                             new Report(ReportType.ERROR, Stage.SEMANTIC,
                                     Integer.parseInt(jmmNode.get("lineStart")),
