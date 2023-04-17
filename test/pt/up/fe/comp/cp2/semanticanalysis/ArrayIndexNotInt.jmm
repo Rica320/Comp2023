@@ -4,13 +4,23 @@ class ArrayIndexNotInt {
 
     }
 
-    public int foo() {
+    public int[] r() {
         int[] a;
-        boolean b;
+        int b;
 
         a = new int[2];
-        b = true;
+        b = 3;
 
-        return a[b];
+        return a;
+    }
+
+    public int foo() {
+        int[] a;
+        int b;
+
+        a = new int[2];
+        b = 3;
+
+        return (this.r())[b];
     }
 }

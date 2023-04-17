@@ -94,9 +94,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         JmmNode right = jmmNode.getJmmChild(1);
         Type leftType = visit(left, "");
         Type rightType = visit(right, "");
-        System.out.println("ola: " + leftType.getName());
-        System.out.println("ola: " + rightType.getName());
-
 
         //Check if type of left is not array
         if(!leftType.isArray()){
@@ -265,6 +262,67 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                     Integer.parseInt(jmmNode.get("colStart")), e.toString()));
             return null;
         }
+
+        /*
+        //Get identifier name
+        String name = jmmNode.get("value");
+        //Get parent
+        JmmNode parent = jmmNode.getJmmParent();
+        while(!parent.getKind().equals("Method")){
+            parent = parent.getJmmParent();
+        }
+
+        if(parent.getKind().equals("Method")){
+            String methodName = parent.get("name");
+
+            //Get local variables from method
+            List<Symbol> locals = st.getLocalVariables(methodName);
+            //Check if identifier is a local variable
+            if(locals != null){
+                for (Symbol l : locals){
+                    if(l.getName().equals(name)){
+                        return l.getType();
+                    }
+                }
+            }
+
+            //Get params from method
+            List<Symbol> parameters  = st.getParameters(methodName);
+            //Check if identifier is a parameter
+            if(parameters != null){
+                for (Symbol p: parameters){
+                    if(p.getName().equals(name)){
+                        return p.getType();
+                    }
+                }
+            }
+
+            //Get fields from class
+            List<Symbol> fields = st.getFields();
+            //Check if identifier is a field
+            if(fields != null){
+                for(Symbol f:fields){
+                    if(f.getName().equals(name)){
+                        //Do I need to verify if the method is main? Fields cannot be used in main method?
+                        if(methodName.equals("main")){
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
+                        }
+                        return  f.getType();
+                    }
+                }
+            }
+
+            //No imports or Variable not in the imports.
+            if(st.getImports() == null || !st.getImports().contains(name)){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Variable " + name + " not declared"));
+            }else{
+                return new Type(name, false);
+            }
+        }
+        //Dummy return
+        return new Type("errorIdentifier", false);
+
+         */
 
     }
 
