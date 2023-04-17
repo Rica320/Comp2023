@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023.SemanticVisitors;
 
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -96,7 +97,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithAssign(JmmNode jmmNode, String s){
-        Type leftT = st.findTypeVar(jmmNode.get("var"));
+        /*Type leftT = st.findTypeVar(jmmNode.get("var"));
 
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
         Type rightType = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
@@ -114,6 +115,86 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
             return new Type("error", false);
         }
         return new Type("null", false);
+        */
+
+        int line = Integer.parseInt(jmmNode.getJmmChild(0).get("lineStart"));
+        int col = Integer.parseInt(jmmNode.getJmmChild(0).get("colStart"));
+
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
+        Type right = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
+
+        String left = jmmNode.get("var"); //ver tipo do var (left)
+
+        JmmNode parent = jmmNode.getJmmParent();
+        Type leftType= new Type("", false);
+
+        while(!parent.getKind().equals("MethodDecl") && !parent.getKind().equals("MainMethod")) {
+            parent = parent.getJmmParent();
+        }
+
+        String methodName;
+        if(parent.getKind().equals("MethodDecl")){
+            methodName = parent.get("name");
+        }
+        else{
+            methodName = "main";
+        }
+        //see if var is a field
+        List<Symbol> fields = st.getFields();
+        if(fields != null){
+            for (int i = 0; i < fields.size(); i++){
+                if(fields.get(i).getName().equals(left)){
+                    if(methodName.equals("main")){
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Fields cannot be used in main method"));
+                    }
+                    leftType = fields.get(i).getType();
+                    break;
+                }
+            }
+        }
+
+        //see if var is a parameter
+        List<Symbol> parameters = st.getParameters(methodName);
+
+        if(parameters != null){
+            for (int i = 0; i < parameters.size(); i++){
+                if(parameters.get(i).getName().equals(left)){
+                    leftType = parameters.get(i).getType();
+                    break;
+                }
+            }
+        }
+
+        //see if var is a local variable
+        List<Symbol> localVariables = st.getLocalVariables(methodName);
+
+        if(localVariables != null){
+            for (int i = 0; i < localVariables.size(); i++){
+                if(localVariables.get(i).getName().equals(left)){
+                    leftType = localVariables.get(i).getType();
+                    break;
+                }
+            }
+        }
+
+        //check if left (assignee) is superclass and right (assigned) is the current class
+        if(leftType.getName().equals(st.getSuper()) && right.getName().equals(st.getClassName())){
+            return right;
+        }
+        //if both are of type that are imported
+        else if(st.getImports().contains(leftType.getName()) && st.getImports().contains(right.getName())){
+            return right;
+        }
+        else if(right.getName().equals("CORRECT")){
+            return right;
+        }
+        else if(!right.getName().equals(leftType.getName())){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Type of the assignee must be compatible with the assigned "));
+            return new Type("ERROR", false);
+
+        }
+        return right;
+
     }
 
     private Type dealWithArrayAssign(JmmNode jmmNode, String s) {
