@@ -198,7 +198,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithArrayAssign(JmmNode jmmNode, String s) {
-
+        /*
         boolean isArr = st.findTypeVar(jmmNode.get("var")).isArray();
 
         if (!isArr) {
@@ -231,5 +231,77 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
             return new Type("error", false);
         }
         return new Type("null", false);
+         */
+        String var = jmmNode.get("var");
+        JmmNode childIndex = jmmNode.getJmmChild(0);
+        JmmNode childAssignment = jmmNode.getJmmChild(1);
+
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st,reports);
+        //Get Index type
+        Type indexType = expressionVisitor.visit(childIndex);
+        //Get assignment
+        Type assignmentType = expressionVisitor.visit(childAssignment);
+
+        Type varType = new Type("", false);
+        //Var type
+        JmmNode parent = jmmNode.getJmmParent();
+        while(!parent.getKind().equals("Method")){
+            parent = parent.getJmmParent();
+        }
+
+        String methodName = parent.get("name");
+
+        //Get fields
+        List<Symbol> fields = st.getFields();
+        //Check if var is a field
+        if(fields != null){
+            for(Symbol f: fields){
+                if(f.getName().equals(var)){
+                    if(methodName.equals("main")){
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
+                    }
+                    varType = f.getType();
+                    break;
+                }
+            }
+        }
+
+        //Get List of local variables
+        List<Symbol> locals = st.getLocalVariables(methodName);
+        //check if var is a local variable
+        if(locals != null){
+            for(Symbol l :locals){
+                if(l.getName().equals(var)){
+                    varType = l.getType();
+                    break;
+                }
+            }
+        }
+
+        //Get List of parameters of the method
+        List<Symbol> parameters  = st.getParameters(methodName);
+        //check if var is a parameter
+        if(parameters != null){
+            for(Symbol p:parameters){
+                if(p.getName().equals(var)){
+                    varType = p.getType();
+                }
+            }
+        }
+
+        //Checks if variable is an array
+        if(!varType.isArray()){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Array assignment variable not array"));
+        }
+        //Checks if index is an integer
+        if(!indexType.getName().equals("int")){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Index needs to be an integer"));
+        }
+        //Checks if assignee is an integer
+        if(!assignmentType.getName().equals("int")){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Assignment needs to be an integer"));
+        }
+
+        return null;
     }
 }
