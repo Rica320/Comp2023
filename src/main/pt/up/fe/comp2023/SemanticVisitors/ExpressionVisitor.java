@@ -165,9 +165,14 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
             // verify types of args
             if (jmmNode.getChildren().size() > 1) {
+                List<Symbol> methodParams = st.getParameters(method);
+
                 for (int i = 1; i < jmmNode.getChildren().size(); i++) {
                     Type argType = visit(jmmNode.getJmmChild(i), "");
-                    if (!argType.getName().equals(st.getMethod(method).getParameters().get(i - 1).getType().toString())) {
+                    System.out.println("argType: " + argType);
+
+                    if(!methodParams.get(i-1).getType().equals(argType)) {
+                    //if (!argType.getName().equals(st.getMethod(method).getParameters().get(i-1).getType().toString())) {
                         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i));
                         return new Type("error", false);
                     }
