@@ -123,7 +123,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
         Type right = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
 
-        String left = jmmNode.get("var"); //ver tipo do var (left)
+        String left = jmmNode.get("var"); //ver tipo do var
 
         JmmNode parent = jmmNode.getJmmParent();
         Type leftType= new Type("", false);
@@ -185,7 +185,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         else if(st.getImports().contains(leftType.getName()) && st.getImports().contains(right.getName())){
             return right;
         }
-        else if(right.getName().equals("CORRECT")){
+        else if(right.getName().equals("importCorrect")){
             return right;
         }
         else if(!right.getName().equals(leftType.getName())){

@@ -124,7 +124,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
-
+        /*
         String method = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
         Type classType = visit(classCall, "");
@@ -182,6 +182,92 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         }catch (Exception e){
             return new Type("null", false);
         }
+        */
+
+            String methodName = jmmNode.get("method");
+            JmmNode classCall = jmmNode.getJmmChild(0);
+            Type classType = visit(classCall,"");
+            System.out.println(classType);
+
+            if(classType == null){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + " null"));
+                return new Type("error", false);
+            }
+            //check if class is imported
+            if (st.getImports().contains(classType.getName())) {
+                return classType;
+            }
+
+        // check if is extended
+        if (st.getSuper().equals(classType.getName())) {
+            return classType;
+        }
+
+        // super relation to extended class
+        if (classType.getName().equals(st.getClassName()) && st.hasSuperClass()) {
+            return classType;
+        }
+
+        // verify if class exists
+        if ( classType.getName().equals(st.getClassName())) {
+            // verify if method exists
+            if (!st.hasMethod(methodName) ) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + methodName + " does not exist"));
+                return new Type("error", false);
+            }
+
+            // verify number of args
+            if (jmmNode.getChildren().size() != st.getMethod(methodName).getParameters().size() + 1) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + methodName + " expects " + st.getMethod(methodName).getParameters().size() + " arguments"));
+                return new Type("error", false);
+            }
+
+            // verify types of args
+            if (jmmNode.getChildren().size() > 1) {
+                for (int i = 1; i < jmmNode.getChildren().size(); i++) {
+                    Type argType = visit(jmmNode.getJmmChild(i), "");
+                    if (!argType.getName().equals(st.getMethod(methodName).getParameters().get(i - 1).getType().toString())) {
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + methodName + " expects " + st.getMethod(methodName).getParameters().get(i - 1).getType() + " as argument " + i));
+                        return new Type("error", false);
+                    }
+                }
+            }
+
+        }
+
+
+
+
+            //The class calling the method is the current class
+            if(classType.getName().equals(st.getClassName())){
+                //verify if method exist
+                //checks if current class extends a super class
+
+                    if(st.getSuper() == null){
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
+                    }else{
+                        return new Type("importCorrect", false);
+                    }
+
+            }else{
+                //checks if class is imported assume method is being called correctly
+                if(!st.getImports().contains(classType.getName())){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class not imported"));
+                    return new Type("importIncorrect", false);
+                }else{
+                    return new Type("importCorrect", false);
+                }
+            }
+
+            if(st.getReturnType(methodName) == null){
+                if(st.getImports().contains(classType.getName())){
+                    return new Type("importCorrect", false);
+                }else{
+                    return new Type("importIncorrect", false);
+                }
+            };
+
+            return st.getReturnType(methodName);
     }
 
     private Type dealWithNot(JmmNode jmmNode, String s) {
