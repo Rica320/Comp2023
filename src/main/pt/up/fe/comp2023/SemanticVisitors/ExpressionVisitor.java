@@ -98,7 +98,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
         //Check if type of left is not array
         if(!leftType.isArray()){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error, " + left.get("var") + " is not an array"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error, " + " is not an array"));
         }
 
         //Check if type of index is not int
@@ -169,7 +169,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
                 for (int i = 1; i < jmmNode.getChildren().size(); i++) {
                     Type argType = visit(jmmNode.getJmmChild(i), "");
-                    System.out.println("argType: " + argType);
 
                     if(!methodParams.get(i-1).getType().equals(argType)) {
                     //if (!argType.getName().equals(st.getMethod(method).getParameters().get(i-1).getType().toString())) {
