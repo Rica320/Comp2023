@@ -28,8 +28,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
 
-        addVisit("IfClause", this::dealWithConditional);
-        addVisit("While", this::dealWithConditional);
+        addVisit("IfClause", this::dealWithIfConditional);
+        addVisit("While", this::dealWithWhileConditional);
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
         addVisit("Assign", this::dealWithAssign);
         addVisit("ArrayAssign", this::dealWithArrayAssign);
@@ -57,17 +57,35 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         return new Type("null", false);
     }
 
-    private Type dealWithConditional(JmmNode jmmNode, String s){
-        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
-        expressionVisitor.visit(jmmNode.getJmmChild(0), "");
+    private Type dealWithIfConditional(JmmNode jmmNode, String s){
         JmmNode child = jmmNode.getJmmChild(0);
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st,reports);
         Type childType = expressionVisitor.visit(child, "");
 
+        //Checks if type is not boolean
         if(!childType.getName().equals("boolean")){
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Conditional expression must be boolean" ));
-            return new Type("error", false);
         }
 
+        //Visit statement inside if
+        visit(jmmNode.getJmmChild(1));
+        //visit statement inside else
+        visit(jmmNode.getJmmChild(2));
+        return childType;
+    }
+
+    private Type dealWithWhileConditional(JmmNode jmmNode, String s){
+        JmmNode child = jmmNode.getJmmChild(0);
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st,reports);
+        Type childType = expressionVisitor.visit(child, "");
+
+        //Checks if type is not boolean
+        if(!childType.getName().equals("boolean")){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Conditional expression must return boolean" ));
+        }
+
+        //Visit statement inside while
+        visit(jmmNode.getJmmChild(1));
         return childType;
     }
 

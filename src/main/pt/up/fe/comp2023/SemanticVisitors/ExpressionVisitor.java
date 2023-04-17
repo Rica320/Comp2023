@@ -225,8 +225,8 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects boolean"));
         } else {
             return switch (op) {
-                case "+", "-", "*", "/", "<" -> new Type("int", false);
-                case "&&" -> new Type("boolean", false);
+                case "+", "-", "*", "/" -> new Type("int", false);
+                case "&&", "<" -> new Type("boolean", false);
                 default -> new Type("void", false);
             };
         }
