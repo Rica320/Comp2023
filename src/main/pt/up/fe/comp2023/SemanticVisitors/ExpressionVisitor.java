@@ -212,8 +212,13 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             }
         }else{
             //checks if class is imported assume method is being called correctly
-            if(!st.getImports().contains(classType.getName())){
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class not imported"));
+            if(!(st.getImports().contains(classCall.get("var")) // static call
+                || st.getImports().contains(classType.getName()))) // virtual call
+            {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                        Integer.parseInt(jmmNode.get("lineStart")),
+                        Integer.parseInt(jmmNode.get("colStart")),
+                        "Class not imported " ));
                 return new Type("importIncorrect", false);
             }else{
                 return new Type("importCorrect", false);
@@ -290,7 +295,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
-        /*
+
         try {
             if (st.getCurrentMethod().equals("main")) {
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
@@ -302,14 +307,16 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 }
             }
 
-            return st.findTypeVar(jmmNode.get("var"));
+            System.out.println("var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode));
+            return st.findTypeVar(jmmNode.get("var"), jmmNode);
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")), e.toString()));
             return new Type("null", false);
         }
 
-        */
+
+        /*
         //Get identifier name
         String name = jmmNode.get("var");
         //Get parent
@@ -368,14 +375,28 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Variable " + name + " not declared"));
         }else{
             return new Type(name, false);
-        }
+        }*/
 
         //Dummy return
-        return new Type("errorIdentifier", false);
 
-
+      //  System.out.println("Var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode).getName());
+      //  return st.findTypeVar(jmmNode.get("var"), jmmNode);
 
     }
+
+   //  private Type convertOllirToSemantic(Type type) {
+   //      switch (type.getName()) {
+   //          case "i32":
+   //              return new Type("int", false);
+   //          case "bool":
+   //              return new Type("boolean", false);
+   //          case "v":
+   //              return new Type("void", false);
+   //          default:
+   //              return new Type(jmmNode.get("type"), false);
+   //      }
+   //      return new Type(jmmNode.get("type"), false);
+   //  }
 
     private Type dealWithBoolean(JmmNode jmmNode, String s) {
         return new Type("boolean",false);
