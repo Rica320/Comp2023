@@ -78,8 +78,11 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
 
         Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
-        if(!retType.equals(st.getCurrentMethodScope().getReturnType())){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type"));
+        if(retType.equals(st.getCurrentMethodScope().getReturnType())){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type" + "return type: " +
+                    st.getCurrentMethodScope().getReturnType().getName()
+                    + "method return type: " + retType.getName()
+                    + "method name: " + st.getCurrentMethod()));
         }
 
         return new Type("null", false);

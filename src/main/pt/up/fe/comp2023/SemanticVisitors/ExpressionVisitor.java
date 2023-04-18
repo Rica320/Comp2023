@@ -171,9 +171,12 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
                     if(!methodParams.get(i-1).getType().equals(argType)) {
                     //if (!argType.getName().equals(st.getMethod(method).getParameters().get(i-1).getType().toString())) {
-                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i));
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName()));
                         return new Type("error", false);
                     }
+                    System.out.println("Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName());
+
+
                 }
             }
 
@@ -244,8 +247,8 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
-        try {
 
+        try {
             if (st.getCurrentMethod().equals("main")) {
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
                 if (origin == SymbolOrigin.FIELD ) { // e se super
@@ -260,19 +263,19 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")), e.toString()));
-            return null;
+            return new Type("null", false);
         }
 
         /*
         //Get identifier name
-        String name = jmmNode.get("value");
+        String name = jmmNode.get("var");
         //Get parent
         JmmNode parent = jmmNode.getJmmParent();
-        while(!parent.getKind().equals("Method")){
+        while(!parent.getKind().equals("MethodDecl")){
             parent = parent.getJmmParent();
         }
 
-        if(parent.getKind().equals("Method")){
+        if(parent.getKind().equals("main")){
             String methodName = parent.get("name");
 
             //Get local variables from method
