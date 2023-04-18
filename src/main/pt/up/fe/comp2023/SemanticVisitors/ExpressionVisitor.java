@@ -108,19 +108,19 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         return new Type("int",false);
     }
 
-    private boolean checkArgsTyps(JmmNode jmmNode, String method) {
-        List<Symbol> methodParams = st.getParameters(method);
-        for (int i = 1; i < jmmNode.getNumChildren(); i++) {
-            Type argType = visit(jmmNode.getJmmChild(i), "");
-            // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
-            if (!methodParams.get(i - 1).getType().equals(argType)) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
-                return false;
-            }
-        }
-
-        return true;
-    }
+   // private boolean checkArgsTyps(JmmNode jmmNode, String method) {
+   //     List<Symbol> methodParams = st.getParameters(method);
+   //     for (int i = 1; i < jmmNode.getNumChildren(); i++) {
+   //         Type argType = visit(jmmNode.getJmmChild(i), "");
+   //         // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
+   //         if (!methodParams.get(i - 1).getType().equals(argType)) {
+   //             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
+   //             return false;
+   //         }
+   //     }
+//
+   //     return true;
+   // }
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
 
@@ -129,7 +129,9 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type classType = visit(classCall, "");
 
         if(classType == null){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " null"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Method " + method + " null"));
             return new Type("error", false);
         }
 
@@ -158,7 +160,8 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
             // verify number of args
             if (jmmNode.getChildren().size() != st.getMethod(method).getParameters().size() + 1) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().size() + " arguments"));
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                        Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().size() + " arguments"));
                 return new Type("error", false);
             }
 
@@ -174,8 +177,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName()));
                         return new Type("error", false);
                     }
-                    System.out.println("Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName());
-
 
                 }
             }

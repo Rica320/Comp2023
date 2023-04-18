@@ -74,7 +74,7 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithBool(JmmNode jmmNode, String s) {
-        jmmNode.put("expType", "boolean");
+        jmmNode.getJmmChild(0).put("expType", "boolean");
         defaultVisit(jmmNode, s);
 
         return null;

@@ -25,11 +25,30 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     protected void buildVisitor() {
         addVisit("ProgramRoot", this::dealWithProgram);
         addVisit("ClassDecl", this::dealWithClass);
-        addVisit("MainMethod", this::dealWithMethodDecl);
+        addVisit("MainMethod", this::dealWithMethodDeclMain);
         addVisit("MethodDecl", this::dealWithMethodDecl);
         addVisit("ReturnStmt", this::dealWithReturn);
 
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private Type dealWithMethodDeclMain(JmmNode jmmNode, String s) {
+        st.setCurrentMethod("main");
+        return visitMethodChildren(jmmNode);
+    }
+
+    private Type visitMethodChildren(JmmNode jmmNode) {
+        for(JmmNode child: jmmNode.getChildren()){
+            switch (child.getKind()) {
+                case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign" -> {
+                    StatementVisitor statementVisitor = new StatementVisitor(st, reports);
+                    Type childType = statementVisitor.visit(child, "");
+                }
+                case "ReturnStmt" -> visit(child, "");
+            }
+        }
+        st.setCurrentMethod(null);
+        return null;
     }
 
 
@@ -51,7 +70,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithClass(JmmNode jmmNode, String s) {
         for(JmmNode child: jmmNode.getChildren()){
-            if(child.getKind().equals("Method")){
+            if(child.getKind().equals("MethodDecl")){
                 visit(child, "");
             }
         }
@@ -61,28 +80,27 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
 
 
     private Type dealWithMethodDecl(JmmNode jmmNode, String s) {
-        for(JmmNode child: jmmNode.getChildren()){
-            switch (child.getKind()) {
-                case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign" -> {
-                    StatementVisitor statementVisitor = new StatementVisitor(st, reports);
-                    Type childType = statementVisitor.visit(child, "");
-                }
-                case "ReturnStmt" -> visit(child, "");
-            }
-        }
-        return null;
+        System.out.println("method name: " + jmmNode.get("name"));
+        st.setCurrentMethod(jmmNode.get("name"));
+        return visitMethodChildren(jmmNode);
     }
 
     private Type dealWithReturn(JmmNode jmmNode, String s) {
 
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
 
+        System.out.println("return type: " + st.getCurrentMethodScope().getReturnType().getName());
+
         Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
-        if(retType.equals(st.getCurrentMethodScope().getReturnType())){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type" + "return type: " +
+        if(!retType.equals(st.getCurrentMethodScope().getReturnType())){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
+                    Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")),
+                    "Return type does not match method return type"
+                            + "\nreturn type: " +
                     st.getCurrentMethodScope().getReturnType().getName()
-                    + "method return type: " + retType.getName()
-                    + "method name: " + st.getCurrentMethod()));
+                    + "\nmethod return type: " + retType.getName()
+                    + "\nmethod name: " + st.getCurrentMethod()));
         }
 
         return new Type("null", false);

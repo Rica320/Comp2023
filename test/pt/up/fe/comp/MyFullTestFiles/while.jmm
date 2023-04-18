@@ -12,11 +12,6 @@ class Simple {
 
            i = i + 1;
         }
-
-      
-       
-
-       
     }
 
 
