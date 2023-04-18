@@ -105,11 +105,9 @@ for(int i = 0; i < children.size(); i++){
         System.out.println("return type: " + st.getCurrentMethodScope().getReturnType().getName());
 
         Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
-        // if(retType.getName().equals("importCorrect")){
-        //     //VER ISTOOO E EXPRESSION ANALYSER LINHA 75
-        //     System.out.println("aqui");
-        // }
-        if(!retType.equals(st.getCurrentMethodScope().getReturnType())) {
+
+        if(!retType.getName().equals("importCorrect")
+            && !retType.equals(st.getCurrentMethodScope().getReturnType())) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                     Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")),

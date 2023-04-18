@@ -25,10 +25,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
-
-        addVisit("MainMethod", this::dealWithMain);
-        addVisit("MethodDecl", this::dealWithMethod);
-
         addVisit("Paren", this::dealWithParentheses);
         addVisit("ArrayLookup", this::dealWithArrayLookup);
         addVisit("AttributeAccess", this::dealWithAttributeAccess);
@@ -44,20 +40,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         addVisit("Boolean", this::dealWithBoolean);
         addVisit("Int", this::dealWithInt);
         setDefaultVisit(this::defaultVisit);
-    }
-
-    private Type dealWithMethod(JmmNode jmmNode, String s) {
-        st.setCurrentMethod(jmmNode.get("name"));
-        defaultVisit(jmmNode, s);
-        st.setCurrentMethod(null);
-        return null;
-    }
-
-    private Type dealWithMain(JmmNode jmmNode, String s) {
-        st.setCurrentMethod("main");
-        defaultVisit(jmmNode, s);
-        st.setCurrentMethod(null);
-        return null;
     }
 
     private Type defaultVisit(JmmNode jmmNode, String s) {

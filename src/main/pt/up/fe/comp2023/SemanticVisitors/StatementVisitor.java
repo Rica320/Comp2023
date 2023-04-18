@@ -26,8 +26,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
-        addVisit("MainMethod", this::dealWithMain);
-        addVisit("MethodDecl", this::dealWithMethod);
         addVisit("Scope", this::dealWithScope);
         addVisit("IfClause", this::dealWithIfConditional);
         addVisit("While", this::dealWithWhileConditional);
@@ -40,20 +38,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         setDefaultVisit(this::defaultVisit);
     }
 
-    private Type dealWithMethod(JmmNode jmmNode, String s) {
-        st.setCurrentMethod(jmmNode.get("name"));
-        defaultVisit(jmmNode, s);
-        st.setCurrentMethod(null);
-        return null;
-    }
-
-    private Type dealWithMain(JmmNode jmmNode, String s) {
-        st.setCurrentMethod("main");
-        //defaultVisit(jmmNode, s);
-
-        st.setCurrentMethod(null);
-        return null;
-    }
 
     private Type defaultVisit(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){

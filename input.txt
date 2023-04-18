@@ -1,20 +1,31 @@
-class IncompatibleReturn {
+import io;
+import GetterAndSetter;
+
+class Simple extends GetterAndSetter {
+
+    public Simple func(){
+        int x;
+        x = this.getA(5);
+
+        return this;
+    }
+
+    public int func2(int x) {
+        x = a;
+        return x;
+
+    }
 
     public static void main(String[] args) {
 
+        io.println(new Simple().func().func2(5));
+
     }
 
-    public int foo(int a) {
-        return a + 1;
-    }
 
-    public boolean bar() {
-        IncompatibleReturn a;
-        int b;
 
-        a = new IncompatibleReturn();
-        b = 0;
 
-        return a.foo(b);
-    }
 }
+
+
+
