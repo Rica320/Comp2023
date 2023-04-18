@@ -26,7 +26,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
-        addVisit("Scope", this::dealWithScope);
+        addVisit("Scope", this  ::dealWithScope);
         addVisit("IfClause", this::dealWithIfConditional);
         addVisit("While", this::dealWithWhileConditional);
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
