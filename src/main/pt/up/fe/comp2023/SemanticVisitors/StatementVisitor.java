@@ -26,18 +26,21 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     @Override
     protected void buildVisitor() {
-        addVisit("MainMethod", this::dealWithMain);
-        addVisit("MethodDecl", this::dealWithMethod);
-
+        //addVisit("MainMethod", this::dealWithMain);
+        //addVisit("MethodDecl", this::dealWithMethod);
+        addVisit("Scope", this::dealWithScope);
         addVisit("IfClause", this::dealWithIfConditional);
         addVisit("While", this::dealWithWhileConditional);
         addVisit("ExpressionStmt", this::dealWithExpressionStmt);
         addVisit("Assign", this::dealWithAssign);
         addVisit("ArrayAssign", this::dealWithArrayAssign);
-        setDefaultVisit(this::defaultVisit);
+        addVisit("ThenBlock", this::dealWithBlock);
+        addVisit("ElseBlock", this::dealWithBlock);
+        addVisit("WhileBlock", this::dealWithBlock);
+        //setDefaultVisit(this::defaultVisit);
     }
 
-    private Type dealWithMethod(JmmNode jmmNode, String s) {
+    /*private Type dealWithMethod(JmmNode jmmNode, String s) {
         st.setCurrentMethod(jmmNode.get("name"));
         defaultVisit(jmmNode, s);
         st.setCurrentMethod(null);
@@ -46,12 +49,20 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithMain(JmmNode jmmNode, String s) {
         st.setCurrentMethod("main");
-        defaultVisit(jmmNode, s);
+        //defaultVisit(jmmNode, s);
+
         st.setCurrentMethod(null);
         return null;
     }
+    */
+    /*private Type defaultVisit(JmmNode jmmNode, String s){
+        for(JmmNode child : jmmNode.getChildren()){
+            visit(child, "");
+        }
+        return new Type("null", false);
+    }*/
 
-    private Type defaultVisit(JmmNode jmmNode, String s){
+    private Type dealWithScope(JmmNode jmmNode, String s){
         for(JmmNode child : jmmNode.getChildren()){
             visit(child, "");
         }
@@ -92,8 +103,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithExpressionStmt(JmmNode jmmNode, String s){
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
-        expressionVisitor.visit(jmmNode.getJmmChild(0), "");
-        return new Type("null", false);
+        return expressionVisitor.visit(jmmNode.getJmmChild(0), "");
+        //return new Type("null", false);
     }
 
     private Type dealWithAssign(JmmNode jmmNode, String s){
@@ -116,7 +127,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         }
         return new Type("null", false);
         */
-
+        /*
         int line = Integer.parseInt(jmmNode.getJmmChild(0).get("lineStart"));
         int col = Integer.parseInt(jmmNode.getJmmChild(0).get("colStart"));
 
@@ -194,6 +205,88 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         }
         return right;
+        */
+        String var = jmmNode.get("var");
+        //Get assignee expression node
+        JmmNode child = jmmNode.getJmmChild(0);
+        //Create expressionAnalyser
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st,reports);
+        //Visit node and get Type
+        Type childType = expressionVisitor.visit(child, "");
+
+        Type varType = new Type("", false);
+
+        JmmNode parent = jmmNode.getJmmParent();
+        while(!(parent.getKind().equals("MethodDecl") && !parent.getKind().equals("MainMethod"))){
+            parent = parent.getJmmParent();
+        }
+
+        String methodName = "";
+        if(parent.getKind().equals("MainMethod")){
+            methodName = "main";
+        }
+        else if(parent.getKind().equals("MethodDecl")){
+            methodName = parent.get("name");
+        }
+
+        //Get fields
+        List<Symbol> fields = st.getFields();
+        //Check if var is a field
+        if(fields != null){
+            for(Symbol f: fields){
+                if(f.getName().equals(var)){
+                    if(methodName.equals("main")){
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
+                    }
+                    varType = f.getType();
+                    break;
+                }
+            }
+        }
+
+        //Get List of local variables
+        List<Symbol> locals = st.getLocalVariables(methodName);
+        //check if var is a local variable
+        if(locals != null){
+            for(Symbol l :locals){
+                if(l.getName().equals(var)){
+                    varType = l.getType();
+                    break;
+                }
+            }
+        }
+
+        //Get List of parameters of the method
+        List<Symbol> parameters  = st.getParameters(methodName);
+        //check if var is a parameter
+        if(parameters != null){
+            for(Symbol p:parameters){
+                if(p.getName().equals(var)){
+                    varType = p.getType();
+                    break;
+                }
+            }
+        }
+
+        System.out.println("VarType" + varType);
+        System.out.println("Child Type" + childType);
+        //Checks if varType equals Super class and child type equals current class
+        if((varType.getName().equals(st.getSuper()) && childType.getName().equals(st.getClassName()))){
+            return varType;
+        }
+        //Checks if both types are imported
+        else if(st.getImports().contains(varType.getName()) && st.getImports().contains(childType.getName())){
+            return varType;
+        }else if(childType.getName().equals("importCorrect")){
+            return varType;
+        }
+        //Checks if assignee and assigner have different types
+        else if(!varType.getName().equals(childType.getName())){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Type of the assignee must be compatible with the assigned"));
+            return new Type("errorType", false);
+        }
+
+        return varType;
 
     }
 
@@ -212,7 +305,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         JmmNode left = jmmNode.getJmmChild(0);
         Type leftType = visit(left);
 
-        if (leftType.getName().equals("int")) {
+        if (!leftType.getName().equals("int")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                     Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")),
@@ -229,6 +322,13 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
                     Integer.parseInt(jmmNode.get("colStart")),
                     "Attempting to assign a value that is not a int"));
             return new Type("error", false);
+        }
+        return null;
+    }
+
+    private Type dealWithBlock(JmmNode jmmNode, String s) {
+        for(JmmNode child : jmmNode.getChildren()){
+            visit(child, "");
         }
         return new Type("null", false);
     }
