@@ -124,7 +124,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
 
-        String method = jmmNode.get("method");
+        /*String method = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
         Type classType = visit(classCall, "");
 
@@ -177,6 +177,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName()));
                         return new Type("error", false);
                     }
+                    //System.out.println("Method " + method + " expects " + st.getMethod(method).getParameters().get(i - 1).getType() + " as argument " + i  + " but got " + argType.getName());
 
                 }
             }
@@ -188,7 +189,65 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             return st.getReturnType(method);
         }catch (Exception e){
             return new Type("null", false);
+        }*/
+
+
+
+        String methodName = jmmNode.get("method");
+        JmmNode classCall = jmmNode.getJmmChild(0);
+        Type classType = visit(classCall,"");
+        System.out.println("method name: " + methodName);
+
+        //The class calling the method is the current class
+        if(classType.getName().equals(st.getClassName())){
+            //verify if method exist
+            if(st.getMethods().contains(methodName)){
+                //verify arguments type
+                List<Symbol> methodParams = st.getParameters(methodName);
+                //Check if number of parameters is different from number of arguments
+                if(methodParams.size() != (jmmNode.getNumChildren() - 1)){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method" ));
+                }else{
+                    for (int i = 1; i < jmmNode.getNumChildren(); i++){
+                        Type argType = visit(jmmNode.getJmmChild(i),"");
+                        // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
+                        if(!methodParams.get(i - 1).getType().equals(argType)){
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type" ));
+                        }
+                    }
+                }
+            }//checks if current class extends a super class
+            else{
+                System.out.println("super3: " + st.getSuper());
+                System.out.println("empty: "+st.getSuper().isEmpty());
+
+                if(st.getSuper().isEmpty()){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
+                    return new Type("Error", false);
+                }else{
+                    return new Type("importCorrect", false);
+                }
+            }
+        }else{
+            //checks if class is imported assume method is being called correctly
+            if(!st.getImports().contains(classType.getName())){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class not imported"));
+                return new Type("importIncorrect", false);
+            }else{
+                return new Type("importCorrect", false);
+            }
         }
+
+        if(st.getReturnType(methodName) == null){
+            if(st.getImports().contains(classType.getName())){
+                return new Type("importCorrect", false);
+            }else{
+                return new Type("importIncorrect", false);
+            }
+        };
+
+        return st.getReturnType(methodName);
+
     }
 
     private Type dealWithNot(JmmNode jmmNode, String s) {
@@ -242,13 +301,14 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithThis(JmmNode jmmNode, String s) {
         if(st.getCurrentMethod().equals("main")) {
+            //testar isto
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
         }
         return new Type(this.st.getClassName(),false);
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
-
+        /*
         try {
             if (st.getCurrentMethod().equals("main")) {
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
@@ -267,66 +327,71 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             return new Type("null", false);
         }
 
-        /*
+        */
         //Get identifier name
         String name = jmmNode.get("var");
         //Get parent
         JmmNode parent = jmmNode.getJmmParent();
-        while(!parent.getKind().equals("MethodDecl")){
+        while(!parent.getKind().equals("MethodDecl") && !parent.getKind().equals("MainMethod")){
             parent = parent.getJmmParent();
         }
 
-        if(parent.getKind().equals("main")){
-            String methodName = parent.get("name");
+        String methodName = "";
+        if(parent.getKind().equals("MainMethod")){
+            methodName = "main";
+        }
+        else if(parent.getKind().equals("MethodDecl")){
+            methodName = parent.get("name");
+        }
 
-            //Get local variables from method
-            List<Symbol> locals = st.getLocalVariables(methodName);
-            //Check if identifier is a local variable
-            if(locals != null){
-                for (Symbol l : locals){
-                    if(l.getName().equals(name)){
-                        return l.getType();
-                    }
+        //Get local variables from method
+        List<Symbol> locals = st.getLocalVariables(methodName);
+        //Check if identifier is a local variable
+        if(locals != null){
+            for (Symbol l : locals){
+                if(l.getName().equals(name)){
+                    return l.getType();
                 }
-            }
-
-            //Get params from method
-            List<Symbol> parameters  = st.getParameters(methodName);
-            //Check if identifier is a parameter
-            if(parameters != null){
-                for (Symbol p: parameters){
-                    if(p.getName().equals(name)){
-                        return p.getType();
-                    }
-                }
-            }
-
-            //Get fields from class
-            List<Symbol> fields = st.getFields();
-            //Check if identifier is a field
-            if(fields != null){
-                for(Symbol f:fields){
-                    if(f.getName().equals(name)){
-                        //Do I need to verify if the method is main? Fields cannot be used in main method?
-                        if(methodName.equals("main")){
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
-                        }
-                        return  f.getType();
-                    }
-                }
-            }
-
-            //No imports or Variable not in the imports.
-            if(st.getImports() == null || !st.getImports().contains(name)){
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Variable " + name + " not declared"));
-            }else{
-                return new Type(name, false);
             }
         }
+
+        //Get params from method
+        List<Symbol> parameters  = st.getParameters(methodName);
+        //Check if identifier is a parameter
+        if(parameters != null){
+            for (Symbol p: parameters){
+                if(p.getName().equals(name)){
+                    return p.getType();
+                }
+            }
+        }
+
+        //Get fields from class
+        List<Symbol> fields = st.getFields();
+        //Check if identifier is a field
+        if(fields != null){
+            for(Symbol f:fields){
+                if(f.getName().equals(name)){
+                    //Do I need to verify if the method is main? Fields cannot be used in main method?
+                    if(methodName.equals("main")){
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
+                    }
+                    return  f.getType();
+                }
+            }
+        }
+
+        //No imports or Variable not in the imports.
+        if(st.getImports() == null || !st.getImports().contains(name)){
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Variable " + name + " not declared"));
+        }else{
+            return new Type(name, false);
+        }
+
         //Dummy return
         return new Type("errorIdentifier", false);
 
-         */
+
 
     }
 
