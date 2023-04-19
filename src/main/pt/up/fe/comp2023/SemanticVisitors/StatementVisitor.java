@@ -210,8 +210,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         }
 
         JmmNode left = jmmNode.getJmmChild(0);
-        Type leftType = visit(left); // DA NULL !
-
+        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
+        Type leftType = expressionVisitor.visit(left);
 
         if (!leftType.equals(new Type("int", false))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
@@ -222,7 +222,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         }
 
         JmmNode right = jmmNode.getJmmChild(1);
-        Type rightType = visit(right, "");
+        Type rightType = expressionVisitor.visit(right);
+
 
         if (!rightType.equals(new Type("int", false))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,

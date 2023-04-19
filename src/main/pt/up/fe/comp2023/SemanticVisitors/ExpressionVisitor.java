@@ -152,14 +152,14 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         }
 
         Type type = st.getReturnType(methodName);
-        if (type == null) {
-            String temp = jmmNode.get("expType");
-            boolean isA = temp.contains("[");
-            if (isA) {
-                temp = temp.split("\\[")[0];
-            }
-            type = new Type(temp, isA);
-        }
+        // if (type == null) {
+        //     String temp = jmmNode.get("expType");
+        //     boolean isA = temp.contains("[");
+        //     if (isA) {
+        //         temp = temp.split("\\[")[0];
+        //     }
+        //     type = new Type(temp, isA);
+        // }
 
         return type;
 
