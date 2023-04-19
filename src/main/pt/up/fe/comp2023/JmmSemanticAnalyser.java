@@ -49,7 +49,7 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
         }
 
 
-        AnnotateVisitor annotateVisitor = new AnnotateVisitor(st);
+        AnnotateVisitor annotateVisitor = new AnnotateVisitor(st, reports);
         annotateVisitor.visit(jmmParserResult.getRootNode());
 
         ProgramVisitor operationVisitor = new ProgramVisitor(st, reports);

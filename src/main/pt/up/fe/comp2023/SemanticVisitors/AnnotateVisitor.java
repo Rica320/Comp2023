@@ -9,12 +9,17 @@ import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
+import java.util.List;
+
 public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
     MySymbolTable st;
+    private final List<Report> reports;
 
-    public AnnotateVisitor(MySymbolTable st) {
+    public AnnotateVisitor(MySymbolTable st, List<Report> reports) {
+
         this.st = st;
+        this.reports = reports;
     }
 
     @Override
@@ -87,7 +92,12 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithArrayAssign(JmmNode jmmNode, String s) {
         jmmNode.getJmmChild(0).put("expType", "int");
-        jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("var")).getName());
+        try {
+            jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("var")).getName());
+        } catch (Exception e) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")), "Array is not declared" ));
+        }
         defaultVisit(jmmNode, s);
 
         return null;
@@ -96,6 +106,8 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
     private String dealWithAssign(JmmNode jmmNode, String s) {
         var varAux = st.findTypeVar(jmmNode.get("var"));
         if(varAux == null) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                    Integer.parseInt(jmmNode.get("colStart")), "Var not declared" ));
             return null;
         }
 
