@@ -4,8 +4,8 @@ import GetterAndSetter;
 class Simple extends GetterAndSetter {
 
     int test() {
-        // int[] a;
-        a[4] = 3;
+        int[] a;
+        a[this.getInt()] = 3;
         return a;
     }
 

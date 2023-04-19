@@ -106,23 +106,23 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 List<Symbol> methodParams = st.getParameters(methodName);
                 //Check if number of parameters is different from number of arguments
                 if (methodParams.size() != (jmmNode.getNumChildren() - 1)) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method"));
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                            Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method"));
                 } else {
                     for (int i = 1; i < jmmNode.getNumChildren(); i++) {
                         Type argType = visit(jmmNode.getJmmChild(i), "");
                         // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
                         if (!methodParams.get(i - 1).getType().equals(argType)) {
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                                    Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
                         }
                     }
                 }
             }//checks if current class extends a super class
             else {
-                System.out.println("super3: " + st.getSuper());
-                System.out.println("empty: " + st.getSuper().isEmpty());
-
                 if (st.getSuper().isEmpty()) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                            Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
                     return new Type("Error", false);
                 } else {
                     return new Type("importCorrect", false);
@@ -150,9 +150,18 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 return new Type("importIncorrect", false);
             }
         }
-        ;
 
-        return st.getReturnType(methodName);
+        Type type = st.getReturnType(methodName);
+        if (type == null) {
+            String temp = jmmNode.get("expType");
+            boolean isA = temp.contains("[");
+            if (isA) {
+                temp = temp.split("\\[")[0];
+            }
+            type = new Type(temp, isA);
+        }
+
+        return type;
 
     }
 
