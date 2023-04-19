@@ -5,6 +5,7 @@ class VarNotDeclared {
     }
 
     public int foo() {
+        x = 3;
         return x;
     }
 }

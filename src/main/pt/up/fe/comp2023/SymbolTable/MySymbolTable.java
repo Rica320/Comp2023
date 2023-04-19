@@ -292,6 +292,10 @@ public class MySymbolTable implements SymbolTable {
             }
         }
         System.out.println("Symbol: " + varName);
+        if(symbol == null) {
+            return null;
+        }
+
         return symbol.getType();
     }
 

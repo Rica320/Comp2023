@@ -239,8 +239,17 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 }
             }
 
-            System.out.println("var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode));
-            return st.findTypeVar(jmmNode.get("var"), jmmNode);
+            var varAux = st.findTypeVar(jmmNode.get("var"));
+            if(varAux == null) {
+                reports.add(
+                        new Report(ReportType.ERROR, Stage.SEMANTIC,
+                                Integer.parseInt(jmmNode.get("lineStart")),
+                                Integer.parseInt(jmmNode.get("colStart")), "VarType couldn't be found"));
+                return new Type("ERROR", false);
+            }
+
+            //System.out.println("var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode));
+            return varAux;
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")), e.toString()));

@@ -1,8 +1,12 @@
 package pt.up.fe.comp2023.SemanticVisitors;
 
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp.jmm.report.ReportType;
+import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 public class AnnotateVisitor extends AJmmVisitor<String, String> {
@@ -90,7 +94,12 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
-        jmmNode.put("expType", st.findTypeVar(jmmNode.get("var")).getName());
+        var varAux = st.findTypeVar(jmmNode.get("var"));
+        if(varAux == null) {
+            return null;
+        }
+
+        jmmNode.put("expType", varAux.getName());
         System.out.println("Assign: " + jmmNode.get("var") + " " + jmmNode.get("expType"));
         defaultVisit(jmmNode, s);
 
