@@ -83,7 +83,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         }
 
         //Check if type of index is not int
-        if (!rightType.getName().equals("int")) {
+        if (!rightType.equals(new Type("int", false))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error,index is not int"));
         }
 
@@ -233,7 +233,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 }
             }
 
-            var varAux = st.findTypeVar(jmmNode.get("var"));
+            var varAux = st.findTypeVar(jmmNode.get("var"), jmmNode);
             if (varAux == null) {
                 reports.add(
                         new Report(ReportType.ERROR, Stage.SEMANTIC,
@@ -242,7 +242,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 return new Type("ERROR", false);
             }
 
-            //System.out.println("var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode));
             return varAux;
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
