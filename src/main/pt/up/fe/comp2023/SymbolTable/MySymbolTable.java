@@ -318,6 +318,13 @@ public class MySymbolTable implements SymbolTable {
             }
         }
 
+        //se for um import
+        for(String imports : getImports()) {
+            if(imports.equals(varName)) {
+                return true;
+            }
+        }
+
         return false;
     }
 }

@@ -100,25 +100,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithAssign(JmmNode jmmNode, String s){
-        /*Type leftT = st.findTypeVar(jmmNode.get("var"));
-
-        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
-        Type rightType = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
-
-        boolean lIsImp = st.hasImport(leftT.getName());
-        boolean rIsImp = st.hasImport(rightType.getName());
-
-        boolean extendsClass = (rightType.getName().equals(st.getClassName()) && leftT.getName().equals(st.getSuper()));
-
-        if (!(leftT.equals(rightType) || extendsClass) && !(lIsImp && rIsImp)) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")),
-                    "Attempting to assign two different types: " + leftT.getName() + "," + rightType.getName()));
-            return new Type("error", false);
-        }
-        return new Type("null", false);
-        */
 
         int line = Integer.parseInt(jmmNode.getJmmChild(0).get("lineStart"));
         int col = Integer.parseInt(jmmNode.getJmmChild(0).get("colStart"));
@@ -203,91 +184,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         }
         return right;
-
-        /*
-        String var = jmmNode.get("var");
-        //Get assignee expression node
-        JmmNode child = jmmNode.getJmmChild(0);
-        //Create expressionAnalyser
-        ExpressionVisitor expressionVisitor = new ExpressionVisitor(st,reports);
-        //Visit node and get Type
-        Type childType = expressionVisitor.visit(child, "");
-
-        Type varType = new Type("", false);
-
-        JmmNode parent = jmmNode.getJmmParent();
-        while(!(parent.getKind().equals("MethodDecl") && !parent.getKind().equals("MainMethod"))){
-            parent = parent.getJmmParent();
-        }
-
-        String methodName = "";
-        if(parent.getKind().equals("MainMethod")){
-            methodName = "main";
-        }
-        else if(parent.getKind().equals("MethodDecl")){
-            methodName = parent.get("name");
-        }
-
-        //Get fields
-        List<Symbol> fields = st.getFields();
-        //Check if var is a field
-        if(fields != null){
-            for(Symbol f: fields){
-                if(f.getName().equals(var)){
-                    if(methodName.equals("main")){
-                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Fields cannot be used inside static method main"));
-                    }
-                    varType = f.getType();
-                    break;
-                }
-            }
-        }
-
-        //Get List of local variables
-        List<Symbol> locals = st.getLocalVariables(methodName);
-        //check if var is a local variable
-        if(locals != null){
-            for(Symbol l :locals){
-                if(l.getName().equals(var)){
-                    varType = l.getType();
-                    break;
-                }
-            }
-        }
-
-        //Get List of parameters of the method
-        List<Symbol> parameters  = st.getParameters(methodName);
-        //check if var is a parameter
-        if(parameters != null){
-            for(Symbol p:parameters){
-                if(p.getName().equals(var)){
-                    varType = p.getType();
-                    break;
-                }
-            }
-        }
-
-        System.out.println("VarType" + varType);
-        System.out.println("Child Type" + childType);
-        //Checks if varType equals Super class and child type equals current class
-        if((varType.getName().equals(st.getSuper()) && childType.getName().equals(st.getClassName()))){
-            return varType;
-        }
-        //Checks if both types are imported
-        else if(st.getImports().contains(varType.getName()) && st.getImports().contains(childType.getName())){
-            return varType;
-        }else if(childType.getName().equals("importCorrect")){
-            return varType;
-        }
-        //Checks if assignee and assigner have different types
-        else if(!varType.getName().equals(childType.getName())){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Type of the assignee must be compatible with the assigned"));
-            return new Type("errorType", false);
-        }
-
-        return varType;
-
-         */
 
     }
 

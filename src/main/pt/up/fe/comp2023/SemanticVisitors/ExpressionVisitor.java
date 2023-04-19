@@ -43,7 +43,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type defaultVisit(JmmNode jmmNode, String s) {
-        for(JmmNode child : jmmNode.getChildren()){
+        for (JmmNode child : jmmNode.getChildren()) {
             visit(child, "");
         }
         return new Type("null", false);
@@ -59,16 +59,16 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         String right = jmmNode.get("atribute");
         Type leftType = visit(left, "");
 
-        if(!(right.equals("length"))) {
+        if (!(right.equals("length"))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Array does not have attribute " + right));
             return new Type("error", false);
         }
 
-        if(!leftType.isArray()) {
+        if (!leftType.isArray()) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), left.get("value") + " is not an array"));
             return new Type("error", false);
         }
-        return new Type("int",false);
+        return new Type("int", false);
     }
 
     private Type dealWithArrayLookup(JmmNode jmmNode, String s) {
@@ -78,91 +78,79 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type rightType = visit(right, "");
 
         //Check if type of left is not array
-        if(!leftType.isArray()){
+        if (!leftType.isArray()) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error, " + left.get("var") + " is not an array"));
         }
 
         //Check if type of index is not int
-        if(!rightType.getName().equals("int")){
+        if (!rightType.getName().equals("int")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Indexing error,index is not int"));
         }
 
-        return new Type("int",false);
+        return new Type("int", false);
     }
 
-   // private boolean checkArgsTyps(JmmNode jmmNode, String method) {
-   //     List<Symbol> methodParams = st.getParameters(method);
-   //     for (int i = 1; i < jmmNode.getNumChildren(); i++) {
-   //         Type argType = visit(jmmNode.getJmmChild(i), "");
-   //         // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
-   //         if (!methodParams.get(i - 1).getType().equals(argType)) {
-   //             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
-   //             return false;
-   //         }
-   //     }
-//
-   //     return true;
-   // }
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
 
         String methodName = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
-        Type classType = visit(classCall,"");
+        Type classType = visit(classCall, "");
         System.out.println("method name: " + methodName);
 
         //The class calling the method is the current class
-        if(classType.getName().equals(st.getClassName())){
+        if (classType.getName().equals(st.getClassName())) {
             //verify if method exist
-            if(st.getMethods().contains(methodName)){
+            if (st.getMethods().contains(methodName)) {
                 //verify arguments type
                 List<Symbol> methodParams = st.getParameters(methodName);
                 //Check if number of parameters is different from number of arguments
-                if(methodParams.size() != (jmmNode.getNumChildren() - 1)){
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method" ));
-                }else{
-                    for (int i = 1; i < jmmNode.getNumChildren(); i++){
-                        Type argType = visit(jmmNode.getJmmChild(i),"");
+                if (methodParams.size() != (jmmNode.getNumChildren() - 1)) {
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method"));
+                } else {
+                    for (int i = 1; i < jmmNode.getNumChildren(); i++) {
+                        Type argType = visit(jmmNode.getJmmChild(i), "");
                         // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
-                        if(!methodParams.get(i - 1).getType().equals(argType)){
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type" ));
+                        if (!methodParams.get(i - 1).getType().equals(argType)) {
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
                         }
                     }
                 }
             }//checks if current class extends a super class
-            else{
+            else {
                 System.out.println("super3: " + st.getSuper());
-                System.out.println("empty: "+st.getSuper().isEmpty());
+                System.out.println("empty: " + st.getSuper().isEmpty());
 
-                if(st.getSuper().isEmpty()){
+                if (st.getSuper().isEmpty()) {
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
                     return new Type("Error", false);
-                }else{
+                } else {
                     return new Type("importCorrect", false);
                 }
             }
-        }else{
+        } else {
             //checks if class is imported assume method is being called correctly
-            if(!(st.getImports().contains(classCall.get("var")) // static call
-                || st.getImports().contains(classType.getName()))) // virtual call
+            if (!(st.getImports().contains(classCall.get("var")) // static call
+                    || st.getImports().contains(classType.getName()))) // virtual call
             {
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                         Integer.parseInt(jmmNode.get("lineStart")),
                         Integer.parseInt(jmmNode.get("colStart")),
-                        "Class not imported " ));
+                        "Class not imported "));
                 return new Type("importIncorrect", false);
-            }else{
+            } else {
                 return new Type("importCorrect", false);
             }
         }
 
-        if(st.getReturnType(methodName) == null){
-            if(st.getImports().contains(classType.getName())){
+        if (st.getReturnType(methodName) == null) {
+            if (st.getImports().contains(classType.getName())) {
                 return new Type("importCorrect", false);
-            }else{
+            } else {
                 return new Type("importIncorrect", false);
             }
-        };
+        }
+        ;
 
         return st.getReturnType(methodName);
 
@@ -172,7 +160,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type childType = visit(jmmNode.getJmmChild(0), "");
 
         //Check if child is boolean
-        if(!childType.getName().equals("boolean")) {
+        if (!childType.getName().equals("boolean")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Not operation expects boolean"));
         }
 
@@ -183,10 +171,10 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         JmmNode child = jmmNode.getJmmChild(0);
         Type childType = visit(child, "");
 
-        if(!childType.getName().equals("int")) {
+        if (!childType.getName().equals("int")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Array initialization requires integer size"));
         }
-        return new Type("int",true);
+        return new Type("int", true);
     }
 
     private Type dealWithNewObject(JmmNode jmmNode, String s) {
@@ -200,13 +188,13 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         String op = jmmNode.get("op");
         System.out.println(left.getName() + " " + op + " " + right.getName());
         if (!left.getName().equals(right.getName())) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Binary operation between different types in " + op + "operation" ));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Binary operation between different types in " + op + "operation"));
         } else if (left.isArray() || right.isArray()) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Arrays cannot be used in binary operations"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Arrays cannot be used in binary operations"));
         } else if (!left.getName().equals("int") && (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/") || op.equals("<"))) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects integer"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects integer"));
         } else if (!left.getName().equals("boolean") && (op.equals("&&"))) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects boolean"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Operation between" + op + " expects boolean"));
         } else {
             return switch (op) {
                 case "+", "-", "*", "/" -> new Type("int", false);
@@ -218,20 +206,26 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithThis(JmmNode jmmNode, String s) {
-        if(st.getCurrentMethod().equals("main")) {
+        if (st.getCurrentMethod().equals("main")) {
             //testar isto
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
         }
-        return new Type(this.st.getClassName(),false);
+        return new Type(this.st.getClassName(), false);
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
 
         try {
+            if (!st.findVar(jmmNode.get("var"), st.getCurrentMethod())) {
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
+                        Integer.parseInt(jmmNode.get("colStart")), "Var not present in ST"));
+                return new Type("ERROR", false);
+            }
+
             if (st.getCurrentMethod().equals("main")) {
                 System.out.println("current: " + st.getCurrentMethod());
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
-                if (origin == SymbolOrigin.FIELD ) { // e se super
+                if (origin == SymbolOrigin.FIELD) { // e se super
                     reports.add(
                             new Report(ReportType.ERROR, Stage.SEMANTIC,
                                     Integer.parseInt(jmmNode.get("lineStart")),
@@ -240,7 +234,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             }
 
             var varAux = st.findTypeVar(jmmNode.get("var"));
-            if(varAux == null) {
+            if (varAux == null) {
                 reports.add(
                         new Report(ReportType.ERROR, Stage.SEMANTIC,
                                 Integer.parseInt(jmmNode.get("lineStart")),
@@ -251,7 +245,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             //System.out.println("var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode));
             return varAux;
         } catch (Exception e) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,Integer.parseInt(jmmNode.get("lineStart")),
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
                     Integer.parseInt(jmmNode.get("colStart")), e.toString()));
             return new Type("null", false);
         }
@@ -320,30 +314,31 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
         //Dummy return
 
-      //  System.out.println("Var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode).getName());
-      //  return st.findTypeVar(jmmNode.get("var"), jmmNode);
+        //  System.out.println("Var: " + jmmNode.get("var") + " " + st.findTypeVar(jmmNode.get("var"), jmmNode).getName());
+        //  return st.findTypeVar(jmmNode.get("var"), jmmNode);
 
     }
 
-   //  private Type convertOllirToSemantic(Type type) {
-   //      switch (type.getName()) {
-   //          case "i32":
-   //              return new Type("int", false);
-   //          case "bool":
-   //              return new Type("boolean", false);
-   //          case "v":
-   //              return new Type("void", false);
-   //          default:
-   //              return new Type(jmmNode.get("type"), false);
-   //      }
-   //      return new Type(jmmNode.get("type"), false);
-   //  }
+    //  private Type convertOllirToSemantic(Type type) {
+    //      switch (type.getName()) {
+    //          case "i32":
+    //              return new Type("int", false);
+    //          case "bool":
+    //              return new Type("boolean", false);
+    //          case "v":
+    //              return new Type("void", false);
+    //          default:
+    //              return new Type(jmmNode.get("type"), false);
+    //      }
+    //      return new Type(jmmNode.get("type"), false);
+    //  }
 
     private Type dealWithBoolean(JmmNode jmmNode, String s) {
-        return new Type("boolean",false);
+        return new Type("boolean", false);
     }
+
     private Type dealWithInt(JmmNode jmmNode, String s) {
-        return new Type("int",false);
+        return new Type("int", false);
     }
 
 
