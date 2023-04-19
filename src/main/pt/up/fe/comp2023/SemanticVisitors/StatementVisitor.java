@@ -110,7 +110,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
             return new Type("error", false);
         }
         return new Type("null", false);
-        */
+
 
         int line = Integer.parseInt(jmmNode.getJmmChild(0).get("lineStart"));
         int col = Integer.parseInt(jmmNode.getJmmChild(0).get("colStart"));
@@ -189,8 +189,8 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         }
         return right;
+        */
 
-        /*
         String var = jmmNode.get("var");
         //Get assignee expression node
         JmmNode child = jmmNode.getJmmChild(0);
@@ -273,7 +273,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         return varType;
 
-         */
+
 
     }
 
