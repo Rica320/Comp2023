@@ -35,6 +35,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         addVisit("ThenBlock", this::dealWithBlock);
         addVisit("ElseBlock", this::dealWithBlock);
         addVisit("WhileBlock", this::dealWithBlock);
+        addVisit("MethodDecl", this::dealWithMethod);
         setDefaultVisit(this::defaultVisit);
     }
 
@@ -44,6 +45,13 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
             visit(child, "");
         }
         return new Type("null", false);
+    }
+
+    private Type dealWithMethod(JmmNode jmmNode, String s) {
+        st.setCurrentMethod(jmmNode.get("name"));
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        return null;
     }
 
     private Type dealWithScope(JmmNode jmmNode, String s){
@@ -119,6 +127,12 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         Type right = expressionVisitor.visit(jmmNode.getJmmChild(0), "");
 
         String left = jmmNode.get("var"); //ver tipo do var
+
+
+        if(!st.findVar(left, st.getCurrentMethod())) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Fields cannot be used in main method"));
+            return new Type("ERROR", false);
+        }
 
         JmmNode parent = jmmNode.getJmmParent();
         Type leftType= new Type("", false);
@@ -319,4 +333,5 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         }
         return new Type("null", false);
     }
+
 }

@@ -294,5 +294,27 @@ public class MySymbolTable implements SymbolTable {
         System.out.println("Symbol: " + varName);
         return symbol.getType();
     }
+
+    public boolean findVar(String varName, String currentMethod) {
+        if(getMethod(currentMethod).hasLocalVariable(varName)){
+            return true;
+        }
+
+        //se for um parametro
+        for(Symbol parameter : getMethod(currentMethod).getParameters()) {
+            if(parameter.getName().equals(varName)) {
+                return true;
+            }
+        }
+
+        //se for um field
+        for(Symbol field : getFields()) {
+            if(field.getName().equals(varName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 

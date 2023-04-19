@@ -229,6 +229,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
         try {
             if (st.getCurrentMethod().equals("main")) {
+                System.out.println("current: " + st.getCurrentMethod());
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
                 if (origin == SymbolOrigin.FIELD ) { // e se super
                     reports.add(
