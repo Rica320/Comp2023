@@ -114,10 +114,10 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
             return new Type("ERROR", false);
         }
 
-        /*if(st.findTypeVar(left, jmmNode).isArray()) {
+        if(st.findTypeVar(left, jmmNode).isArray()) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Assign to array without lookup"));
             return new Type("ERROR", false);
-        }*/
+        }
 
         JmmNode parent = jmmNode.getJmmParent();
         Type leftType= new Type("", false);
