@@ -96,7 +96,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         String methodName = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
         Type classType = visit(classCall, "");
-        System.out.println("method name: " + methodName);
 
         //The class calling the method is the current class
         if (classType.getName().equals(st.getClassName())) {
@@ -232,7 +231,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             }
 
             if (st.getCurrentMethod().equals("main")) {
-                System.out.println("current: " + st.getCurrentMethod());
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
                 if (origin == SymbolOrigin.FIELD) { // e se super
                     reports.add(
