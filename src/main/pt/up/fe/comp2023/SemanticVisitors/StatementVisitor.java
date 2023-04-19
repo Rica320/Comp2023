@@ -109,9 +109,13 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         String left = jmmNode.get("var"); //ver tipo do var
 
-
         if(!st.findVar(left, st.getCurrentMethod())) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Fields cannot be used in main method"));
+            return new Type("ERROR", false);
+        }
+
+        if(st.findTypeVar(left, jmmNode).isArray()) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Assign to array without lookup"));
             return new Type("ERROR", false);
         }
 
@@ -201,6 +205,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
         JmmNode left = jmmNode.getJmmChild(0);
         Type leftType = visit(left);
+
 
         if (!leftType.getName().equals("int")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
