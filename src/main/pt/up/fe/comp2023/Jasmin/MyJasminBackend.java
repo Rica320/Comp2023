@@ -7,10 +7,6 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
 
-// • Assignments
-//• Arithmetic operations (with correct precedence)
-//• Method invocation
-
 public class MyJasminBackend implements JasminBackend {
 
     ClassUnit classe;

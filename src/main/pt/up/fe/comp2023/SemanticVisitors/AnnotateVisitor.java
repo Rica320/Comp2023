@@ -1,7 +1,5 @@
 package pt.up.fe.comp2023.SemanticVisitors;
 
-import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
-import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.report.Report;
@@ -13,8 +11,8 @@ import java.util.List;
 
 public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
-    MySymbolTable st;
     private final List<Report> reports;
+    MySymbolTable st;
 
     public AnnotateVisitor(MySymbolTable st, List<Report> reports) {
 
@@ -29,21 +27,11 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
 
-        // Methods
-        //addVisit("MethodArgs", this::dealWithMethodArgs);
-        // addVisit("ParamDecl", this::dealWithParamDecl);
-        // addVisit("MethodCall", this::dealWithMethodCall);
-
-        // addVisit("Int", this::dealWithInt);
-        // addVisit("Var", this::dealWithVar);
-        // addVisit("Boolean", this::dealWithBool);
-
         // Statements
         addVisit("Assign", this::dealWithAssign);
         addVisit("IfClause", this::dealWithBool);
         addVisit("While", this::dealWithBool);
         addVisit("ArrayAssign", this::dealWithArrayAssign);
-
 
         // Expression
         addVisit("NewIntArray", this::dealWithNewIntArray);
@@ -96,7 +84,7 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
             jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("var")).getName());
         } catch (Exception e) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")), "Array is not declared" ));
+                    Integer.parseInt(jmmNode.get("colStart")), "Array is not declared"));
         }
         defaultVisit(jmmNode, s);
 
@@ -105,9 +93,9 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
         var varAux = st.findTypeVar(jmmNode.get("var"));
-        if(varAux == null) {
+        if (varAux == null) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")), "Var not declared" ));
+                    Integer.parseInt(jmmNode.get("colStart")), "Var not declared"));
             return null;
         }
 

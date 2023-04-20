@@ -37,6 +37,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         };
     }
 
+    public static boolean placeVariable(JmmNode node) {
+        return !node.getJmmParent().getKind().equals("ExpressionStmt"); // TODO; ver melhor
+    }
+
     @Override
     protected void buildVisitor() {
         addVisit("ProgramRoot", this::dealWithProgram);
@@ -86,18 +90,19 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
     private Pair<String, String> dealWithThis(JmmNode jmmNode, String s) {
         String tempName = "t" + newTemp() + "." + symbolTable.getClassName();
-        String sb = tempName + " :=." + symbolTable.getClassName() +
-                " $0.this." + symbolTable.getClassName() + ";\n";
+        String sb = tempName + " :=." + symbolTable.getClassName() + " $0.this." + symbolTable.getClassName() + ";\n";
 
         return new Pair<>(sb, tempName);
     }
 
     private Pair<String, String> dealWithArrayLookup(JmmNode jmmNode, String s) {
+
         StringBuilder sb = new StringBuilder();
         StringBuilder code = new StringBuilder();
         Pair<String, String> array;
         Pair<String, String> index;
-        String arrayName = "";
+        String arrayName;
+
         if (jmmNode.hasAttribute("var")) {
             array = new Pair<>("", jmmNode.get("var"));
             arrayName = array.b;
@@ -108,14 +113,11 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             arrayName = array.b.split("\\.")[isParam];
             index = this.visit(jmmNode.getJmmChild(1));
         }
+
         code.append(array.a).append("\n");
         code.append(index.a).append("\n");
 
         SymbolOrigin origin = symbolTable.getSymbolOrigin(arrayName);
-        System.out.println("ArrayLookup: " + arrayName + " " + origin);
-        // Type type = findTypeVar(arrayName);
-        // String olliType = getOllirType(type.getName(), type.isArray());
-
         return arrLookup(arrayName, index, origin, code, sb);
     }
 
@@ -129,31 +131,29 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
             index = new Pair<>("", tempName);
         }
-        switch (origin) { // REFACTOR THIS TODO
-            case FIELD: // DA PARA MELHORAR TEMPS
+        switch (origin) {
+            case FIELD:
                 String tempName = "t" + temp++;
                 code.append(tempName).append(".array.i32 :=.array.i32 getfield(this, ").append(arrayName).append(".array.i32).array.i32;");
-
                 return new Pair<>(code.toString(), sb.append(tempName).append("[").append(index.b).append("].i32").toString());
             case PARAMETER:
                 sb.append("$").append(symbolTable.getParameterIndex(arrayName)).append(".").append(arrayName).append("[").append(index.b).append("].i32");
                 return new Pair<>(code.toString(), sb.toString());
             case IMPORT:
                 throw new RuntimeException("ArrayLookup: IMPORT");
-
             case LOCAL:
             default:
-                return new Pair<>(code.toString(), sb.append(arrayName).append("[").append(index.b).append("].i32").toString()); // TODO: mesma questão do default
+                return new Pair<>(code.toString(), sb.append(arrayName).append("[").append(index.b).append("].i32").toString());
         }
     }
 
-    private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) { // TODO.... a string pode ser um array? no main... ficava mais fácil sem esse
+    private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         Pair<String, String> index = this.visit(jmmNode.getJmmChild(0));
         if (index.b.split("\\.")[0].matches("\\d+")) { // is a number
             String tempName = "t" + temp++ + ".i32";
             sb.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
-            index = new Pair<>(index.a, tempName); // todo: A ORDENACAO ESTA CORRETA?
+            index = new Pair<>(index.a, tempName);
         }
         Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
 
@@ -164,28 +164,23 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> la = arrLookup(varName, index, origin, sb, new StringBuilder());
 
-
-        /*
-            TODO:::::::: SE FOR UM FIELD
-         */
-
-        String olliType = getOllirType(type.getName(), false); // false pk queremos o elemento do array ... que na grammar n pode ser array
+        String olliType = getOllirType(type.getName(), false);
 
         sb.append(index.a).append("\n");
-        sb.append(value.a).append("\n"); // TODO: perguntar ao STOR ... e se for um field ????
-        sb.append(la.b).append(" :=.").append(olliType).append(" ").append(value.b).append(";\n"); // TODO: temp pode ser melhorado
+        sb.append(value.a).append("\n");
+        sb.append(la.b).append(" :=.").append(olliType).append(" ").append(value.b).append(";\n");
 
         return new Pair<>(sb.toString(), null);
     }
 
-    // TODO:t10.bool :=.bool c.i32 <.bool 1000.i32; if (t10.bool) goto End2; .... esta correto ???
+
     private Pair<String, String> dealWithWhile(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         String newLabel = newLabel();
         sb.append("Loop").append(newLabel).append(":\n");
         Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
         sb.append(condition.a).append("\n");
-        sb.append("if (!.bool ").append(condition.b).append(") goto End").append(newLabel).append(";\n"); // TODO: outro sitio onde se pode poupar temps
+        sb.append("if (!.bool ").append(condition.b).append(") goto End").append(newLabel).append(";\n");
         Pair<String, String> body = this.visit(jmmNode.getJmmChild(1));
         sb.append(body.a).append("\ngoto Loop").append(newLabel).append(";\n");
         sb.append("End").append(newLabel).append(":\n");
@@ -198,17 +193,16 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         sb.append(expr.a).append("\n");
         String temp = "t" + newTemp() + ".bool";
         sb.append(temp).append(" :=.bool ").append("!.bool ").append(expr.b).append(";\n");
-        return new Pair<>(sb.toString(), temp); // TODO: tb é possivel poupar temps aqui ...t8.bool :=.bool !.bool 0.bool; if (t8.bool) goto Then1;
+        return new Pair<>(sb.toString(), temp);
 
     }
 
-    private Pair<String, String> dealWithIf(JmmNode jmmNode, String s) { // TODO ... STOR ... no exemplo tem !.bool exp ... mas n fiz assim, está bem ?
+    private Pair<String, String> dealWithIf(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         Pair<String, String> condition = this.visit(jmmNode.getJmmChild(0));
         Pair<String, String> then = this.visit(jmmNode.getJmmChild(1));
         Pair<String, String> els = this.visit(jmmNode.getJmmChild(2));
 
-        // TODO: outra vez a questão de n estar a utilizar as variaveis de uma forma eficiente
         sb.append(condition.a).append("\n");
         String label = newLabel();
         String thenLabel = "Then" + label;
@@ -230,8 +224,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         sb.append(left.a); // code that "creates" the child
 
         String place = "t" + newTemp() + ".i32";
-        sb.append(place).append(" :=.i32 arraylength(").append(left.b) // TODO: suposição que o array é de inteiros ... e o String da main
-                .append(").i32;\n");
+        sb.append(place).append(" :=.i32 arraylength(").append(left.b).append(").i32;\n");
 
         return new Pair<>(sb.toString(), place);
     }
@@ -270,9 +263,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Pair<String, String> right = this.visit(jmmNode.getJmmChild(1));
         String op = jmmNode.get("op") + ".i32";
         // TODO: ver este
-        String place = "t" + newTemp() + ".i32"; // TODO: BINARY OP IS .i32 ALL THE  TIME ???
+        String place = "t" + newTemp() + ".i32";
 
-        sb.append(left.a).append("\n"); // TODO para poupar temps, verificar se o left.a é vazio
+        sb.append(left.a).append("\n");
         sb.append(right.a).append("\n");
 
         String code = sb.append(place).append(" :=.i32 ").append(left.b).append(" ").append(op).append(" ").append(right.b).append(";").toString();
@@ -285,16 +278,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = symbolTable.findTypeVar(varName, jmmNode); // TODO: e se n for local ...
+        Type type = symbolTable.findTypeVar(varName, jmmNode);
         String ollirType = getOllirType(type.getName(), type.isArray());
 
-        // TODO: we can improve the number of temps by modifying the code bellow ... a := 2 + 1 instead of t1 := 2 + 1; a := t1
-        sb.append(codePlace.a).append("\n"); // APPENDED CODE THAT GENERATES THE TEMP ON THE RIGHT OF THE ASSIGN
-        //sb.append(varName).append(".").append(ollirType)
-        //        .append(" :=.").append(ollirType).append(" ")
-        //        .append(codePlace.b); // TODO assumindo o valor da variavel da direita??
+        sb.append(codePlace.a).append("\n");
 
-        switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
+        switch (symbolOrign) {
             case PARAMETER -> // already checks STATIC
                     sb.append("$").append(symbolTable.getParameterIndex(varName)).append(".").append(varName).append(".i32").append(" :=.").append(ollirType).append(" ").append(codePlace.b); // TODO: FALAR COM STOR
             case IMPORT, LOCAL ->
@@ -313,26 +302,27 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
 
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
-        Type type = symbolTable.findTypeVar(varName, jmmNode); // TODO: assumindo que a semantica esta bem
+        Type type = symbolTable.findTypeVar(varName, jmmNode);
 
-        switch (symbolOrign) { // TODO:::: e se houver uma var chamada t1 ?????
-            case PARAMETER: // already checks STATIC
+        switch (symbolOrign) {
+            case PARAMETER -> { // already checks STATIC
                 return new Pair<>("", "$" + symbolTable.getParameterIndex(varName) + "." + varName + "." + getOllirType(type.getName(), type.isArray()));
-            case IMPORT:// TODO: IMPORTS
-            case LOCAL:
+            }// TODO: IMPORTS
+            case IMPORT, LOCAL -> {
                 return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
-            case FIELD:
-            case UNKNOWN:
+            }
+            case FIELD, UNKNOWN -> {
                 StringBuilder sb = new StringBuilder();
                 String ollirType = getOllirType(type.getName(), type.isArray());
                 String newTemp = "t" + newTemp() + "." + ollirType;
                 sb.append(newTemp).append(" :=.").append(ollirType).append(" getfield(this,").append(varName).append(".").append(ollirType).append(").").append(ollirType).append(";\n");
                 return new Pair<>(sb.toString(), newTemp);
+            }
         }
         return new Pair<>("", varName + "." + getOllirType(type.getName(), type.isArray()));
     }
 
-    private Pair<String, String> dealWithInt(JmmNode jmmNode, String s) { // TODO: VER SE O LADO ESQUERDO ESTA BEM
+    private Pair<String, String> dealWithInt(JmmNode jmmNode, String s) {
         return new Pair<>("", jmmNode.get("val") + ".i32");
     }
 
@@ -342,10 +332,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String ret = getOllirType(type.getName(), type.isArray());
         Pair<String, String> expr = this.visit(jmmNode.getJmmChild(0));
         sb.append(expr.a).append("\n");
-        sb.append("ret.").append(ret).append(" ").append(expr.b); //TODO: return value
+        sb.append("ret.").append(ret).append(" ").append(expr.b);
         return new Pair<>(sb.append(";\n").toString(), null);
     }
-
 
     public Type findRetMethod(String methodName, JmmNode node) {
         MethodScope symbol = symbolTable.getMethod(methodName);
@@ -355,14 +344,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             }
             return new Type(node.get("expType"), node.get("expType").contains("["));
         }
-        return symbol.getReturnType(); // TODO: é suposto assumir que é void ???
+        return symbol.getReturnType();
     }
 
-    public static boolean placeVariable (JmmNode node) {
-        return !node.getJmmParent().getKind().equals("ExpressionStmt"); // TODO; ver melhor
-    }
-
-    // TODO ::: VER ISTO ... t4.V :=.V invokestatic(io, "println", c.i32).V;
     private Pair<String, String> dealWithMethodCall(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
 
@@ -375,8 +359,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         if (varName != null) { // TODO: refactor
             int isParam = codePlace1.b.charAt(0) == '$' ? 1 : 0;
             varName = "";
-            if (isParam == 1)
-                varName = codePlace1.b.split("\\.")[0] + ".";
+            if (isParam == 1) varName = codePlace1.b.split("\\.")[0] + ".";
             varName += codePlace1.b.split("\\.")[isParam];
             typeVar = codePlace1.b.split("\\.")[isParam + 1];
         }
@@ -403,7 +386,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         }
 
-        if (!ollirType.equals("V") && placeVariable(jmmNode)) { // TODO: DISCUTIR ISTO COM O STOR ... para dif de void tem de ter uma temp (ou var)
+        if (!ollirType.equals("V") && placeVariable(jmmNode)) {
             newTemp = "t" + newTemp() + "." + ollirType;
             sb.append(newTemp).append(" :=.").append(ollirType).append(" ");
         }
@@ -438,8 +421,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         return new Pair<>(sb.toString(), null);
     }
 
-    private Pair<String, String> dealWithNewObject(JmmNode jmmNode, String s) { // TODO: otimizações
-        // TODO: especial é para method new object
+    private Pair<String, String> dealWithNewObject(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         String className = jmmNode.get("objClass");
         String newTemp = "t" + newTemp() + "." + className;
@@ -498,15 +480,15 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         List<JmmNode> children = jmmNode.getChildren();
 
         symbolTable.setCurrentMethod(methodName);
-        // TODO: OUTRA VEZ PUBLIC OU PRIVATE ?
-        sb.append(".method public ").append(methodName).append("(").append(dealWithMethodArgs(symbolTable.getCurrentMethodScope().getParameters())).append(").").append(getOllirType(symbolTable.getReturnType(methodName).getName(), symbolTable.getReturnType(methodName).isArray())).append(" {\n");
-
+        sb.append(".method public ").append(methodName).append("(").append(dealWithMethodArgs(symbolTable.getCurrentMethodScope().getParameters()));
+        sb.append(").").append(getOllirType(symbolTable.getReturnType(methodName).getName(), symbolTable.getReturnType(methodName).isArray())).append(" {\n");
         sb.append(dealWithLocalVarDcl(symbolTable.getCurrentMethodScope().getLocalVariables()));
 
         for (int i = 0; i < children.size() - 1; i++) {
             Pair<String, String> childCode = this.visit(jmmNode.getJmmChild(i), " ");
             if (childCode != null) sb.append(childCode.a).append("\n");
         }
+
         sb.append(this.visit(children.get(children.size() - 1), " ").a);// TODO: change this, add the code before the return
         sb.append("}");
         symbolTable.setCurrentMethod(null);
@@ -522,16 +504,14 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
         sb.append("\n.method public static main(").append(symbols.get(0).getName()).append(".array.String).V {\n");
 
-        /*
-         TODO: o que acontece no caso Simple e; ... fica s.Simple :=.Simple 0.Simple; ? ou seja nulo?
-         */
         sb.append(dealWithLocalVarDcl(symbolTable.getCurrentMethodScope().getLocalVariables()));
+
         for (JmmNode child : jmmNode.getChildren()) {
             Pair<String, String> childCode = this.visit(child, " ");
             if (childCode != null) sb.append(childCode.a).append("\n");
         }
-        sb.append("ret.V;");
-        sb.append("\n}\n");
+
+        sb.append("ret.V;").append("\n}\n");
 
         symbolTable.setCurrentMethod(null);
 
@@ -540,9 +520,8 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
     private String dealWithVarDcl(List<Symbol> symbols) {
         StringBuilder sb = new StringBuilder();
-        for (Symbol symbol : symbols) { // TODO: PRIVATE or public????
+        for (Symbol symbol : symbols)
             sb.append(".field public ").append(symbol.getName()).append(".").append(getOllirType(symbol.getType().getName(), symbol.getType().isArray())).append(";\n");
-        }
         return sb.toString();
     }
 
@@ -550,7 +529,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         StringBuilder sb = new StringBuilder();
         for (Symbol symbol : symbols) {
             Type type = symbol.getType();
-            if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean"))) // TODO: questão do default
+            if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean")))
                 sb.append(symbol.getName()).append(".").append(getOllirType(type.getName(), type.isArray())).append(" :=.").append(getOllirType(type.getName(), type.isArray())).append(" 0.").append(getOllirType(type.getName(), type.isArray())) // TODO: 0 é default value?
                         .append(";\n");
         }
@@ -567,8 +546,9 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String extendsClass = symbolTable.getSuper().isEmpty() ? "" : " extends " + symbolTable.getSuper();
         sb.append(symbolTable.getClassName()).append(extendsClass).append(" {\n");
 
-        sb.append(dealWithVarDcl(symbolTable.getFields())).append("\n"); // TODO: ESTES \n sao para efeitos visuais
+        sb.append(dealWithVarDcl(symbolTable.getFields())).append("\n");
         sb.append(defaultConstructor());
+
         for (JmmNode child : jmmNode.getChildren()) {
             String childCode = this.visit(child, " ").a;
             if (childCode != null) sb.append(childCode);
@@ -580,6 +560,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
 
     private String dealWithImports() {
         StringBuilder sb = new StringBuilder();
+
         for (String impr : symbolTable.getImports())
             sb.append("import ").append(impr).append(";\n");
 
