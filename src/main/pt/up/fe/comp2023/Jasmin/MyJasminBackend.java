@@ -423,7 +423,7 @@ public class MyJasminBackend implements JasminBackend {
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
             case "ldc" ->
-                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral()); // TODO: necessary?
+                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
             case "arraylength" -> {
                 loadElement(inst.getFirstArg());
                 code.append("\n\tarraylength ");

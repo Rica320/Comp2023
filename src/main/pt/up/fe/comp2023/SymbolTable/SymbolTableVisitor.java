@@ -1,4 +1,4 @@
-package pt.up.fe.comp2023.Visitor;
+package pt.up.fe.comp2023.SymbolTable;
 
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -105,7 +105,6 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
 
         Symbol new_symbol = new Symbol(new Type(type, isArr), jmmNode.get("var"));
 
-        // System.out.println("Adding field: " + new_symbol.getName() + " in method " + st.currentMethod);
 
         if (st.getCurrentMethodScope() == null) {
             st.addField(new_symbol);
@@ -117,7 +116,7 @@ public class SymbolTableVisitor extends AJmmVisitor<String, String> {
     }
 
     private String dealWithMain(JmmNode jmmNode, String s) {
-        MethodScope main = new MethodScope(new Type("void", false), "main", null); // TODO : STRING[] ??
+        MethodScope main = new MethodScope(new Type("void", false), "main", null);
         st.addMethod("main", main);
 
         st.setCurrentMethod("main");

@@ -7,27 +7,11 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SemanticVisitors.AnnotateVisitor;
-import pt.up.fe.comp2023.SemanticVisitors.ExpressionVisitor;
 import pt.up.fe.comp2023.SemanticVisitors.ProgramVisitor;
-import pt.up.fe.comp2023.SemanticVisitors.StatementVisitor;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
 import java.util.List;
-
-
-// todo: add semantic analysis
-// Return type checking
-// argument number and type checking on method calls
-// Check if theres a main method and if the only argument is String[] args
-
-// attribute = length checking
-// var assign must be of the same type as declared
-// Check if [INDEX] is only used on arrays and if index given is int
-
-// Binary op must have same type on both sides
-// If/While must have boolean condition
-
 
 public class JmmSemanticAnalyser implements JmmAnalysis {
     @Override
@@ -53,7 +37,7 @@ public class JmmSemanticAnalyser implements JmmAnalysis {
         annotateVisitor.visit(jmmParserResult.getRootNode());
 
         ProgramVisitor operationVisitor = new ProgramVisitor(st, reports);
-        operationVisitor.visit(jmmParserResult.getRootNode(),"");
+        operationVisitor.visit(jmmParserResult.getRootNode(), "");
 
 
         //List<Report> temp = arrayOperationVisitor.getReports();

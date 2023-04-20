@@ -186,7 +186,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         Type right = visit(jmmNode.getChildren().get(1));
 
         String op = jmmNode.get("op");
-        System.out.println(left.getName() + " " + op + " " + right.getName());
+
         if (!left.getName().equals(right.getName())) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Binary operation between different types in " + op + "operation"));
         } else if (left.isArray() || right.isArray()) {

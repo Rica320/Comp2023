@@ -77,14 +77,12 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
         return null;
     }
 
-
     private String dealWithArrayAssign(JmmNode jmmNode, String s) {
         jmmNode.getJmmChild(0).put("expType", "int");
         try {
             jmmNode.getJmmChild(1).put("expType", st.findTypeVar(jmmNode.get("var")).getName());
         } catch (Exception e) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")), "Array is not declared"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Array is not declared"));
         }
         defaultVisit(jmmNode, s);
 
@@ -94,25 +92,18 @@ public class AnnotateVisitor extends AJmmVisitor<String, String> {
     private String dealWithAssign(JmmNode jmmNode, String s) {
         var varAux = st.findTypeVar(jmmNode.get("var"));
         if (varAux == null) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")), "Var not declared"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Var not declared"));
             return null;
         }
 
         jmmNode.put("expType", varAux.getName());
-        System.out.println("Assign: " + jmmNode.get("var") + " " + jmmNode.get("expType"));
         defaultVisit(jmmNode, s);
-
         return null;
     }
 
     private void propagateDown(JmmNode jmmNode) {
-        if (jmmNode.hasAttribute("expType")) {
-            for (JmmNode child : jmmNode.getChildren()) {
-                System.out.println("Propagate: " + child.getKind() + " " + jmmNode.get("expType"));
-                child.put("expType", jmmNode.get("expType"));
-            }
-        }
+        if (jmmNode.hasAttribute("expType")) for (JmmNode child : jmmNode.getChildren())
+            child.put("expType", jmmNode.get("expType"));
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {

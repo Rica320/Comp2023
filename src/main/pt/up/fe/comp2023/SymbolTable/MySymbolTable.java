@@ -5,7 +5,6 @@ import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
-import pt.up.fe.comp2023.Visitor.SymbolTableVisitor;
 
 import java.util.*;
 
@@ -129,9 +128,8 @@ public class MySymbolTable implements SymbolTable {
         return methods.get(label);
     }
 
-    public int getMethodRegister(String method, String var){
-        if (methods.containsKey(method))
-            return methods.get(method).getVarRegister(var);
+    public int getMethodRegister(String method, String var) {
+        if (methods.containsKey(method)) return methods.get(method).getVarRegister(var);
         else return -1;
     }
 
@@ -196,8 +194,7 @@ public class MySymbolTable implements SymbolTable {
             return SymbolOrigin.LOCAL;
         else if (hasField(symbolLabel)) // Is it a field?
             return SymbolOrigin.FIELD;
-        else if (hasImport(symbolLabel))
-            return SymbolOrigin.IMPORT;
+        else if (hasImport(symbolLabel)) return SymbolOrigin.IMPORT;
         return SymbolOrigin.UNKNOWN;
     }
 
@@ -257,7 +254,7 @@ public class MySymbolTable implements SymbolTable {
         return sb.toString();
     }
 
-    public int curIsNotStatic() { // TODO: falar com o stor
+    public int curIsNotStatic() {
         return currentMethod.equals("main") ? 0 : 1;
     }
 
@@ -280,7 +277,7 @@ public class MySymbolTable implements SymbolTable {
         if (symbol == null) {
             symbol = this.getCurrentMethodScope().getParameter(varName); // Is it a parameter ?
         }
-        if (this.hasImport(varName)) { // Is it an import? ... TODO: always void ?
+        if (this.hasImport(varName)) { // Is it an import?
             return new Type("void", false);
         }
         if (symbol == null && this.hasSuperClass()) {
@@ -291,36 +288,33 @@ public class MySymbolTable implements SymbolTable {
                 return new Type(node.get("expType"), node.get("expType").contains("["));
             }
         }
-        System.out.println("Symbol: " + varName);
-        if(symbol == null) {
-            return null;
-        }
 
+        if (symbol == null) return null;
         return symbol.getType();
     }
 
     public boolean findVar(String varName, String currentMethod) {
-        if(getMethod(currentMethod).hasLocalVariable(varName)){
+        if (getMethod(currentMethod).hasLocalVariable(varName)) {
             return true;
         }
 
         //se for um parametro
-        for(Symbol parameter : getMethod(currentMethod).getParameters()) {
-            if(parameter.getName().equals(varName)) {
+        for (Symbol parameter : getMethod(currentMethod).getParameters()) {
+            if (parameter.getName().equals(varName)) {
                 return true;
             }
         }
 
         //se for um field
-        for(Symbol field : getFields()) {
-            if(field.getName().equals(varName)) {
+        for (Symbol field : getFields()) {
+            if (field.getName().equals(varName)) {
                 return true;
             }
         }
 
         //se for um import
-        for(String imports : getImports()) {
-            if(imports.equals(varName)) {
+        for (String imports : getImports()) {
+            if (imports.equals(varName)) {
                 return true;
             }
         }
