@@ -126,9 +126,9 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         List<Symbol> localVariables = st.getLocalVariables(methodName);
 
         if (localVariables != null) {
-            for (int i = 0; i < localVariables.size(); i++) {
-                if (localVariables.get(i).getName().equals(left)) {
-                    leftType = localVariables.get(i).getType();
+            for (Symbol localVariable : localVariables) {
+                if (localVariable.getName().equals(left)) {
+                    leftType = localVariable.getType();
                     break;
                 }
             }
@@ -138,9 +138,9 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         List<Symbol> parameters = st.getParameters(methodName);
 
         if (parameters != null && leftType.getName().equals("")) {
-            for (int i = 0; i < parameters.size(); i++) {
-                if (parameters.get(i).getName().equals(left)) {
-                    leftType = parameters.get(i).getType();
+            for (Symbol parameter : parameters) {
+                if (parameter.getName().equals(left)) {
+                    leftType = parameter.getType();
                     break;
                 }
             }
@@ -149,12 +149,12 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         //see if var is a field
         List<Symbol> fields = st.getFields();
         if (fields != null && leftType.getName().equals("")) {
-            for (int i = 0; i < fields.size(); i++) {
-                if (fields.get(i).getName().equals(left)) {
+            for (Symbol field : fields) {
+                if (field.getName().equals(left)) {
                     if (methodName.equals("main")) {
                         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Fields cannot be used in main method"));
                     }
-                    leftType = fields.get(i).getType();
+                    leftType = field.getType();
                     break;
                 }
             }
