@@ -59,11 +59,13 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         String right = jmmNode.get("atribute");
         Type leftType = visit(left, "");
 
+        //Check if right is not length
         if (!(right.equals("length"))) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Array does not have attribute " + right));
             return new Type("error", false);
         }
 
+        //Check if type of left is not array
         if (!leftType.isArray()) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), left.get("value") + " is not an array"));
             return new Type("error", false);
@@ -92,12 +94,11 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
 
     private Type dealWithMethodCall(JmmNode jmmNode, String s) {
-
         String methodName = jmmNode.get("method");
         JmmNode classCall = jmmNode.getJmmChild(0);
         Type classType = visit(classCall, "");
 
-        //The class calling the method is the current class
+
         if (classType.getName().equals(st.getClassName())) {
             //verify if method exist
             if (st.getMethods().contains(methodName)) {
@@ -151,15 +152,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
         }
 
         Type type = st.getReturnType(methodName);
-        // if (type == null) {
-        //     String temp = jmmNode.get("expType");
-        //     boolean isA = temp.contains("[");
-        //     if (isA) {
-        //         temp = temp.split("\\[")[0];
-        //     }
-        //     type = new Type(temp, isA);
-        // }
-
         return type;
 
     }
@@ -215,14 +207,12 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
 
     private Type dealWithThis(JmmNode jmmNode, String s) {
         if (st.getCurrentMethod().equals("main")) {
-            //testar isto
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "This cannot be used in main method"));
         }
         return new Type(this.st.getClassName(), false);
     }
 
     private Type dealWithVar(JmmNode jmmNode, String s) {
-
         try {
             if (!st.findVar(jmmNode.get("var"), st.getCurrentMethod())) {
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
@@ -256,20 +246,6 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             return new Type("null", false);
         }
     }
-
-    //  private Type convertOllirToSemantic(Type type) {
-    //      switch (type.getName()) {
-    //          case "i32":
-    //              return new Type("int", false);
-    //          case "bool":
-    //              return new Type("boolean", false);
-    //          case "v":
-    //              return new Type("void", false);
-    //          default:
-    //              return new Type(jmmNode.get("type"), false);
-    //      }
-    //      return new Type(jmmNode.get("type"), false);
-    //  }
 
     private Type dealWithBoolean(JmmNode jmmNode, String s) {
         return new Type("boolean", false);
