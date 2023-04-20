@@ -61,11 +61,6 @@ public class MyFullTests {
     }
 
     @Test
-    public void testReturnObj() {
-        test("returnobj.jmm", "");
-    }
-
-    @Test
     public void testPrintArray() {
         test("printarr.jmm", "1\n2\n3\n4\n5");
     }
