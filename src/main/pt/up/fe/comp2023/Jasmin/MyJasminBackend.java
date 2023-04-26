@@ -74,9 +74,17 @@ public class MyJasminBackend implements JasminBackend {
                 else code.append("ldc ");
                 code.append(value);
             } else {
+
                 Operand variable = (Operand) element;
                 String name = variable.getName();
-                code.append("iload ").append(getRegister(name)).append(" ; ").append(name);
+
+                // Check if it is "true" or "false"
+                if (isBoolean && name.equals("true"))
+                    code.append("iconst_1");
+                else if (isBoolean && name.equals("false"))
+                    code.append("iconst_0");
+                else // it is a variable
+                    code.append("iload ").append(getRegister(name)).append(" ; ").append(name);
             }
             code.append("\n\t");
             return;
@@ -143,8 +151,8 @@ public class MyJasminBackend implements JasminBackend {
             }
 
             // in this phase we don't need to worry about locals and stack limits
-            code.append("\t.limit stack 99\n");
-            code.append("\t.limit locals 99\n\n");
+            code.append("\t.limit stack 64\n");
+            code.append("\t.limit locals 64\n\n");
 
             // add instructions
             method.getInstructions().forEach(instruction -> {
@@ -422,8 +430,7 @@ public class MyJasminBackend implements JasminBackend {
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
-            case "ldc" ->
-                    code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
+            case "ldc" -> code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
             case "arraylength" -> {
                 loadElement(inst.getFirstArg());
                 code.append("\n\tarraylength ");
