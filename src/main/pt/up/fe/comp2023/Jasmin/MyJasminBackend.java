@@ -329,14 +329,27 @@ public class MyJasminBackend implements JasminBackend {
     private void BinaryOpInstAux(OperationType opType) {
 
         switch (opType) {
-            case ADD -> code.append("iadd\n");
-            case SUB -> code.append("isub\n");
-            case MUL -> code.append("imul\n");
-            case DIV -> code.append("idiv\n");
-            case LTH -> {
-                addLTHOp();
+            case ADD -> {
+                code.append("iadd\n");
+                updateStack(-1);
             }
-            case AND -> code.append("iand\n");
+            case SUB -> {
+                code.append("isub\n");
+                updateStack(-1);
+            }
+            case MUL -> {
+                code.append("imul\n");
+                updateStack(-1);
+            }
+            case DIV -> {
+                code.append("idiv\n");
+                updateStack(-1);
+            }
+            case AND -> {
+                code.append("iand\n");
+                updateStack(-1);
+            }
+            case LTH -> addLTHOp();
             default -> System.out.println("Binary op error");
         }
     }
@@ -481,7 +494,7 @@ public class MyJasminBackend implements JasminBackend {
 
         code.append("\t; Making a call instruction\n\t");
         switch ((inst.getInvocationType()).toString()) {
-            case "NEW" -> callNew(inst);
+            case "NEW" -> callNew(inst); // TODO: VER O NUMERO DE ARGUMENTOS E DESCARTAR RETORNOS VOID/NON VOID NA STACK
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
