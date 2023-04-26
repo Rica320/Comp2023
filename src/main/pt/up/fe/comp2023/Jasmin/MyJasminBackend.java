@@ -19,6 +19,26 @@ public class MyJasminBackend implements JasminBackend {
     HashMap<String, Descriptor> currVarTable;
 
     int labelCounter = 0;
+    int currentStack = 0;
+    int maxStack = 0;
+
+    private void resetStack() {
+        this.currentStack = 0;
+        this.maxStack = 0;
+    }
+
+    private void updateStack(int stack) {
+        this.currentStack += stack;
+        this.maxStack = Math.max(this.currentStack, this.maxStack);
+    }
+
+    private void updateMethodLimits(int locals, int stack) {
+        int lastIndex = code.lastIndexOf(".limit locals");
+        code.replace(lastIndex, lastIndex + 16, ".limit locals " + locals);
+
+        lastIndex = code.lastIndexOf(".limit stack");
+        code.replace(lastIndex, lastIndex + 15, ".limit stack " + stack);
+    }
 
     private String getRegister(String var) {
         if (currVarTable.containsKey(var)) return String.valueOf(currVarTable.get(var).getVirtualReg());
@@ -140,6 +160,7 @@ public class MyJasminBackend implements JasminBackend {
 
             currVarTable = method.getVarTable();
             this.currentMethod = method;
+            resetStack();
 
             if (method.getMethodName().equals("main"))
                 code.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
@@ -154,9 +175,24 @@ public class MyJasminBackend implements JasminBackend {
                 code.append(")").append(toJasminType(method.getReturnType())).append("\n");
             }
 
-            // in this phase we don't need to worry about locals and stack limits
-            code.append("\t.limit stack " + 64 + "\n");
-            code.append("\t.limit locals " + 64).append("\n\n");
+            // These values are added later
+            code.append("\t.limit stack 99").append("\n");
+            code.append("\t.limit locals 99").append("\n\n");
+
+            // TODO: Falar com prof sobre isto
+        /*    StringBuilder kkk = new StringBuilder();
+
+            method.getVarTable().forEach((name, type) -> {
+                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
+                kkk.append(a);
+            });
+
+            try {
+                int a = 0 / 0;
+            } catch (Exception e) {
+                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n"+kkk.toString());
+            }*/
+
 
             // add instructions
             method.getInstructions().forEach(instruction -> {
@@ -164,6 +200,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
+            updateMethodLimits(currVarTable.size() + 30, 64);
             currVarTable = null;
 
             code.append(".end method\n\n");
