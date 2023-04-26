@@ -9,6 +9,8 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
+    boolean debug = false;
+
     ClassUnit classe;
     StringBuilder code = new StringBuilder();
 
@@ -79,12 +81,13 @@ public class MyJasminBackend implements JasminBackend {
                 String name = variable.getName();
 
                 // Check if it is "true" or "false"
-                if (isBoolean && name.equals("true"))
-                    code.append("iconst_1");
-                else if (isBoolean && name.equals("false"))
-                    code.append("iconst_0");
-                else // it is a variable
-                    code.append("iload ").append(getRegister(name)).append(" ; ").append(name);
+                if (isBoolean && name.equals("true")) code.append("iconst_1");
+                else if (isBoolean && name.equals("false")) code.append("iconst_0");
+                else {// it is a variable
+                    code.append("iload ").append(getRegister(name));
+                    if (debug) code.append(" ; ").append(name);
+                }
+
             }
             code.append("\n\t");
             return;
@@ -97,7 +100,8 @@ public class MyJasminBackend implements JasminBackend {
         // array or object reference
         Operand variable = (Operand) element;
         String name = variable.getName();
-        code.append("aload ").append(getRegister(name)).append(" ; ").append(name);
+        code.append("aload ").append(getRegister(name));
+        if (debug) code.append(" ; ").append(name);
         code.append("\n\t");
 
     }
@@ -151,8 +155,8 @@ public class MyJasminBackend implements JasminBackend {
             }
 
             // in this phase we don't need to worry about locals and stack limits
-            code.append("\t.limit stack 64\n");
-            code.append("\t.limit locals 64\n\n");
+            code.append("\t.limit stack " + 64 + "\n");
+            code.append("\t.limit locals " + 64).append("\n\n");
 
             // add instructions
             method.getInstructions().forEach(instruction -> {
@@ -181,7 +185,8 @@ public class MyJasminBackend implements JasminBackend {
             // load array (cant use loadElement because IDK)
             Operand variable = (Operand) dest;
             String name = variable.getName();
-            code.append("aload ").append(getRegister(name)).append(" ; ").append(name);
+            code.append("aload ").append(getRegister(name));
+            if (debug) code.append(" ; ").append(name);
             code.append("\n\t");
 
             // get index
@@ -228,7 +233,8 @@ public class MyJasminBackend implements JasminBackend {
 
         Operand variable = (Operand) elem;
         String name = variable.getName();
-        code.append("aload ").append(getRegister(name)).append(" ; ").append(name); // load array
+        code.append("aload ").append(getRegister(name)); // load array
+        if (debug) code.append(" ; ").append(name);
         code.append("\n\t");
 
         loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
@@ -263,7 +269,7 @@ public class MyJasminBackend implements JasminBackend {
         if (reg < 4) code.append("store_").append(reg);
         else code.append("store ").append(reg);
 
-        code.append(" ; ").append(name);
+        if (debug) code.append(" ; ").append(name);
     }
 
     private void addBinaryOperation(BinaryOpInstruction opInstruction) {
@@ -546,7 +552,7 @@ public class MyJasminBackend implements JasminBackend {
             if (reg < 4) code.append("\n\tastore_").append(reg);
             else code.append("\n\tastore ").append(reg);
 
-            code.append(" ; ").append(varName);
+            if (debug) code.append(" ; ").append(varName);
         }
     }
 
@@ -561,10 +567,11 @@ public class MyJasminBackend implements JasminBackend {
         addConstructor();
         addMethods();
 
-        System.out.println("\n======================JASMIN CODE======================\n");
-        System.out.println(code.toString());
-        System.out.println("======================================================");
-
+        if (debug) {
+            System.out.println("\n======================JASMIN CODE======================\n");
+            System.out.println(code.toString());
+            System.out.println("======================================================");
+        }
         return new JasminResult(code.toString());
     }
 
