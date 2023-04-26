@@ -131,6 +131,13 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
             index = new Pair<>("", tempName);
         }
+        // check case arr[arr[3]]
+        if (index.b.contains("[")) {
+            String tempName = "t" + newTemp() + ".i32";
+            code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
+            index = new Pair<>("", tempName);
+        }
+
         switch (origin) {
             case FIELD:
                 String tempName = "t" + temp++;
