@@ -109,11 +109,13 @@ public class MyJasminBackend implements JasminBackend {
                 }
 
             }
+            updateStack(1);
             code.append("\n\t");
             return;
         } else if (element.isLiteral()) { // string
             code.append("ldc ").append(((LiteralElement) element).getLiteral());
             code.append("\n\t");
+            updateStack(1);
             return;
         }
 
@@ -123,7 +125,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("aload ").append(getRegister(name));
         if (debug) code.append(" ; ").append(name);
         code.append("\n\t");
-
+        updateStack(1);
     }
 
     private void addHeaders() {
@@ -200,7 +202,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            updateMethodLimits(currVarTable.size() + 30, 64);
+            updateMethodLimits(currVarTable.size() + 30, this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
@@ -220,14 +222,7 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t; Start Array assign\n\t");
 
             // load array (cant use loadElement because IDK)
-            Operand variable = (Operand) dest;
-            String name = variable.getName();
-            code.append("aload ").append(getRegister(name));
-            if (debug) code.append(" ; ").append(name);
-            code.append("\n\t");
-
-            // get index
-            loadElement(((ArrayOperand) dest).getIndexOperands().get(0));
+            arrayLoad((Operand) dest);
             code.deleteCharAt(code.length() - 1); // delete last character (new line)
 
             // value will be calculated below by the rhs instruction
@@ -267,16 +262,19 @@ public class MyJasminBackend implements JasminBackend {
 
     public void arrayAccess(Element elem) {
         code.append("\t; Start Array access\n\t");
+        arrayLoad((Operand) elem);
+        code.append("iaload\n\t");
+        updateStack(-1);
+        code.append("; End Array access\n\t");
+    }
 
-        Operand variable = (Operand) elem;
-        String name = variable.getName();
+    private void arrayLoad(Operand elem) {
+        String name = elem.getName();
         code.append("aload ").append(getRegister(name)); // load array
+        updateStack(1);
         if (debug) code.append(" ; ").append(name);
         code.append("\n\t");
-
         loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
-        code.append("iaload\n\t");
-        code.append("; End Array access\n\t");
     }
 
 
@@ -287,8 +285,10 @@ public class MyJasminBackend implements JasminBackend {
         loadElement(op.getOperand());
 
         // Execute unary operation
-        if (op.getOperation().getOpType().equals(OperationType.NOTB)) code.append("iconst_1\n\tixor\n");
-        else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
+        if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
+            code.append("iconst_1\n\tixor\n");
+            updateStack(1);
+        } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
         code.append("\t; End unary operation\n\n");
     }
@@ -305,6 +305,7 @@ public class MyJasminBackend implements JasminBackend {
 
         if (reg < 4) code.append("store_").append(reg);
         else code.append("store ").append(reg);
+        updateStack(-1);
 
         if (debug) code.append(" ; ").append(name);
     }
@@ -333,19 +334,26 @@ public class MyJasminBackend implements JasminBackend {
             case MUL -> code.append("imul\n");
             case DIV -> code.append("idiv\n");
             case LTH -> {
-                String trueL = getNewLabel(), endL = getNewLabel();
-                code.append("; Making lth operation\n\t");
-                code.append("if_icmplt ").append(trueL).append("\n");
-                code.append("\ticonst_0\n"); // false scope
-                code.append("\tgoto ").append(endL).append("\n");
-                code.append(trueL).append(":\n");
-                code.append("\ticonst_1\n"); // true scope
-                code.append(endL).append(":\n");
-                code.append("; End lth operation\n");
+                addLTHOp();
             }
             case AND -> code.append("iand\n");
             default -> System.out.println("Binary op error");
         }
+    }
+
+    private void addLTHOp() {
+        String trueL = getNewLabel(), endL = getNewLabel();
+        code.append("; Making lth operation\n\t");
+        code.append("if_icmplt ").append(trueL).append("\n");
+        updateStack(-2);
+        code.append("\ticonst_0\n"); // false scope
+        updateStack(1);
+        code.append("\tgoto ").append(endL).append("\n");
+        code.append(trueL).append(":\n");
+        code.append("\ticonst_1\n"); // true scope
+        updateStack(1);
+        code.append(endL).append(":\n");
+        code.append("; End lth operation\n");
     }
 
     private void addInstruction(Instruction instruction) {
@@ -407,6 +415,7 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t");
             loadElement(op1);
             code.append("getfield").append(" ").append(typeClass).append("/");
+            updateStack(1);
             code.append(op2.getName()).append(" ").append(toJasminType(op2.getType()));
             code.append("\n\t");
             return;
@@ -423,6 +432,7 @@ public class MyJasminBackend implements JasminBackend {
         loadElement(op1);
         loadElement(op3);
         code.append("putfield").append(" ").append(typeClass).append("/");
+        updateStack(-1);
         code.append(op2.getName()).append(" ").append(toJasminType(op3.getType()));
         code.append("\n\t");
 
@@ -448,6 +458,7 @@ public class MyJasminBackend implements JasminBackend {
             loadElement(rightOperand);
 
             code.append("if_icmplt ").append(label).append("\n");
+            updateStack(-2);
         }
 
         code.append("\t; End of conditional branch");
@@ -461,6 +472,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n\t; Executing conditional branch\n\t");
         loadElement(op);
         code.append("ifne ").append(label).append("\n");
+        updateStack(-1);
         code.append("\t; End conditional branch\n\n");
     }
 
@@ -473,13 +485,15 @@ public class MyJasminBackend implements JasminBackend {
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
-            case "ldc" -> code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
+            case "ldc" -> {
+                code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
+                updateStack(1);
+            }
             case "arraylength" -> {
                 loadElement(inst.getFirstArg());
                 code.append("\n\tarraylength ");
             }
             default -> System.out.println("Call instruction not supported");
-
         }
         code.append("\n\t; End of call instruction\n\t");
     }
@@ -496,6 +510,7 @@ public class MyJasminBackend implements JasminBackend {
 
             // create new array (only int arrays are supported)
             code.append("\n\t newarray int");
+            updateStack(1);
             return;
         }
 
@@ -504,7 +519,9 @@ public class MyJasminBackend implements JasminBackend {
         // create new object
         code.append("\n\t; Creating new object\n\t");
         code.append("new ").append(className).append("\n\t");
+        updateStack(1);
         code.append("dup\n\t");
+        updateStack(1);
         code.append("; End of creating new object\n\t");
     }
 
@@ -535,7 +552,10 @@ public class MyJasminBackend implements JasminBackend {
         code.append(")").append(toJasminType(inst.getReturnType()));
 
         // if it is not an assign , just ignore the non-void return
-        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) code.append("\n\tpop");
+        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
+            code.append("\n\tpop");
+            updateStack(-1);
+        }
     }
 
     public void callInvokeStatic(CallInstruction inst, boolean isAssignment) {
@@ -557,11 +577,12 @@ public class MyJasminBackend implements JasminBackend {
 
         Element firstArg = inst.getFirstArg();
 
-
         boolean isThis = firstArg.getType().getTypeOfElement().equals(ElementType.THIS);
 
-        if (isThis) code.append("\n\taload_0");
-        else loadElement(firstArg);
+        if (isThis) {
+            code.append("\n\taload_0");
+            updateStack(1);
+        } else loadElement(firstArg);
 
         // load arguments
         for (Element arg : inst.getListOfOperands())
@@ -588,6 +609,7 @@ public class MyJasminBackend implements JasminBackend {
 
             if (reg < 4) code.append("\n\tastore_").append(reg);
             else code.append("\n\tastore ").append(reg);
+            updateStack(-1);
 
             if (debug) code.append(" ; ").append(varName);
         }
