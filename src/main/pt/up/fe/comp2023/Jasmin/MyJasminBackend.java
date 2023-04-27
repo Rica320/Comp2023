@@ -164,8 +164,9 @@ public class MyJasminBackend implements JasminBackend {
             this.currentMethod = method;
             resetStack();
 
-            if (method.getMethodName().equals("main"))
-                code.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
+            boolean isMain = method.getMethodName().equals("main");
+
+            if (isMain) code.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else code.append("\n.method public ").append(method.getMethodName()).append("(");
 
@@ -182,19 +183,19 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t.limit locals 99").append("\n\n");
 
 
-//            // TODO: Falar com prof sobre isto
-//          StringBuilder kkk = new StringBuilder();
-//
-//            method.getVarTable().forEach((name, type) -> {
-//                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
-//                kkk.append(a);
-//            });
-//
-//            try {
-//                int a = 0 / 0;
-//            } catch (Exception e) {
-//                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n"+kkk.toString());
-//            }
+/*        // TODO: Falar com prof sobre isto
+            StringBuilder kkk = new StringBuilder();
+
+            method.getVarTable().forEach((name, type) -> {
+                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
+                kkk.append(a);
+            });
+
+            try {
+                int a = 0 / 0;
+            } catch (Exception e) {
+                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n" + kkk);
+            }*/
 
 
             // add instructions
@@ -203,7 +204,12 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            updateMethodLimits(currVarTable.size() + 1, this.maxStack);
+            int limitCount = 0;
+            for (var k : currVarTable.keySet())
+                if (!currVarTable.get(k).getScope().equals(VarScope.FIELD)) limitCount++;
+
+            // prof disse para n usar diretamente currVarTable.size() pq pelos vistos ela pode conter fields...
+            updateMethodLimits(limitCount + ((isMain) ? 0 : 1), this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
@@ -287,8 +293,10 @@ public class MyJasminBackend implements JasminBackend {
 
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            code.append("iconst_1\n\tixor\n");
+            code.append("iconst_1");
             updateStack(1);
+            code.append("\n\tixor\n");
+            updateStack(-1);
         } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
         code.append("\t; End unary operation\n\n");
@@ -533,9 +541,8 @@ public class MyJasminBackend implements JasminBackend {
         // create new object
         code.append("\n\t; Creating new object\n\t");
         code.append("new ").append(className).append("\n\t");
-        updateStack(1);
         code.append("dup\n\t");
-        updateStack(1);
+        updateStack(2);
         code.append("; End of creating new object\n\t");
     }
 
