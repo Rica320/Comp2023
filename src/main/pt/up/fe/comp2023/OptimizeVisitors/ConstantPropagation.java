@@ -6,9 +6,16 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.JmmNodeImpl;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public class ConstantPropagation extends AJmmVisitor<String, String> {
 
-    private final MySymbolTable st;
+
+    private final HashMap<String, Integer> variables = new HashMap<>(); // Variable name -> value
+    MySymbolTable st;
+    private List<String> constantVars = new ArrayList<>(); // Variables that are constants
     private boolean changed = false;
 
     public ConstantPropagation(MySymbolTable st) {
@@ -16,25 +23,27 @@ public class ConstantPropagation extends AJmmVisitor<String, String> {
     }
 
     public JmmSemanticsResult optimize(JmmSemanticsResult semanticsResult) {
+        changed = false;
         JmmNode root = semanticsResult.getRootNode();
+
+        PropagationVisitorUpdater visitorUpdater = new PropagationVisitorUpdater(this.st);
+        visitorUpdater.visit(root, "");
+
         visit(root, "");
         return semanticsResult;
     }
 
-    private void replaceParent(JmmNode oldNode, JmmNode newNode) {
+    private void replaceNode(JmmNode oldNode, JmmNode newNode) {
         JmmNode parent = oldNode.getJmmParent();
         if (parent == null) return;
         int index = parent.getChildren().indexOf(oldNode);
         parent.setChild(newNode, index);
         this.changed = true;
+        System.out.println("Propagated constant " + oldNode.get("var") + " to " + newNode.get("val"));
     }
 
     public boolean isChanged() {
         return this.changed;
-    }
-
-    public void setChanged(boolean changed) {
-        this.changed = changed;
     }
 
     @Override
@@ -44,31 +53,11 @@ public class ConstantPropagation extends AJmmVisitor<String, String> {
 
     @Override
     protected void buildVisitor() {
-
-        addVisit("BinaryOp", this::dealWithBinaryOp);
-        addVisit("BinaryComp", this::dealWithBinaryOp);
-        addVisit("BinaryBool", this::dealWithBinaryOp);
-
-        //addVisit("Assign", this::dealWithAssign);
-        //addVisit("ArrayAssign", this::dealWithArrayAssign);
-        //addVisit("MethodCall", this::dealWithMethodCall);
-        //addVisit("NewObject", this::dealWithNewObject);
-        // addVisit("Not", this::dealWithNot);
-        //addVisit("Var", this::dealWithVar);
-        //addVisit("Boolean", this::dealWithBoolean);
-        //addVisit("Int", this::dealWithInt);
-        //addVisit("ArrayLookup", this::dealWithArrayLookup);
-        //addVisit("NewIntArray", this::dealWithNewIntArray);
-
+        addVisit("MainMethod", this::dealWithMain);
+        addVisit("MethodDecl", this::dealWithMethod);
+        addVisit("Var", this::dealWithVar);
+        addVisit("Assign", this::dealWithAssign);
         setDefaultVisit(this::defaultVisit);
-    }
-
-    private String dealWithArrayAssign(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithAssign(JmmNode jmmNode, String s) {
-        return "";
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
@@ -77,71 +66,61 @@ public class ConstantPropagation extends AJmmVisitor<String, String> {
         return "";
     }
 
-
-    private String dealWithArrayLookup(JmmNode jmmNode, String s) {
+    private String dealWithMethod(JmmNode jmmNode, String s) {
+        st.setCurrentMethod(jmmNode.get("name"));
+        this.constantVars = st.getCurrentMethodScope().getConstantVars();
+        System.out.println("Constant vars in " + jmmNode.get("name") + ": " + constantVars);
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        this.constantVars = new ArrayList<>();
+        variables.clear();
         return "";
     }
 
-    private String dealWithMethodCall(JmmNode jmmNode, String s) {
+    private String dealWithMain(JmmNode jmmNode, String s) {
+        st.setCurrentMethod("main");
+        this.constantVars = st.getCurrentMethodScope().getConstantVars();
+        System.out.println("Constant vars in main: " + constantVars);
+        defaultVisit(jmmNode, s);
+        st.setCurrentMethod(null);
+        this.constantVars = new ArrayList<>();
+        variables.clear();
         return "";
     }
 
-    private String dealWithNot(JmmNode jmmNode, String s) {
-        return "";
-    }
 
-    private String dealWithNewIntArray(JmmNode jmmNode, String s) {
-        return "";
-    }
+    private String dealWithAssign(JmmNode jmmNode, String s) {
 
-    private String dealWithNewObject(JmmNode jmmNode, String s) {
-        return "";
-    }
+        String varName = jmmNode.get("var");
+        visit(jmmNode.getJmmChild(0), s); // i have to visit the right side no matter what because it can be an expression that has a const var in it to be replaced
+        if (!constantVars.contains(varName)) return "";
 
-    private String dealWithBinaryOp(JmmNode jmmNode, String s) {
-        JmmNode left = jmmNode.getJmmChild(0);
-        JmmNode right = jmmNode.getJmmChild(1);
+        if (variables.containsKey(varName))
+            throw new RuntimeException("Constant variable '" + varName + "' is being assigned twice.\n" + variables + "\n" + jmmNode + "\n" + st.getCurrentMethod() + "\n" + constantVars);
 
-        // Check if left and right are literals
-        if (left.getKind().equals("Int") || left.getKind().equals("Boolean")) {
-            int leftValue = Integer.parseInt(left.get("val"));
-            int rightValue = Integer.parseInt(right.get("val"));
-
-            String op = jmmNode.get("op");
-            int result = 0;
-
-            switch (op) {
-                case "+" -> result = leftValue + rightValue;
-                case "-" -> result = leftValue - rightValue;
-                case "*" -> result = leftValue * rightValue;
-                case "/" -> result = leftValue / rightValue;
-                case "<" -> result = leftValue < rightValue ? 1 : 0;
-                case "&&" -> result = leftValue == 1 && rightValue == 1 ? 1 : 0;
-                default -> {
-                }
-            }
-
-            JmmNode newNode = new JmmNodeImpl(left.getKind());
-            newNode.put("val", String.valueOf(result));
-            replaceParent(jmmNode, newNode);
+        // If the variable is being assigned a constant, add it to the variables map
+        String kind = jmmNode.getJmmChild(0).getKind();
+        if (kind.equals("Int") || kind.equals("Boolean")) {
+            variables.put(varName, Integer.parseInt(jmmNode.getJmmChild(0).get("val")));
+            System.out.println("Added constant " + varName + " = " + jmmNode.getJmmChild(0).get("val") + " to variables");
         }
-        return "";
-    }
 
-    private String dealWithThis(JmmNode jmmNode, String s) {
+
         return "";
     }
 
 
     private String dealWithVar(JmmNode jmmNode, String s) {
+        // If the variable is being used, replace it with its value
+        String varName = jmmNode.get("var");
+        System.out.println("HERE2! " + varName + " " + variables.get(varName));
+        if (variables.containsKey(varName)) {
+            JmmNode newNode = new JmmNodeImpl("Int");
+            System.out.println("HERE! " + varName + " " + variables.get(varName));
+            newNode.put("val", variables.get(varName).toString());
+            replaceNode(jmmNode, newNode);
+        }
         return "";
     }
 
-    private String dealWithBoolean(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithInt(JmmNode jmmNode, String s) {
-        return "";
-    }
 }

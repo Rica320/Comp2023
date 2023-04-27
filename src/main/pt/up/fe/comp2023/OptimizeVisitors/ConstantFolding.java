@@ -10,6 +10,7 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
     private boolean changed = false;
 
     public JmmSemanticsResult optimize(JmmSemanticsResult semanticsResult) {
+        changed = false;
         JmmNode root = semanticsResult.getRootNode();
         visit(root, "");
         return semanticsResult;
@@ -24,14 +25,15 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
         int index = parent.getChildren().indexOf(oldNode);
         parent.setChild(newNode, index);
         this.changed = true;
+        try {
+            System.out.println("Folded constant " + oldNode.getJmmChild(0).get("val") + " " + oldNode.get("op") + " " + oldNode.getJmmChild(1).get("val") + " = " + newNode.get("val"));
+        } catch (Exception e) {
+            System.out.println("Removed parentesis");
+        }
     }
 
     public boolean isChanged() {
         return this.changed;
-    }
-
-    public void reset() {
-        this.changed = false;
     }
 
     @Override
@@ -44,7 +46,14 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
         addVisit("BinaryOp", this::dealWithBinaryOp);
         addVisit("BinaryComp", this::dealWithBinaryOp);
         addVisit("BinaryBool", this::dealWithBinaryOp);
+        addVisit("Paren", this::dealWithParen);
         setDefaultVisit(this::defaultVisit);
+    }
+
+    private String dealWithParen(JmmNode jmmNode, String s) {
+        // if it only has one child, replace it with the child
+        if (jmmNode.getChildren().size() == 1) replaceParent(jmmNode, jmmNode.getJmmChild(0));
+        return "";
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
@@ -59,8 +68,13 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
 
         // Check if left and right are literals
         if (left.getKind().equals("Int") || left.getKind().equals("Boolean")) {
-            int leftValue = Integer.parseInt(left.get("val"));
-            int rightValue = Integer.parseInt(right.get("val"));
+            int leftValue, rightValue;
+            try {
+                leftValue = Integer.parseInt(left.get("val"));
+                rightValue = Integer.parseInt(right.get("val"));
+            } catch (Exception e) {
+                throw new RuntimeException("ERROR: " + left + " or " + right + " is not a literal");
+            }
 
             String op = jmmNode.get("op");
             int result;

@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.Jasmin.MyJasminBackend;
 import pt.up.fe.comp2023.OptimizeVisitors.ConstantFolding;
+import pt.up.fe.comp2023.OptimizeVisitors.ConstantPropagation;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
@@ -83,7 +84,13 @@ public class Launcher {
         TestUtils.noErrors(analyserResult.getReports());
 
         ConstantFolding constantFolding = new ConstantFolding();
-        analyserResult = constantFolding.optimize(analyserResult);
+        ConstantPropagation constantPropagation = new ConstantPropagation((MySymbolTable) analyserResult.getSymbolTable());
+        do {
+            analyserResult = constantFolding.optimize(analyserResult);
+            System.out.println(analyserResult.getRootNode().toTree());
+            analyserResult = constantPropagation.optimize(analyserResult);
+        } while (constantFolding.isChanged() || constantPropagation.isChanged());
+
         // Print full AST
         System.out.println(analyserResult.getRootNode().toTree());
 
