@@ -3,6 +3,7 @@ package pt.up.fe.comp2023;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import pt.up.fe.comp.TestUtils;
@@ -75,11 +76,22 @@ public class Launcher {
         // Analyse stage
         JmmSemanticsResult analyserResult = analyser.semanticAnalysis(parserResult);
 
+
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
 
         MyOllir myOllir = new MyOllir();
+
+        if (!config.get("registerAllocation").equals("-1")) {
+            analyserResult = myOllir.optimize(analyserResult);
+        }
+
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
+
+
+        if (config.get("optimize").equals("true")) {
+            ollirResult = myOllir.optimize(ollirResult);
+        }
 
         JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         String jasminCode = jasminResult.getJasminCode();
@@ -103,15 +115,23 @@ public class Launcher {
         SpecsLogs.info("Executing with args: " + Arrays.toString(args));
 
         // Check if there is at least one argument
-        if (args.length != 1) {
+        if (args.length <= 1) {
             throw new RuntimeException("Expected a single argument, a path to an existing input file.");
         }
 
+        List<String> options = Arrays.stream(args).toList();
+
+        String registerAllocation = options.stream()
+                .filter(option -> option.startsWith("-r"))
+                .findFirst()
+                .orElse("-1");
         // Create config
         Map<String, String> config = new HashMap<>();
         config.put("inputFile", args[0]);
-        config.put("optimize", "false");
-        config.put("registerAllocation", "-1");
+        config.put("optimize", options.contains("-o") ? "true" : "false");
+        config.put("registerAllocation", registerAllocation.strip().split("\\=")[1]);
+        System.out.println("Register allocation: " + registerAllocation.split("\\=")[1]);
+        System.out.println("Optimize: " + config.get("optimize"));
         config.put("debug", "false");
 
         return config;
