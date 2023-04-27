@@ -7,6 +7,8 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
 
+// TODO: use of iinc and comparisons to zero (e.g., iflt, ifne). --> MAIS EFICIENTES !
+
 public class MyJasminBackend implements JasminBackend {
 
     boolean debug = false;

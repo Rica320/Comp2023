@@ -1,11 +1,5 @@
 package pt.up.fe.comp2023;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import pt.up.fe.comp.TestUtils;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
@@ -14,10 +8,18 @@ import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.Jasmin.MyJasminBackend;
+import pt.up.fe.comp2023.OptimizeVisitors.ConstantFolding;
+import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Launcher {
 
@@ -80,18 +82,21 @@ public class Launcher {
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
 
+        ConstantFolding constantFolding = new ConstantFolding((MySymbolTable) analyserResult.getSymbolTable());
+        analyserResult = constantFolding.optimize(analyserResult);
+
         MyOllir myOllir = new MyOllir();
 
-        if (!config.get("registerAllocation").equals("-1")) {
+/*        if (!config.get("registerAllocation").equals("-1")) {
             analyserResult = myOllir.optimize(analyserResult);
-        }
+        }*/
 
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
 
-        if (config.get("optimize").equals("true")) {
+/*        if (config.get("optimize").equals("true")) {
             ollirResult = myOllir.optimize(ollirResult);
-        }
+        }*/
 
         JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         String jasminCode = jasminResult.getJasminCode();
@@ -115,9 +120,9 @@ public class Launcher {
         SpecsLogs.info("Executing with args: " + Arrays.toString(args));
 
         // Check if there is at least one argument
-        if (args.length <= 1) {
+/*        if (args.length <= 1) {
             throw new RuntimeException("Expected a single argument, a path to an existing input file.");
-        }
+        }*/
 
         List<String> options = Arrays.stream(args).toList();
 
@@ -129,9 +134,9 @@ public class Launcher {
         Map<String, String> config = new HashMap<>();
         config.put("inputFile", args[0]);
         config.put("optimize", options.contains("-o") ? "true" : "false");
-        config.put("registerAllocation", registerAllocation.strip().split("\\=")[1]);
-        System.out.println("Register allocation: " + registerAllocation.split("\\=")[1]);
-        System.out.println("Optimize: " + config.get("optimize"));
+        //config.put("registerAllocation", registerAllocation.strip().split("\\=")[1]);
+        //System.out.println("Register allocation: " + registerAllocation.split("\\=")[1]);
+        //System.out.println("Optimize: " + config.get("optimize"));
         config.put("debug", "false");
 
         return config;

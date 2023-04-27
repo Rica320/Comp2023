@@ -106,23 +106,20 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
                 List<Symbol> methodParams = st.getParameters(methodName);
                 //Check if number of parameters is different from number of arguments
                 if (methodParams.size() != (jmmNode.getNumChildren() - 1)) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                            Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method"));
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in number of arguments calling method"));
                 } else {
                     for (int i = 1; i < jmmNode.getNumChildren(); i++) {
                         Type argType = visit(jmmNode.getJmmChild(i), "");
                         // (i-1) because parameters index start at 0 and children that corresponds to arguments start at 1
                         if (!methodParams.get(i - 1).getType().equals(argType)) {
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                                    Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Error in argument type"));
                         }
                     }
                 }
             }//checks if current class extends a super class
             else {
                 if (st.getSuper().isEmpty()) {
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                            Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Method doesnt exist"));
                     return new Type("Error", false);
                 } else {
                     return new Type("importCorrect", false);
@@ -133,10 +130,7 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
             if (!(st.getImports().contains(classCall.get("var")) // static call
                     || st.getImports().contains(classType.getName()))) // virtual call
             {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                        Integer.parseInt(jmmNode.get("lineStart")),
-                        Integer.parseInt(jmmNode.get("colStart")),
-                        "Class not imported "));
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class not imported "));
                 return new Type("importIncorrect", false);
             } else {
                 return new Type("importCorrect", false);
@@ -215,34 +209,26 @@ public class ExpressionVisitor extends AJmmVisitor<String, Type> {
     private Type dealWithVar(JmmNode jmmNode, String s) {
         try {
             if (!st.findVar(jmmNode.get("var"), st.getCurrentMethod())) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                        Integer.parseInt(jmmNode.get("colStart")), "Var not present in ST"));
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Var not present in ST"));
                 return new Type("ERROR", false);
             }
 
             if (st.getCurrentMethod().equals("main")) {
                 SymbolOrigin origin = st.getSymbolOrigin(jmmNode.get(("var")));
                 if (origin == SymbolOrigin.FIELD) { // e se super
-                    reports.add(
-                            new Report(ReportType.ERROR, Stage.SEMANTIC,
-                                    Integer.parseInt(jmmNode.get("lineStart")),
-                                    Integer.parseInt(jmmNode.get("colStart")), "Field in main"));
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Field in main"));
                 }
             }
 
             var varAux = st.findTypeVar(jmmNode.get("var"), jmmNode);
             if (varAux == null) {
-                reports.add(
-                        new Report(ReportType.ERROR, Stage.SEMANTIC,
-                                Integer.parseInt(jmmNode.get("lineStart")),
-                                Integer.parseInt(jmmNode.get("colStart")), "VarType couldn't be found"));
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "VarType couldn't be found"));
                 return new Type("ERROR", false);
             }
 
             return varAux;
         } catch (Exception e) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")), e.toString()));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), e.toString()));
             return new Type("null", false);
         }
     }

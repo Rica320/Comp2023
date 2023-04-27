@@ -8,7 +8,6 @@ import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp.jmm.report.Stage;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
-
 import java.util.List;
 
 public class ProgramVisitor extends AJmmVisitor<String, Type> {
@@ -16,7 +15,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     private final MySymbolTable st;
     private final List<Report> reports;
 
-    public ProgramVisitor(MySymbolTable table, List<Report> reports){
+    public ProgramVisitor(MySymbolTable table, List<Report> reports) {
         this.st = table;
         this.reports = reports;
     }
@@ -36,7 +35,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type visitMethodChildren(JmmNode jmmNode) {
-        for(JmmNode child: jmmNode.getChildren()){
+        for (JmmNode child : jmmNode.getChildren()) {
             switch (child.getKind()) {
                 case "Scope", "ExpressionStmt", "IfClause", "While", "Assign", "ArrayAssign" -> {
                     StatementVisitor statementVisitor = new StatementVisitor(st, reports);
@@ -49,9 +48,9 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         return null;
     }
 
-    private Type dealWithProgram(JmmNode jmmNode, String s){
-        for(JmmNode child : jmmNode.getChildren()){
-            if(child.getKind().equals("ClassDecl")) {
+    private Type dealWithProgram(JmmNode jmmNode, String s) {
+        for (JmmNode child : jmmNode.getChildren()) {
+            if (child.getKind().equals("ClassDecl")) {
                 visit(child, "");
             }
         }
@@ -59,8 +58,8 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
     }
 
     private Type dealWithClass(JmmNode jmmNode, String s) {
-        for(JmmNode child: jmmNode.getChildren()){
-            if(child.getKind().equals("MethodDecl") || child.getKind().equals("MainMethod")){
+        for (JmmNode child : jmmNode.getChildren()) {
+            if (child.getKind().equals("MethodDecl") || child.getKind().equals("MainMethod")) {
                 visit(child, "");
             }
         }
@@ -76,7 +75,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         ExpressionVisitor expressionVisitor = new ExpressionVisitor(st, reports);
         Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
 
-        if(!retType.getName().equals("importCorrect") && !retType.equals(st.getCurrentMethodScope().getReturnType())) {
+        if (!retType.getName().equals("importCorrect") && !retType.equals(st.getCurrentMethodScope().getReturnType())) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
                     Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")),
                     "Return type does not match method return type"

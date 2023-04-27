@@ -1,16 +1,19 @@
-class LocalLimits{
+import io;
 
-    public int func(int a, int b){
-       int j;
+class Simple{
 
-       a = b + 10 * (3 + this.func(3,4));
-       j = this.func(3,4);
-       return 1;
+    public int func(){
+        int a;
+        a = 10 + 5;
+        return a;
     }
 
     public static void main(String[] args){
-        LocalLimits l;
-        l = new LocalLimits();
-        l.func(3,4);
+
+        Simple s;
+        s = new Simple();
+
+        io.println(s.func());
+
     }
 }
