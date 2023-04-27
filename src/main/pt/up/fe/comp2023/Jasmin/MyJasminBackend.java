@@ -181,19 +181,20 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t.limit stack 99").append("\n");
             code.append("\t.limit locals 99").append("\n\n");
 
-            // TODO: Falar com prof sobre isto
-        /*    StringBuilder kkk = new StringBuilder();
 
-            method.getVarTable().forEach((name, type) -> {
-                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
-                kkk.append(a);
-            });
-
-            try {
-                int a = 0 / 0;
-            } catch (Exception e) {
-                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n"+kkk.toString());
-            }*/
+//            // TODO: Falar com prof sobre isto
+//          StringBuilder kkk = new StringBuilder();
+//
+//            method.getVarTable().forEach((name, type) -> {
+//                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
+//                kkk.append(a);
+//            });
+//
+//            try {
+//                int a = 0 / 0;
+//            } catch (Exception e) {
+//                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n"+kkk.toString());
+//            }
 
 
             // add instructions
@@ -202,7 +203,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            updateMethodLimits(currVarTable.size() + 30, this.maxStack);
+            updateMethodLimits(currVarTable.size() + 1, this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
