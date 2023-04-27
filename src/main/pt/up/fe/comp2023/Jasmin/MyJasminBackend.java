@@ -104,28 +104,34 @@ public class MyJasminBackend implements JasminBackend {
                 if (isBoolean && name.equals("true")) code.append("iconst_1");
                 else if (isBoolean && name.equals("false")) code.append("iconst_0");
                 else {// it is a variable
-                    code.append("iload ").append(getRegister(name));
+                    int reg = Integer.parseInt(getRegister(name));
+                    if (reg < 4) code.append("iload_").append(reg);
+                    else code.append("iload ").append(reg);
                     if (debug) code.append(" ; ").append(name);
                 }
 
             }
-            updateStack(1);
+            updateStack(1); // push int
             code.append("\n\t");
             return;
         } else if (element.isLiteral()) { // string
             code.append("ldc ").append(((LiteralElement) element).getLiteral());
             code.append("\n\t");
-            updateStack(1);
+            updateStack(1); // push string
             return;
         }
 
         // array or object reference
         Operand variable = (Operand) element;
         String name = variable.getName();
-        code.append("aload ").append(getRegister(name));
+
+        int reg = Integer.parseInt(getRegister(name));
+        if (reg < 4) code.append("aload_").append(reg);
+        else code.append("aload ").append(reg);
+
         if (debug) code.append(" ; ").append(name);
         code.append("\n\t");
-        updateStack(1);
+        updateStack(1); // push reference
     }
 
     private void addHeaders() {
@@ -133,15 +139,14 @@ public class MyJasminBackend implements JasminBackend {
         if (this.classe.getSuperClass() != null)
             code.append(".super ").append(this.classe.getSuperClass()).append("\n");
         else code.append(".super java/lang/Object\n");
-
     }
 
     public void addFields() {
-        code.append("\n; Fields\n");
         if (this.classe.getFields().size() == 0) {
-            code.append("; No fields\n");
+            code.append("\n; No fields\n");
             return;
         }
+        code.append("\n; Fields\n");
         this.classe.getFields().forEach(field -> {
             code.append(".field public ");
             code.append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType())).append("\n");
@@ -152,7 +157,8 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n; Constructor");
         code.append("\n.method public <init>()V");
         code.append("\n\taload_0");
-        code.append("\n\tinvokespecial ").append(this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass()).append("/<init>()V");
+        String aux = this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass();
+        code.append("\n\tinvokespecial ").append(aux).append("/<init>()V");
         code.append("\n\treturn");
         code.append("\n.end method\n\n");
     }
@@ -170,11 +176,8 @@ public class MyJasminBackend implements JasminBackend {
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else code.append("\n.method public ").append(method.getMethodName()).append("(");
 
-            if (!method.getMethodName().equals("main"))
+            if (!isMain) { // ignore constructor because its already defined
                 method.getParams().forEach(param -> code.append(toJasminType(param.getType())));
-
-            if (!method.getMethodName().equals("main")) { // ignore constructor because its already defined
-
                 code.append(")").append(toJasminType(method.getReturnType())).append("\n");
             }
 
@@ -182,34 +185,33 @@ public class MyJasminBackend implements JasminBackend {
             code.append("\t.limit stack 99").append("\n");
             code.append("\t.limit locals 99").append("\n\n");
 
-
-/*        // TODO: Falar com prof sobre isto
-            StringBuilder kkk = new StringBuilder();
-
-            method.getVarTable().forEach((name, type) -> {
-                String a = "\t.var " + getRegister(name) + " is " + name + " " + type + "\n";
-                kkk.append(a);
-            });
-
-            try {
-                int a = 0 / 0;
-            } catch (Exception e) {
-                throw new RuntimeException("SIZE=" + method.getVarTable().size() + "\n\n" + kkk);
-            }*/
-
-
             // add instructions
             method.getInstructions().forEach(instruction -> {
                 addInstruction(instruction);
                 code.append("\n");
             });
 
-            int limitCount = 0;
-            for (var k : currVarTable.keySet())
-                if (!currVarTable.get(k).getScope().equals(VarScope.FIELD)) limitCount++;
+/*
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n\t; VarTable\n");
+            for (var k : currVarTable.keySet()) {
+                sb.append("\t; ").append(k).append(" -> ").append(currVarTable.get(k)).append("\n");
+            }
+
+            try {
+                int x = 0 / 0;
+            } catch (Exception e) {
+                throw new RuntimeException("====================================\n" + sb + "\n================= " + currVarTable.containsKey("this") + " ==================");
+            }*/
+
+
+            //int limitCount = 0;
+            //for (var k : currVarTable.keySet())
+            //if (!currVarTable.get(k).getScope().equals(VarScope.FIELD)) limitCount++;
 
             // prof disse para n usar diretamente currVarTable.size() pq pelos vistos ela pode conter fields...
-            updateMethodLimits(limitCount + ((isMain) ? 0 : 1), this.maxStack);
+            //updateMethodLimits(limitCount + ((isMain) ? 0 : 1), this.maxStack);
+            updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
@@ -260,30 +262,33 @@ public class MyJasminBackend implements JasminBackend {
         }
 
         // Storing final value in variable
-        if (dest instanceof ArrayOperand) code.append("iastore\n\t; End Array Assign\n\t");
-        else storeElement(dest);
-
+        if (dest instanceof ArrayOperand) {
+            code.append("iastore\n\t; End Array Assign\n\t");
+            updateStack(-3); // pop array, index and value
+        } else storeElement(dest);
         code.append("\n\t; End Assign Instruction\n\n");
+    }
 
+
+    private void arrayLoad(Operand elem) {
+        String name = elem.getName();
+        int reg = Integer.parseInt(getRegister(name));
+        // load array
+        if (reg < 4) code.append("aload_").append(reg);
+        else code.append("aload ").append(reg);
+        if (debug) code.append(" ; ").append(name);
+        code.append("\n\t");
+        updateStack(1); // push array
+        loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
     }
 
     public void arrayAccess(Element elem) {
         code.append("\t; Start Array access\n\t");
         arrayLoad((Operand) elem);
         code.append("iaload\n\t");
-        updateStack(-1);
+        updateStack(-1); // pop array, index and push value in stack
         code.append("; End Array access\n\t");
     }
-
-    private void arrayLoad(Operand elem) {
-        String name = elem.getName();
-        code.append("aload ").append(getRegister(name)); // load array
-        updateStack(1);
-        if (debug) code.append(" ; ").append(name);
-        code.append("\n\t");
-        loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
-    }
-
 
     private void addUnaryOperation(UnaryOpInstruction op) {
         code.append("\n\t; Executing unary operation\n\t");
@@ -294,9 +299,9 @@ public class MyJasminBackend implements JasminBackend {
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
             code.append("iconst_1");
-            updateStack(1);
+            updateStack(1); // push 1
             code.append("\n\tixor\n");
-            updateStack(-1);
+            updateStack(-1); // ixor pops 2 values and pushes 1
         } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
         code.append("\t; End unary operation\n\n");
@@ -305,8 +310,9 @@ public class MyJasminBackend implements JasminBackend {
     private void storeElement(Element dest) {
 
         Operand operand = (Operand) dest;
-        if (operand.getType().getTypeOfElement().equals(ElementType.INT32) || operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN))
-            code.append("i"); // Number
+        boolean isInt = operand.getType().getTypeOfElement().equals(ElementType.INT32);
+        boolean isBool = operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+        if (isInt || isBool) code.append("i"); // Number
         else code.append("a"); // Generic Object
 
         String name = ((Operand) dest).getName();
@@ -314,7 +320,7 @@ public class MyJasminBackend implements JasminBackend {
 
         if (reg < 4) code.append("store_").append(reg);
         else code.append("store ").append(reg);
-        updateStack(-1);
+        updateStack(-1); // pop value from stack and store it
 
         if (debug) code.append(" ; ").append(name);
     }
@@ -336,7 +342,7 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     private void BinaryOpInstAux(OperationType opType) {
-
+        // binary ops pop 2 values and push 1 to stack
         switch (opType) {
             case ADD -> {
                 code.append("iadd\n");
@@ -367,13 +373,13 @@ public class MyJasminBackend implements JasminBackend {
         String trueL = getNewLabel(), endL = getNewLabel();
         code.append("; Making lth operation\n\t");
         code.append("if_icmplt ").append(trueL).append("\n");
-        updateStack(-2);
+        updateStack(-2); // pop 2 values used for comparison
         code.append("\ticonst_0\n"); // false scope
-        updateStack(1);
+        updateStack(1); // push false
         code.append("\tgoto ").append(endL).append("\n");
         code.append(trueL).append(":\n");
         code.append("\ticonst_1\n"); // true scope
-        updateStack(1);
+        updateStack(1); // push true
         code.append(endL).append(":\n");
         code.append("; End lth operation\n");
     }
@@ -415,7 +421,7 @@ public class MyJasminBackend implements JasminBackend {
             return;
         }
 
-        loadElement(inst.getOperand());
+        loadElement(inst.getOperand()); // load return value
 
         switch (inst.getReturnType().toString()) {
             case "INT32", "BOOLEAN" -> code.append("ireturn");
@@ -434,12 +440,12 @@ public class MyJasminBackend implements JasminBackend {
             op2 = (Operand) (inst).getSecondOperand();
             typeClass = ((ClassType) op1.getType()).getName();
 
+            // getfield consumes 'this' and then pushes field value to stack
             code.append("\t");
-            loadElement(op1);
+            loadElement(op1); // load 'this' : stack + 1
             code.append("getfield").append(" ").append(typeClass).append("/");
-            updateStack(1);
             code.append(op2.getName()).append(" ").append(toJasminType(op2.getType()));
-            code.append("\n\t");
+            code.append("\n\t"); // the field occupies the stack position of 'this'
             return;
         }
 
@@ -451,13 +457,12 @@ public class MyJasminBackend implements JasminBackend {
         typeClass = ((ClassType) op1.getType()).getName();
 
         code.append("\t");
-        loadElement(op1);
-        loadElement(op3);
+        loadElement(op1); // load obj ref : stack + 1
+        loadElement(op3); // load value to be stored : stack + 2
         code.append("putfield").append(" ").append(typeClass).append("/");
-        updateStack(-1);
+        updateStack(-2); // putfield consumes 2 values and pushes none
         code.append(op2.getName()).append(" ").append(toJasminType(op3.getType()));
         code.append("\n\t");
-
     }
 
     private void addConditionalBranch(OpCondInstruction instruction) {
@@ -470,17 +475,18 @@ public class MyJasminBackend implements JasminBackend {
 
             addUnaryOperation((UnaryOpInstruction) opType);
             code.append("ifne ").append(label).append("\n");
+            updateStack(-1); // pop value used for comparison
 
         } else {
             Element leftOperand = opType.getOperands().get(0);
             Element rightOperand = opType.getOperands().get(1);
 
             // Load operands needed to execute binary operation
-            loadElement(leftOperand);
-            loadElement(rightOperand);
+            loadElement(leftOperand); // stack + 1
+            loadElement(rightOperand); // stack + 2
 
             code.append("if_icmplt ").append(label).append("\n");
-            updateStack(-2);
+            updateStack(-2); // pop 2 values used for comparison
         }
 
         code.append("\t; End of conditional branch");
@@ -494,7 +500,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n\t; Executing conditional branch\n\t");
         loadElement(op);
         code.append("ifne ").append(label).append("\n");
-        updateStack(-1);
+        updateStack(-1); // pop value used for comparison
         code.append("\t; End conditional branch\n\n");
     }
 
@@ -503,15 +509,16 @@ public class MyJasminBackend implements JasminBackend {
 
         code.append("\t; Making a call instruction\n\t");
         switch ((inst.getInvocationType()).toString()) {
-            case "NEW" -> callNew(inst); // TODO: VER O NUMERO DE ARGUMENTOS E DESCARTAR RETORNOS VOID/NON VOID NA STACK
+            case "NEW" -> callNew(inst);
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
             case "invokestatic" -> callInvokeStatic(inst, isAssignment);
             case "invokespecial" -> callInvokeSpecial(inst);
             case "ldc" -> {
                 code.append("ldc ").append(((LiteralElement) inst.getFirstArg()).getLiteral());
-                updateStack(1);
+                updateStack(1); // ldc pushes a value to the stack
             }
             case "arraylength" -> {
+                // arraylength pops an array ref and pushes its length
                 loadElement(inst.getFirstArg());
                 code.append("\n\tarraylength ");
             }
@@ -532,7 +539,7 @@ public class MyJasminBackend implements JasminBackend {
 
             // create new array (only int arrays are supported)
             code.append("\n\t newarray int");
-            updateStack(1);
+            updateStack(1); // newarray pushes new array ref to stack
             return;
         }
 
@@ -548,23 +555,34 @@ public class MyJasminBackend implements JasminBackend {
 
     public void callInvokeVirtual(CallInstruction inst, boolean isAssignment) {
 
-        loadElement(inst.getFirstArg());
+        loadElement(inst.getFirstArg()); // load object reference
 
-        // load arguments
         for (Element arg : inst.getListOfOperands())
-            loadElement(arg);
+            loadElement(arg); // load arguments
 
         // invoke method
-        code.append("invokevirtual ").append(((ClassType) inst.getFirstArg().getType()).getName());
+        String methodName = ((ClassType) inst.getFirstArg().getType()).getName();
+        code.append("invokevirtual ").append(methodName);
 
-        // add arguments names and types
-        invokeArgs(inst, isAssignment);
+        invokeArgs(inst, isAssignment); // add arguments names and types
     }
 
+    public void callInvokeStatic(CallInstruction inst, boolean isAssignment) {
+
+        String name = ((Operand) inst.getFirstArg()).getName();
+
+        for (Element arg : inst.getListOfOperands())
+            loadElement(arg); // load arguments
+
+        code.append("invokestatic ").append(name); // invoke method
+
+        invokeArgs(inst, isAssignment); // add arguments names and types
+    }
 
     private void invokeArgs(CallInstruction inst, boolean isAssignment) {
 
-        code.append(".").append(((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "")).append("(");
+        String aux = ((LiteralElement) inst.getSecondArg()).getLiteral().replace("\"", "");
+        code.append(".").append(aux).append("(");
 
         // add arguments types
         for (Element arg : inst.getListOfOperands())
@@ -572,42 +590,33 @@ public class MyJasminBackend implements JasminBackend {
 
         code.append(")").append(toJasminType(inst.getReturnType()));
 
-        // if it is not an assign , just ignore the non-void return
-        if (!isAssignment && !inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
-            code.append("\n\tpop");
-            updateStack(-1);
+        // update stack
+        updateStack(-1); // pop obj reference
+        updateStack(-inst.getListOfOperands().size()); // pop arguments
+
+        if (!inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
+            updateStack(1); // push space for return value to stack
+
+            // if it is not an assign , just ignore the non-void return
+            if (!isAssignment) {
+                code.append("\n\tpop");
+                updateStack(-1); // pop return value
+            }
         }
-    }
-
-    public void callInvokeStatic(CallInstruction inst, boolean isAssignment) {
-
-        String name = ((Operand) inst.getFirstArg()).getName();
-
-        // load arguments
-        for (Element arg : inst.getListOfOperands())
-            loadElement(arg);
-
-        // invoke method
-        code.append("invokestatic ").append(name);
-
-        // add arguments names and types
-        invokeArgs(inst, isAssignment);
     }
 
     private void callInvokeSpecial(CallInstruction inst) {
 
         Element firstArg = inst.getFirstArg();
-
         boolean isThis = firstArg.getType().getTypeOfElement().equals(ElementType.THIS);
 
         if (isThis) {
             code.append("\n\taload_0");
-            updateStack(1);
+            updateStack(1); // push this to stack
         } else loadElement(firstArg);
 
-        // load arguments
         for (Element arg : inst.getListOfOperands())
-            loadElement(arg);
+            loadElement(arg); // load arguments
 
         code.append("\n\tinvokespecial ");
 
@@ -624,18 +633,19 @@ public class MyJasminBackend implements JasminBackend {
 
         code.append(")V");
 
+        // update stack
+        updateStack(-1); // pop obj reference
+        updateStack(-inst.getListOfOperands().size()); // pop arguments
+
         if (!isThis) {
+            // no need to update stack in this case ?
             String varName = ((Operand) firstArg).getName();
             int reg = Integer.parseInt(getRegister(varName));
-
             if (reg < 4) code.append("\n\tastore_").append(reg);
             else code.append("\n\tastore ").append(reg);
-            updateStack(-1);
-
             if (debug) code.append(" ; ").append(varName);
         }
     }
-
 
     @Override
     public JasminResult toJasmin(OllirResult ollirResult) {
@@ -654,6 +664,5 @@ public class MyJasminBackend implements JasminBackend {
         }
         return new JasminResult(code.toString());
     }
-
 }
 
