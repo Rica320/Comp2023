@@ -3,18 +3,35 @@ package pt.up.fe.comp2023.OptimizeVisitors;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
-import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
+import pt.up.fe.comp.jmm.ast.JmmNodeImpl;
 
 public class ConstantFolding extends AJmmVisitor<String, String> {
 
-    private final MySymbolTable st;
-
-    public ConstantFolding(MySymbolTable st) {
-        this.st = st;
-    }
+    private boolean changed = false;
 
     public JmmSemanticsResult optimize(JmmSemanticsResult semanticsResult) {
+        JmmNode root = semanticsResult.getRootNode();
+        visit(root, "");
         return semanticsResult;
+    }
+
+    private void replaceParent(JmmNode oldNode, JmmNode newNode) {
+        JmmNode parent = oldNode.getJmmParent();
+        if (parent == null) {
+            System.out.println("Parent is null");
+            return;
+        }
+        int index = parent.getChildren().indexOf(oldNode);
+        parent.setChild(newNode, index);
+        this.changed = true;
+    }
+
+    public boolean isChanged() {
+        return this.changed;
+    }
+
+    public void reset() {
+        this.changed = false;
     }
 
     @Override
@@ -24,40 +41,10 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
 
     @Override
     protected void buildVisitor() {
-
-        // Assign
-        addVisit("Assign", this::dealWithAssign);
-        addVisit("ArrayAssign", this::dealWithArrayAssign);
-
-        // Expressions
-        addVisit("MethodCall", this::dealWithMethodCall);
-        addVisit("NewObject", this::dealWithNewObject);
-
-        // Array
-        addVisit("ArrayLookup", this::dealWithArrayLookup);
-        addVisit("NewIntArray", this::dealWithNewIntArray);
-
-        // Binary ops
         addVisit("BinaryOp", this::dealWithBinaryOp);
         addVisit("BinaryComp", this::dealWithBinaryOp);
         addVisit("BinaryBool", this::dealWithBinaryOp);
-
-        addVisit("Not", this::dealWithNot);
-
-        // Literals and variables
-        addVisit("Var", this::dealWithVar);
-        addVisit("Boolean", this::dealWithBoolean);
-        addVisit("Int", this::dealWithInt);
-
         setDefaultVisit(this::defaultVisit);
-    }
-
-    private String dealWithArrayAssign(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithAssign(JmmNode jmmNode, String s) {
-        return "";
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
@@ -66,49 +53,36 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
         return "";
     }
 
-
-    private String dealWithArrayLookup(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithAttributeAccess(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithMethodCall(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithNot(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithNewIntArray(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithNewObject(JmmNode jmmNode, String s) {
-        return "";
-    }
-
     private String dealWithBinaryOp(JmmNode jmmNode, String s) {
-        return "";
-    }
+        JmmNode left = jmmNode.getJmmChild(0);
+        JmmNode right = jmmNode.getJmmChild(1);
 
-    private String dealWithThis(JmmNode jmmNode, String s) {
-        return "";
-    }
+        // Check if left and right are literals
+        if (left.getKind().equals("Int") || left.getKind().equals("Boolean")) {
+            int leftValue = Integer.parseInt(left.get("val"));
+            int rightValue = Integer.parseInt(right.get("val"));
 
+            String op = jmmNode.get("op");
+            int result;
 
-    private String dealWithVar(JmmNode jmmNode, String s) {
-        return "";
-    }
+            switch (op) {
+                case "+" -> result = leftValue + rightValue;
+                case "-" -> result = leftValue - rightValue;
+                case "*" -> result = leftValue * rightValue;
+                case "/" -> result = leftValue / rightValue;
+                case "<" -> result = leftValue < rightValue ? 1 : 0;
+                case "&&" -> result = leftValue == 1 && rightValue == 1 ? 1 : 0;
+                default -> {
+                    System.out.println("Unknown operator: " + op);
+                    return "";
+                }
+            }
 
-    private String dealWithBoolean(JmmNode jmmNode, String s) {
-        return "";
-    }
-
-    private String dealWithInt(JmmNode jmmNode, String s) {
+            String kind = (op.equals("&&") || op.equals("<")) ? "Boolean" : "Int";
+            JmmNode newNode = new JmmNodeImpl(kind);
+            newNode.put("val", String.valueOf(result));
+            replaceParent(jmmNode, newNode);
+        }
         return "";
     }
 }

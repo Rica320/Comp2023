@@ -11,7 +11,7 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
-    boolean debug = false;
+    boolean debug = true;
 
     ClassUnit classe;
     StringBuilder code = new StringBuilder();

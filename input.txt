@@ -8,12 +8,27 @@ class Simple{
         return a;
     }
 
+    public int func2(int a, int b){
+        return a + b;
+    }
+
     public static void main(String[] args){
 
+        int a;
+        int b;
+        int c;
+        boolean d;
         Simple s;
+
+        a = 10;
+        b = 10 + 2;
+        b = a + 5;
+        c = b + a;
+        d = 3 < 2;
+
         s = new Simple();
 
         io.println(s.func());
-
+        io.println(s.func2(10/2, 209-9));
     }
 }

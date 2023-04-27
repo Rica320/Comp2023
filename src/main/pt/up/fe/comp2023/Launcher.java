@@ -82,8 +82,11 @@ public class Launcher {
         // Check if there are semantic errors
         TestUtils.noErrors(analyserResult.getReports());
 
-        ConstantFolding constantFolding = new ConstantFolding((MySymbolTable) analyserResult.getSymbolTable());
+        ConstantFolding constantFolding = new ConstantFolding();
         analyserResult = constantFolding.optimize(analyserResult);
+        // Print full AST
+        System.out.println(analyserResult.getRootNode().toTree());
+
 
         MyOllir myOllir = new MyOllir();
 
@@ -101,7 +104,7 @@ public class Launcher {
         JasminResult jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         String jasminCode = jasminResult.getJasminCode();
 
-        System.out.println(jasminCode);
+        // System.out.println(jasminCode);
         TestUtils.runJasmin(jasminCode);
 //
         // try {
@@ -126,10 +129,7 @@ public class Launcher {
 
         List<String> options = Arrays.stream(args).toList();
 
-        String registerAllocation = options.stream()
-                .filter(option -> option.startsWith("-r"))
-                .findFirst()
-                .orElse("-1");
+        String registerAllocation = options.stream().filter(option -> option.startsWith("-r")).findFirst().orElse("-1");
         // Create config
         Map<String, String> config = new HashMap<>();
         config.put("inputFile", args[0]);
