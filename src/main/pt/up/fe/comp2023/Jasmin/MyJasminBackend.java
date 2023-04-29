@@ -7,11 +7,9 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
 
-// TODO: use of iinc and comparisons to zero (e.g., iflt, ifne). --> MAIS EFICIENTES !
-
 public class MyJasminBackend implements JasminBackend {
 
-    boolean debug = true;
+    boolean debug = false;
 
     ClassUnit classe;
     StringBuilder code = new StringBuilder();
@@ -95,6 +93,7 @@ public class MyJasminBackend implements JasminBackend {
                 int value = Integer.parseInt(literal.getLiteral());
                 if (value < 6) code.append("iconst_");  // more efficient than bipush
                 else if (value < 128) code.append("bipush ");
+                else if (value < 32768) code.append("sipush ");
                 else code.append("ldc ");
                 code.append(value);
             } else {
@@ -240,14 +239,19 @@ public class MyJasminBackend implements JasminBackend {
         }
 
         if (instType.equals(InstructionType.BINARYOPER)) {
-            addBinaryOperation((BinaryOpInstruction) rhs); // Add binary operation loads and calculation
+            // check if binop is iinc (x = x +/- N)
+            if (tryAddInc(((Operand) dest), (BinaryOpInstruction) rhs)) {
+                code.append("\t; End Assign Instruction\n\n");
+                return;
+            }
+            else addBinaryOperation((BinaryOpInstruction) rhs); // // if not, add binary operation loads and calculation
             code.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand() instanceof ArrayOperand) {
+            if (op.getSingleOperand() instanceof ArrayOperand)
                 arrayAccess(op.getSingleOperand());
-            } else {
+            else {
                 code.append("\t");
                 loadElement(op.getSingleOperand());
             }
@@ -271,6 +275,49 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n\t; End Assign Instruction\n\n");
     }
 
+    private boolean tryAddInc(Operand dest, BinaryOpInstruction rhs) {
+
+        String op = rhs.getOperation().getOpType().toString();
+        if (!op.equals("ADD") && !op.equals("SUB")) return false; // only add and sub are supported
+
+        String opSign = op.equals("ADD") ? " + " : " - ";
+
+        Element l = rhs.getLeftOperand();
+        Element r = rhs.getRightOperand();
+
+        if (l.isLiteral() && !r.isLiteral()) {
+            Operand right = (Operand) r;
+            LiteralElement left = (LiteralElement) l;
+            int value = Integer.parseInt(left.getLiteral());
+
+            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+
+            // check if non literal is dest
+            if (right.getName().equals(dest.getName())) {
+                code.append("\tiinc ").append(getRegister(right.getName())).append(" ").append(opSign.equals(" + ") ? value : -value);
+                if (debug)
+                    code.append("\t; ").append(right.getName()).append(" = ").append(right.getName()).append(opSign).append(value);
+                code.append("\n");
+                return true;
+            }
+        } else if (r.isLiteral() && !l.isLiteral()) {
+            Operand left = (Operand) l;
+            LiteralElement right = (LiteralElement) r;
+            int value = Integer.parseInt(right.getLiteral());
+
+            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+
+            // check if non literal is dest
+            if (left.getName().equals(dest.getName())) {
+                code.append("\tiinc ").append(getRegister(left.getName())).append(" ").append(opSign.equals(" + ") ? value : -value);
+                if (debug)
+                    code.append("\t; ").append(left.getName()).append(" = ").append(left.getName()).append(opSign).append(value);
+                code.append("\n");
+                return true;
+            }
+        }
+        return false; // cant add iinc
+    }
 
     private void arrayLoad(Operand elem) {
         String name = elem.getName();
@@ -333,15 +380,19 @@ public class MyJasminBackend implements JasminBackend {
 
         code.append("\n\t; Executing binary operation\n\t");
 
-        // Load operands
-        loadElement(opInstruction.getLeftOperand());
-        loadElement(opInstruction.getRightOperand());
+        Element left = opInstruction.getLeftOperand();
+        Element right = opInstruction.getRightOperand();
 
-        // execute operation
-        BinaryOpInstAux(opType);
+        if (opType.name().equals("LTH")) addLTHOp(left, right);
+        else {
+            loadElement(left);
+            loadElement(right);
+            BinaryOpInstAux(opType); // execute operation
+        }
 
         code.append("\t; End binary operation\n\n ");
     }
+
 
     private void BinaryOpInstAux(OperationType opType) {
         // binary ops pop 2 values and push 1 to stack
@@ -366,15 +417,42 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("iand\n");
                 updateStack(-1);
             }
-            case LTH -> addLTHOp();
             default -> System.out.println("Binary op error");
         }
     }
 
-    private void addLTHOp() {
+    private void addLTHOp(Element left, Element right) {
+
+        // case 0 < A
+        if (left.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) left).getLiteral());
+            if (value == 0) {
+                loadElement(right);
+                addConditionalJump("ifgt");
+                return;
+            }
+        }
+
+        // case A < 0
+        if (right.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) right).getLiteral());
+            if (value == 0) {
+                loadElement(left);
+                addConditionalJump("iflt");
+                return;
+            }
+        }
+
+        // case A < B
+        loadElement(left);
+        loadElement(right);
+        addConditionalJump("if_icmplt");
+    }
+
+    private void addConditionalJump(String jumpCondition) {
         String trueL = getNewLabel(), endL = getNewLabel();
-        code.append("; Making lth operation\n\t");
-        code.append("if_icmplt ").append(trueL).append("\n");
+        code.append("; Conditional Jump\n\t");
+        code.append(jumpCondition).append(" ").append(trueL).append("\n");
         updateStack(-2); // pop 2 values used for comparison
         code.append("\ticonst_0\n"); // false scope
         updateStack(1); // push false
@@ -383,7 +461,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\ticonst_1\n"); // true scope
         updateStack(1); // push true
         code.append(endL).append(":\n");
-        code.append("; End lth operation\n");
+        code.append("; End of Conditional Jump\n");
     }
 
     private void addInstruction(Instruction instruction) {

@@ -66,6 +66,10 @@ public class ConstantFolding extends AJmmVisitor<String, String> {
         JmmNode left = jmmNode.getJmmChild(0);
         JmmNode right = jmmNode.getJmmChild(1);
 
+        // Visit left and right because they might be expressions that can be folded themselves
+        visit(left, s);
+        visit(right, s);
+
         // Check if left and right are literals
         if (left.getKind().equals("Int") || left.getKind().equals("Boolean")) {
             int leftValue, rightValue;

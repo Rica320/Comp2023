@@ -2,6 +2,25 @@ import io;
 
 class Simple{
 
+
+     public static void main(String[] args){
+
+            int a;
+            int b;
+
+            a = 10;
+            b = 20;
+            a = a + b;
+            a = a + 10;
+            b = b + 10;
+            a = b - 10;
+
+        }
+
+
+
+
+    /*
     public int func(){
         int a;
         a = 10 + 5;
@@ -31,4 +50,5 @@ class Simple{
         io.println(s.func());
         io.println(s.func2(10/2, 209-9));
     }
+    */
 }
