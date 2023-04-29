@@ -202,7 +202,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            if (this.registerNum > -2) // TODO: temporary --> falar com o prof
+            if (this.registerNum == 0) // TODO: temporary --> falar com o prof
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
 
             currVarTable = null;
