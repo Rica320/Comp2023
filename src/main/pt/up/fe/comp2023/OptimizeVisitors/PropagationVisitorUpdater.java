@@ -14,20 +14,14 @@ public class PropagationVisitorUpdater extends AJmmVisitor<String, String> {
 
     @Override
     protected void buildVisitor() {
-
-        // Class
         addVisit("MainMethod", this::dealWithMain);
         addVisit("MethodDecl", this::dealWithMethod);
-
-        // Statements
         addVisit("Assign", this::dealWithAssign);
-
         setDefaultVisit(this::defaultVisit);
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
-        for (JmmNode child : jmmNode.getChildren())
-            visit(child, "");
+        for (JmmNode child : jmmNode.getChildren()) visit(child, "");
         return null;
     }
 
@@ -52,11 +46,9 @@ public class PropagationVisitorUpdater extends AJmmVisitor<String, String> {
 
         // If the variable is being assigned a constant, add it to the variables map
         String kind = jmmNode.getJmmChild(0).getKind();
-        if (kind.equals("Int") || kind.equals("Boolean")){
-            st.addConstantVar(jmmNode.get("var"));
-            System.out.println("Added constant var: " + jmmNode.get("var") + " in " + st.getCurrentMethod() + " " + jmmNode);
-        }else{
-            // impede que variavel nao associada a constante possa ser usada como constante
+        if (kind.equals("Int") || kind.equals("Boolean")) st.addConstantVar(jmmNode.get("var"));
+        else {
+            // by adding twice the same variable, we are sure that the variable is not a constant
             st.addConstantVar(jmmNode.get("var"));
             st.addConstantVar(jmmNode.get("var"));
         }

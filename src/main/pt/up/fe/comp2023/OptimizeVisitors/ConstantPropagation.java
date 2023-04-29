@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023.OptimizeVisitors;
 
+import org.antlr.v4.runtime.misc.Pair;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
 import pt.up.fe.comp.jmm.ast.JmmNode;
@@ -13,7 +14,7 @@ import java.util.List;
 public class ConstantPropagation extends AJmmVisitor<String, String> {
 
 
-    private final HashMap<String, Integer> variables = new HashMap<>(); // Variable name -> value
+    private final HashMap<String, Pair<String, Integer>> variables = new HashMap<>(); // Variable name -> value
     MySymbolTable st;
     private List<String> constantVars = new ArrayList<>(); // Variables that are constants
     private boolean changed = false;
@@ -39,7 +40,6 @@ public class ConstantPropagation extends AJmmVisitor<String, String> {
         int index = parent.getChildren().indexOf(oldNode);
         parent.setChild(newNode, index);
         this.changed = true;
-        System.out.println("Propagated constant " + oldNode.get("var") + " to " + newNode.get("val"));
     }
 
     public boolean isChanged() {
@@ -61,66 +61,60 @@ public class ConstantPropagation extends AJmmVisitor<String, String> {
     }
 
     private String defaultVisit(JmmNode jmmNode, String s) {
-        for (JmmNode child : jmmNode.getChildren())
-            visit(child, s);
-        return "";
+        for (JmmNode child : jmmNode.getChildren()) visit(child, s);
+        return null;
     }
 
     private String dealWithMethod(JmmNode jmmNode, String s) {
         st.setCurrentMethod(jmmNode.get("name"));
         this.constantVars = st.getCurrentMethodScope().getConstantVars();
-        System.out.println("Constant vars in " + jmmNode.get("name") + ": " + constantVars);
         defaultVisit(jmmNode, s);
         st.setCurrentMethod(null);
         this.constantVars = new ArrayList<>();
         variables.clear();
-        return "";
+        return null;
     }
 
     private String dealWithMain(JmmNode jmmNode, String s) {
         st.setCurrentMethod("main");
         this.constantVars = st.getCurrentMethodScope().getConstantVars();
-        System.out.println("Constant vars in main: " + constantVars);
         defaultVisit(jmmNode, s);
         st.setCurrentMethod(null);
         this.constantVars = new ArrayList<>();
         variables.clear();
-        return "";
+        return null;
     }
 
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
 
         String varName = jmmNode.get("var");
-        visit(jmmNode.getJmmChild(0), s); // i have to visit the right side no matter what because it can be an expression that has a const var in it to be replaced
-        if (!constantVars.contains(varName)) return "";
 
-        if (variables.containsKey(varName))
-            throw new RuntimeException("Constant variable '" + varName + "' is being assigned twice.\n" + variables + "\n" + jmmNode + "\n" + st.getCurrentMethod() + "\n" + constantVars);
+        // We have to visit the right side no matter what because
+        // it may contain an expression that has a const var in it to be replaced
+        visit(jmmNode.getJmmChild(0), s);
 
+        if (!constantVars.contains(varName)) return null;
+
+        // if (variables.containsKey(varName)) THROW ERROR  // This never happens ?
         // If the variable is being assigned a constant, add it to the variables map
         String kind = jmmNode.getJmmChild(0).getKind();
-        if (kind.equals("Int") || kind.equals("Boolean")) {
-            variables.put(varName, Integer.parseInt(jmmNode.getJmmChild(0).get("val")));
-            System.out.println("Added constant " + varName + " = " + jmmNode.getJmmChild(0).get("val") + " to variables");
-        }
-
-
-        return "";
+        if (kind.equals("Int") || kind.equals("Boolean"))
+            variables.put(varName, new Pair<>(kind, Integer.parseInt(jmmNode.getJmmChild(0).get("val"))));
+        return null;
     }
 
 
     private String dealWithVar(JmmNode jmmNode, String s) {
         // If the variable is being used, replace it with its value
         String varName = jmmNode.get("var");
-        System.out.println("HERE2! " + varName + " " + variables.get(varName));
         if (variables.containsKey(varName)) {
-            JmmNode newNode = new JmmNodeImpl("Int");
-            System.out.println("HERE! " + varName + " " + variables.get(varName));
-            newNode.put("val", variables.get(varName).toString());
+            Pair<String, Integer> pair = variables.get(varName); // type, value
+            JmmNode newNode = new JmmNodeImpl(pair.a); // Create a new node with the same type
+            newNode.put("val", pair.b.toString()); // Set the value
             replaceNode(jmmNode, newNode);
         }
-        return "";
+        return null;
     }
 
 }

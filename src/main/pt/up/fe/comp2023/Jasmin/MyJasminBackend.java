@@ -93,9 +93,9 @@ public class MyJasminBackend implements JasminBackend {
             if (element.isLiteral()) {
                 LiteralElement literal = (LiteralElement) element;
                 int value = Integer.parseInt(literal.getLiteral());
-                if (value < 6) code.append("iconst_");  // more efficient than bipush
-                else if (value < 128) code.append("bipush ");
-                else if (value < 32768) code.append("sipush ");
+                if (value < 6 && value >= 0) code.append("iconst_");  // more efficient than bipush
+                else if (value < 128 && value >= 0) code.append("bipush ");
+                else if (value < 32768 && value >= 0) code.append("sipush ");
                 else code.append("ldc ");
                 code.append(value);
             } else {
