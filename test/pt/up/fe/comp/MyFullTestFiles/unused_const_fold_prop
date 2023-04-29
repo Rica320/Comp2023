@@ -16,7 +16,7 @@ class Simple{
     }
 
 
-    public int func2(int a, int b){ //todo: se apagar esta funcao que é usada no main, a semantica devia dar erro
+    public int func2(int a, int b){
         return a + b;
     }
 
@@ -56,6 +56,7 @@ class Simple{
         int c;
         boolean d;
         boolean e;
+        boolean f;
         Simple s;
 
         a = (10+1);
@@ -63,7 +64,8 @@ class Simple{
         b = (a + 5);
         c = b + a;
         d = 3 < 2;
-        e = (a*2-(5*a)) < 9*a-2*3;
+        e = (a*2-(5*(a))) < 9*a-2*3;
+        f = d && !e;
 
         s = new Simple();
 
