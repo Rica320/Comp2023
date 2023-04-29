@@ -10,7 +10,6 @@ import pt.up.fe.comp.jmm.report.ReportType;
 import pt.up.fe.comp2023.Jasmin.MyJasminBackend;
 import pt.up.fe.comp2023.ollir.MyOllir;
 import pt.up.fe.specs.util.SpecsIo;
-import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
 
 import java.io.File;
@@ -18,6 +17,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Launcher {
 
@@ -27,7 +28,11 @@ public class Launcher {
 
         // Parse arguments as a map with predefined options
         var config = parseArgs(args);
-        System.out.println("Running with config: " + config);
+        System.out.println("Running with config: " + config + "\n");
+
+        // Load argument from config
+        boolean isDebug = config.getOrDefault("debug", "false").equals("true");
+        boolean isOptimize = config.getOrDefault("optimize", "false").equals("true");
 
         // Get input file
         File inputFile = new File(config.get("inputFile"));
@@ -38,11 +43,6 @@ public class Launcher {
 
         // Read contents of input file
         String code = SpecsIo.read(inputFile);
-
-        // Load other arguments from config
-        boolean isDebug = config.get("debug").equals("true");
-        boolean isOptimize = config.get("optimize").equals("true");
-        int registerAllocation = Integer.parseInt(config.get("registerAllocation"));
 
         // ========================= Parsing =========================
 
@@ -72,7 +72,7 @@ public class Launcher {
         // ========================= OLLIR =========================
 
         // Instantiate MyOllir
-        MyOllir myOllir = new MyOllir(isDebug, registerAllocation, isOptimize);
+        MyOllir myOllir = new MyOllir();
 
         // Optimize AST before generating OLLIR code
         if (isOptimize) analyserResult = myOllir.optimize(analyserResult);
@@ -83,7 +83,7 @@ public class Launcher {
         // ========================= BACKEND JASMIN =========================
 
         // Instantiate MyJasminBackend
-        MyJasminBackend jasminBackend = new MyJasminBackend(registerAllocation, isDebug);
+        MyJasminBackend jasminBackend = new MyJasminBackend();
 
         // Generate Jasmin code
         JasminResult jasminResult = jasminBackend.toJasmin(ollirResult);
@@ -110,13 +110,11 @@ public class Launcher {
         } else if (parserResult.getRootNode() == null) {
             System.out.println("Parser result is null!");
             return true;
-        } else System.out.println("No errors found!\n\n");
+        }
         return false;
     }
 
     private static Map<String, String> parseArgs(String[] args) {
-        SpecsLogs.info("Executing with args: " + Arrays.toString(args));
-
         // Check if there is at least one argument
         if (args.length < 1)
             throw new RuntimeException("Expected a single argument, a path to an existing input file.");
@@ -129,10 +127,15 @@ public class Launcher {
         config.put("debug", options.contains("-d") ? "true" : "false");
         config.put("optimize", options.contains("-o") ? "true" : "false");
 
-        if (options.contains("-r")) config.put("registerAllocation", options.get(options.indexOf("-r") + 2));
-        else config.put("registerAllocation", "-1");
+        int r = 0;
+        Pattern pattern = Pattern.compile("^-r=(\\d+)$");
+        for (String arg : options) {
+            Matcher matcher = pattern.matcher(arg);
+            if (matcher.matches())
+                r = Integer.parseInt(matcher.group(1));
+        }
 
+        config.put("registerAllocation", String.valueOf(r));
         return config;
     }
-
 }

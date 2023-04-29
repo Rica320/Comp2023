@@ -9,7 +9,6 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
-    private final int registerNum;
     boolean debug = false;
 
     ClassUnit classe;
@@ -23,14 +22,7 @@ public class MyJasminBackend implements JasminBackend {
     int currentStack = 0;
     int maxStack = 0;
 
-    public MyJasminBackend() {
-        this(0, false);
-    }
-
-    public MyJasminBackend(int registerNum, boolean isDebug) {
-        this.debug = isDebug;
-        this.registerNum = registerNum;
-    }
+    int regNumAlloc = 0;
 
     private void resetStack() {
         this.currentStack = 0;
@@ -192,7 +184,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append(")").append(toJasminType(method.getReturnType())).append("\n");
             }
 
-            // These values are added later
+            // These values are changed later if reg optimization is enabled
             code.append("\t.limit stack 99").append("\n");
             code.append("\t.limit locals 99").append("\n\n");
 
@@ -202,7 +194,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            if (this.registerNum == 0) // TODO: temporary --> falar com o prof
+            if (this.regNumAlloc == 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
 
             currVarTable = null;
@@ -210,7 +202,6 @@ public class MyJasminBackend implements JasminBackend {
             code.append(".end method\n\n");
         });
     }
-
 
     private void addInstructionAssign(AssignInstruction instruction) {
         code.append("\n\t; Assign Instruction\n");
@@ -725,6 +716,10 @@ public class MyJasminBackend implements JasminBackend {
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
+
+        var config = ollirResult.getConfig();
+        this.debug = config.getOrDefault("debug", "false").equals("true");
+        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "0"));
 
         addHeaders();
         addFields();

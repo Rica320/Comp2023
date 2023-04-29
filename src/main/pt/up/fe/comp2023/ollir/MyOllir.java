@@ -12,23 +12,12 @@ import java.util.Collections;
 
 public class MyOllir implements JmmOptimization {
 
-    private final int registerNum;
-    private final boolean isDebug;
-
-    private final boolean isOptimize;
-
-    public MyOllir(boolean isDebug, int registerNum, boolean isOptimize) {
-        this.isDebug = isDebug;
-        this.registerNum = registerNum;
-        this.isOptimize = isOptimize;
-    }
-
-    public MyOllir() {
-        this(false, 0, false);
-    }
-
     @Override
     public JmmSemanticsResult optimize(JmmSemanticsResult analyserResult) {
+
+        var config = analyserResult.getConfig();
+        boolean isDebug = config.getOrDefault("debug", "false").equals("true");
+        boolean isOptimize = config.getOrDefault("optimize", "false").equals("true");
 
         if (!isOptimize) return analyserResult;
 
@@ -50,19 +39,21 @@ public class MyOllir implements JmmOptimization {
     public OllirResult toOllir(JmmSemanticsResult jmmSemanticsResult) {
 
         SymbolTable symbolTable = jmmSemanticsResult.getSymbolTable();
+
+        // TODO: está aqui o valor de registos para usares ricardo
+        int regNumAlloc = Integer.parseInt(jmmSemanticsResult.getConfig().getOrDefault("registerAllocation", "0"));
+
         MyOllirVisitor myOllirVisitor = new MyOllirVisitor(symbolTable);
 
         String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode()).a;
 
         System.out.println(code);
         return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
-        //return null;
     }
 
 
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
-        System.out.println("Optimizing OLLIR code");
         return ollirResult;
     }
 
