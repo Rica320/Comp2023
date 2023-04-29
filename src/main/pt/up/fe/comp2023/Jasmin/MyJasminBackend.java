@@ -292,9 +292,12 @@ public class MyJasminBackend implements JasminBackend {
 
             if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
 
+            // cases like N-X cant be done with iinc
+            if (opSign.equals(" - ")) return false;
+
             // check if non literal is dest
             if (right.getName().equals(dest.getName())) {
-                code.append("\tiinc ").append(getRegister(right.getName())).append(" ").append(opSign.equals(" + ") ? value : -value);
+                code.append("\tiinc ").append(getRegister(right.getName())).append(" ").append(value);
                 if (debug)
                     code.append("\t; ").append(right.getName()).append(" = ").append(right.getName()).append(opSign).append(value);
                 code.append("\n");
