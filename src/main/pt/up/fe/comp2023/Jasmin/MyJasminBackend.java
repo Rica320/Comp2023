@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 public class MyJasminBackend implements JasminBackend {
 
+    private final int registerNum;
     boolean debug = false;
 
     ClassUnit classe;
@@ -21,6 +22,15 @@ public class MyJasminBackend implements JasminBackend {
     int labelCounter = 0;
     int currentStack = 0;
     int maxStack = 0;
+
+    public MyJasminBackend() {
+        this(0, false);
+    }
+
+    public MyJasminBackend(int registerNum, boolean isDebug) {
+        this.debug = isDebug;
+        this.registerNum = registerNum;
+    }
 
     private void resetStack() {
         this.currentStack = 0;
@@ -192,27 +202,9 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-/*
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n\t; VarTable\n");
-            for (var k : currVarTable.keySet()) {
-                sb.append("\t; ").append(k).append(" -> ").append(currVarTable.get(k)).append("\n");
-            }
+            if (this.registerNum > -2) // TODO: temporary --> falar com o prof
+                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
 
-            try {
-                int x = 0 / 0;
-            } catch (Exception e) {
-                throw new RuntimeException("====================================\n" + sb + "\n================= " + currVarTable.containsKey("this") + " ==================");
-            }*/
-
-
-            //int limitCount = 0;
-            //for (var k : currVarTable.keySet())
-            //if (!currVarTable.get(k).getScope().equals(VarScope.FIELD)) limitCount++;
-
-            // prof disse para n usar diretamente currVarTable.size() pq pelos vistos ela pode conter fields...
-            //updateMethodLimits(limitCount + ((isMain) ? 0 : 1), this.maxStack);
-            updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
@@ -243,14 +235,13 @@ public class MyJasminBackend implements JasminBackend {
             if (tryAddInc(((Operand) dest), (BinaryOpInstruction) rhs)) {
                 code.append("\t; End Assign Instruction\n\n");
                 return;
-            }
-            else addBinaryOperation((BinaryOpInstruction) rhs); // // if not, add binary operation loads and calculation
+            } else
+                addBinaryOperation((BinaryOpInstruction) rhs); // // if not, add binary operation loads and calculation
             code.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand() instanceof ArrayOperand)
-                arrayAccess(op.getSingleOperand());
+            if (op.getSingleOperand() instanceof ArrayOperand) arrayAccess(op.getSingleOperand());
             else {
                 code.append("\t");
                 loadElement(op.getSingleOperand());
