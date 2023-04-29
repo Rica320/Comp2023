@@ -40,6 +40,7 @@ public class MyOllir implements JmmOptimization {
             analyserResult = constantFolding.optimize(analyserResult);
             if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
             analyserResult = constantPropagation.optimize(analyserResult);
+            if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
         } while (constantFolding.isChanged() || constantPropagation.isChanged());
 
         return analyserResult;

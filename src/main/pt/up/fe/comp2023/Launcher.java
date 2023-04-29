@@ -77,9 +77,6 @@ public class Launcher {
         // Optimize AST before generating OLLIR code
         if (isOptimize) analyserResult = myOllir.optimize(analyserResult);
 
-        // Print full AST after optimization
-        if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
-
         // Generate OLLIR code
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
