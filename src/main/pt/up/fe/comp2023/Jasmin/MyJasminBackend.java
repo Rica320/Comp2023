@@ -22,6 +22,8 @@ public class MyJasminBackend implements JasminBackend {
     int currentStack = 0;
     int maxStack = 0;
 
+    int regNumAlloc = 0;
+
     private void resetStack() {
         this.currentStack = 0;
         this.maxStack = 0;
@@ -91,8 +93,9 @@ public class MyJasminBackend implements JasminBackend {
             if (element.isLiteral()) {
                 LiteralElement literal = (LiteralElement) element;
                 int value = Integer.parseInt(literal.getLiteral());
-                if (value < 6) code.append("iconst_");  // more efficient than bipush
-                else if (value < 128) code.append("bipush ");
+                if (value < 6 && value >= 0) code.append("iconst_");  // more efficient than bipush
+                else if (value < 128 && value >= 0) code.append("bipush ");
+                else if (value < 32768 && value >= 0) code.append("sipush ");
                 else code.append("ldc ");
                 code.append(value);
             } else {
@@ -142,11 +145,8 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     public void addFields() {
-        if (this.classe.getFields().size() == 0) {
-            code.append("\n; No fields\n");
-            return;
-        }
-        code.append("\n; Fields\n");
+        if (this.classe.getFields().size() == 0) return;
+        if (debug) code.append("\n; Fields\n");
         this.classe.getFields().forEach(field -> {
             code.append(".field public ");
             code.append(field.getFieldName()).append(" ").append(toJasminType(field.getFieldType())).append("\n");
@@ -154,7 +154,7 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     public void addConstructor() {
-        code.append("\n; Constructor");
+        if (debug) code.append("\n; Constructor");
         code.append("\n.method public <init>()V");
         code.append("\n\taload_0");
         String aux = this.classe.getSuperClass() == null ? "java/lang/Object" : this.classe.getSuperClass();
@@ -172,7 +172,7 @@ public class MyJasminBackend implements JasminBackend {
 
             boolean isMain = method.getMethodName().equals("main");
 
-            if (isMain) code.append("\n\n; main method\n.method public static main([Ljava/lang/String;)V\n");
+            if (isMain) code.append("\n.method public static main([Ljava/lang/String;)V\n");
             else if (method.getMethodName().equals(this.classe.getClassName())) return; // ignore constructor
             else code.append("\n.method public ").append(method.getMethodName()).append("(");
 
@@ -181,7 +181,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append(")").append(toJasminType(method.getReturnType())).append("\n");
             }
 
-            // These values are added later
+            // These values are changed later if reg optimization is enabled
             code.append("\t.limit stack 99").append("\n");
             code.append("\t.limit locals 99").append("\n\n");
 
@@ -191,36 +191,18 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-/*
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n\t; VarTable\n");
-            for (var k : currVarTable.keySet()) {
-                sb.append("\t; ").append(k).append(" -> ").append(currVarTable.get(k)).append("\n");
-            }
+            if (this.regNumAlloc == 0)
+                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
 
-            try {
-                int x = 0 / 0;
-            } catch (Exception e) {
-                throw new RuntimeException("====================================\n" + sb + "\n================= " + currVarTable.containsKey("this") + " ==================");
-            }*/
-
-
-            //int limitCount = 0;
-            //for (var k : currVarTable.keySet())
-            //if (!currVarTable.get(k).getScope().equals(VarScope.FIELD)) limitCount++;
-
-            // prof disse para n usar diretamente currVarTable.size() pq pelos vistos ela pode conter fields...
-            //updateMethodLimits(limitCount + ((isMain) ? 0 : 1), this.maxStack);
-            updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             currVarTable = null;
 
             code.append(".end method\n\n");
         });
     }
 
-
     private void addInstructionAssign(AssignInstruction instruction) {
-        code.append("\n\t; Assign Instruction\n");
+        if (debug) code.append("\n\t; Assign Instruction\n");
+        else code.append("\n");
 
         Element dest = instruction.getDest(); // instruction type <=> inst.getTypeOfAssign()
         Instruction rhs = instruction.getRhs();
@@ -228,7 +210,8 @@ public class MyJasminBackend implements JasminBackend {
 
         if (dest instanceof ArrayOperand) {
 
-            code.append("\t; Start Array assign\n\t");
+            if (debug) code.append("\t; Start Array assign\n\t");
+            else code.append("\t");
 
             // load array (cant use loadElement because IDK)
             arrayLoad((Operand) dest);
@@ -238,14 +221,19 @@ public class MyJasminBackend implements JasminBackend {
         }
 
         if (instType.equals(InstructionType.BINARYOPER)) {
-            addBinaryOperation((BinaryOpInstruction) rhs); // Add binary operation loads and calculation
+            // check if binop is iinc (x = x +/- N)
+            if (tryAddInc(((Operand) dest), (BinaryOpInstruction) rhs)) {
+                if (debug) code.append("\t; End Assign Instruction\n\n");
+                else code.append("\n");
+                return;
+            } else
+                addBinaryOperation((BinaryOpInstruction) rhs); // // if not, add binary operation loads and calculation
             code.append("\t");
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand() instanceof ArrayOperand) {
-                arrayAccess(op.getSingleOperand());
-            } else {
+            if (op.getSingleOperand() instanceof ArrayOperand) arrayAccess(op.getSingleOperand());
+            else {
                 code.append("\t");
                 loadElement(op.getSingleOperand());
             }
@@ -263,12 +251,61 @@ public class MyJasminBackend implements JasminBackend {
 
         // Storing final value in variable
         if (dest instanceof ArrayOperand) {
-            code.append("iastore\n\t; End Array Assign\n\t");
+            code.append("iastore\n\t");
+            if (debug) code.append("; End Array Assign\n\t");
+            else code.append("\n\t");
             updateStack(-3); // pop array, index and value
         } else storeElement(dest);
-        code.append("\n\t; End Assign Instruction\n\n");
+        if (debug) code.append("\n\t; End Assign Instruction\n\n");
+        else code.append("\n");
     }
 
+    private boolean tryAddInc(Operand dest, BinaryOpInstruction rhs) {
+
+        String op = rhs.getOperation().getOpType().toString();
+        if (!op.equals("ADD") && !op.equals("SUB")) return false; // only add and sub are supported
+
+        String opSign = op.equals("ADD") ? " + " : " - ";
+
+        Element l = rhs.getLeftOperand();
+        Element r = rhs.getRightOperand();
+
+        if (l.isLiteral() && !r.isLiteral()) {
+            Operand right = (Operand) r;
+            LiteralElement left = (LiteralElement) l;
+            int value = Integer.parseInt(left.getLiteral());
+
+            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+
+            // cases like N-X cant be done with iinc
+            if (opSign.equals(" - ")) return false;
+
+            // check if non literal is dest
+            if (right.getName().equals(dest.getName())) {
+                code.append("\tiinc ").append(getRegister(right.getName())).append(" ").append(value);
+                if (debug)
+                    code.append("\t; ").append(right.getName()).append(" = ").append(right.getName()).append(opSign).append(value);
+                code.append("\n");
+                return true;
+            }
+        } else if (r.isLiteral() && !l.isLiteral()) {
+            Operand left = (Operand) l;
+            LiteralElement right = (LiteralElement) r;
+            int value = Integer.parseInt(right.getLiteral());
+
+            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+
+            // check if non literal is dest
+            if (left.getName().equals(dest.getName())) {
+                code.append("\tiinc ").append(getRegister(left.getName())).append(" ").append(opSign.equals(" + ") ? value : -value);
+                if (debug)
+                    code.append("\t; ").append(left.getName()).append(" = ").append(left.getName()).append(opSign).append(value);
+                code.append("\n");
+                return true;
+            }
+        }
+        return false; // cant add iinc
+    }
 
     private void arrayLoad(Operand elem) {
         String name = elem.getName();
@@ -283,15 +320,18 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     public void arrayAccess(Element elem) {
-        code.append("\t; Start Array access\n\t");
+        if (debug) code.append("\t; Start Array access\n\t");
+        else code.append("\t");
         arrayLoad((Operand) elem);
         code.append("iaload\n\t");
         updateStack(-1); // pop array, index and push value in stack
-        code.append("; End Array access\n\t");
+        if (debug) code.append("; End Array access\n\t");
+        else code.append("\n\t");
     }
 
     private void addUnaryOperation(UnaryOpInstruction op) {
-        code.append("\n\t; Executing unary operation\n\t");
+        if (debug) code.append("\n\t; Executing unary operation\n\t");
+        else code.append("\n\t");
 
         // Load operand if needed to execute unary operation
         loadElement(op.getOperand());
@@ -304,7 +344,8 @@ public class MyJasminBackend implements JasminBackend {
             updateStack(-1); // ixor pops 2 values and pushes 1
         } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
-        code.append("\t; End unary operation\n\n");
+        if (debug) code.append("\t; End unary operation\n\n");
+        else code.append("\n");
     }
 
     private void storeElement(Element dest) {
@@ -329,17 +370,23 @@ public class MyJasminBackend implements JasminBackend {
 
         OperationType opType = opInstruction.getOperation().getOpType();
 
-        code.append("\n\t; Executing binary operation\n\t");
+        if (debug) code.append("\n\t; Executing binary operation\n\t");
+        else code.append("\n\t");
 
-        // Load operands
-        loadElement(opInstruction.getLeftOperand());
-        loadElement(opInstruction.getRightOperand());
+        Element left = opInstruction.getLeftOperand();
+        Element right = opInstruction.getRightOperand();
 
-        // execute operation
-        BinaryOpInstAux(opType);
+        if (opType.name().equals("LTH")) addLTHOp(left, right);
+        else {
+            loadElement(left);
+            loadElement(right);
+            BinaryOpInstAux(opType); // execute operation
+        }
 
-        code.append("\t; End binary operation\n\n ");
+        if (debug) code.append("\t; End binary operation\n\n ");
+        else code.append("\n");
     }
+
 
     private void BinaryOpInstAux(OperationType opType) {
         // binary ops pop 2 values and push 1 to stack
@@ -364,15 +411,43 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("iand\n");
                 updateStack(-1);
             }
-            case LTH -> addLTHOp();
             default -> System.out.println("Binary op error");
         }
     }
 
-    private void addLTHOp() {
+    private void addLTHOp(Element left, Element right) {
+
+        // case 0 < A
+        if (left.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) left).getLiteral());
+            if (value == 0) {
+                loadElement(right);
+                addConditionalJump("ifgt");
+                return;
+            }
+        }
+
+        // case A < 0
+        if (right.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) right).getLiteral());
+            if (value == 0) {
+                loadElement(left);
+                addConditionalJump("iflt");
+                return;
+            }
+        }
+
+        // case A < B
+        loadElement(left);
+        loadElement(right);
+        addConditionalJump("if_icmplt");
+    }
+
+    private void addConditionalJump(String jumpCondition) {
         String trueL = getNewLabel(), endL = getNewLabel();
-        code.append("; Making lth operation\n\t");
-        code.append("if_icmplt ").append(trueL).append("\n");
+        if (debug) code.append("; Conditional Jump\n\t");
+        else code.append("\n\t");
+        code.append(jumpCondition).append(" ").append(trueL).append("\n");
         updateStack(-2); // pop 2 values used for comparison
         code.append("\ticonst_0\n"); // false scope
         updateStack(1); // push false
@@ -381,7 +456,8 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\ticonst_1\n"); // true scope
         updateStack(1); // push true
         code.append(endL).append(":\n");
-        code.append("; End lth operation\n");
+        if (debug) code.append("; End of Conditional Jump\n");
+        else code.append("\n");
     }
 
     private void addInstruction(Instruction instruction) {
@@ -469,7 +545,8 @@ public class MyJasminBackend implements JasminBackend {
         OpInstruction opType = instruction.getCondition();
         String label = instruction.getLabel();
 
-        code.append("\n\t; Executing conditional branch\n\t");
+        if (debug) code.append("\n\t; Executing Conditional branch\n\t");
+        else code.append("\n\t");
 
         if (opType.getOperands().size() != 2) {
 
@@ -489,7 +566,8 @@ public class MyJasminBackend implements JasminBackend {
             updateStack(-2); // pop 2 values used for comparison
         }
 
-        code.append("\t; End of conditional branch");
+        if (debug) code.append("\t; End of Conditional branch");
+        else code.append("\n");
     }
 
 
@@ -497,17 +575,20 @@ public class MyJasminBackend implements JasminBackend {
         Operand op = (Operand) instruction.getCondition().getSingleOperand();
         String label = instruction.getLabel();
 
-        code.append("\n\t; Executing conditional branch\n\t");
+        if (debug) code.append("\n\t; Executing single op conditional branch\n\t");
+        else code.append("\n\t");
         loadElement(op);
         code.append("ifne ").append(label).append("\n");
         updateStack(-1); // pop value used for comparison
-        code.append("\t; End conditional branch\n\n");
+        if (debug) code.append("\t; End single op conditional branch\n\n");
+        else code.append("\n");
     }
 
 
     private void addCallInstruction(CallInstruction inst, boolean isAssignment) {
 
-        code.append("\t; Making a call instruction\n\t");
+        if (debug) code.append("\t; Making a call instruction\n\t");
+        else code.append("\n\t");
         switch ((inst.getInvocationType()).toString()) {
             case "NEW" -> callNew(inst);
             case "invokevirtual" -> callInvokeVirtual(inst, isAssignment);
@@ -524,7 +605,8 @@ public class MyJasminBackend implements JasminBackend {
             }
             default -> System.out.println("Call instruction not supported");
         }
-        code.append("\n\t; End of call instruction\n\t");
+        if (debug) code.append("\n\t; End of call instruction\n\t");
+        else code.append("\n\t");
     }
 
     public void callNew(CallInstruction inst) {
@@ -538,7 +620,7 @@ public class MyJasminBackend implements JasminBackend {
                 loadElement(arg);
 
             // create new array (only int arrays are supported)
-            code.append("\n\t newarray int");
+            code.append("\n\t newarray int\n\t");
             updateStack(1); // newarray pushes new array ref to stack
             return;
         }
@@ -546,11 +628,13 @@ public class MyJasminBackend implements JasminBackend {
         String className = ((ClassType) firstArg.getType()).getName();
 
         // create new object
-        code.append("\n\t; Creating new object\n\t");
+        if (debug) code.append("\n\t; Creating new object\n\t");
+        else code.append("\n\t");
         code.append("new ").append(className).append("\n\t");
         code.append("dup\n\t");
         updateStack(2);
-        code.append("; End of creating new object\n\t");
+        if (debug) code.append("; End of creating new object\n\t");
+        else code.append("\n\t");
     }
 
     public void callInvokeVirtual(CallInstruction inst, boolean isAssignment) {
@@ -651,6 +735,10 @@ public class MyJasminBackend implements JasminBackend {
     public JasminResult toJasmin(OllirResult ollirResult) {
 
         this.classe = ollirResult.getOllirClass();
+
+        var config = ollirResult.getConfig();
+        this.debug = config.getOrDefault("debug", "false").equals("true");
+        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "0"));
 
         addHeaders();
         addFields();

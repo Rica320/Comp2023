@@ -294,32 +294,28 @@ public class MySymbolTable implements SymbolTable {
     }
 
     public boolean findVar(String varName, String currentMethod) {
-        if (getMethod(currentMethod).hasLocalVariable(varName)) {
-            return true;
-        }
+        if (getMethod(currentMethod).hasLocalVariable(varName)) return true;
 
         //se for um parametro
-        for (Symbol parameter : getMethod(currentMethod).getParameters()) {
-            if (parameter.getName().equals(varName)) {
-                return true;
-            }
-        }
+        for (Symbol parameter : getMethod(currentMethod).getParameters())
+            if (parameter.getName().equals(varName)) return true;
 
         //se for um field
-        for (Symbol field : getFields()) {
-            if (field.getName().equals(varName)) {
-                return true;
-            }
-        }
+        for (Symbol field : getFields()) if (field.getName().equals(varName)) return true;
 
         //se for um import
-        for (String imports : getImports()) {
-            if (imports.equals(varName)) {
-                return true;
-            }
-        }
+        for (String imports : getImports()) if (imports.equals(varName)) return true;
 
         return false;
     }
+
+    public void addConstantVar(String varName) {
+        if (getMethod(currentMethod) != null) getMethod(currentMethod).addConstantVar(varName);
+    }
+
+    public void clearConstantVars(){
+        if (getMethod(currentMethod) != null) getMethod(currentMethod).clearConstantVars();
+    }
+
 }
 

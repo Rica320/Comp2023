@@ -36,7 +36,6 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         setDefaultVisit(this::defaultVisit);
     }
 
-
     private Type defaultVisit(JmmNode jmmNode, String s) {
         for (JmmNode child : jmmNode.getChildren()) {
             visit(child, "");
@@ -181,18 +180,12 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         try {
             isArr = st.findTypeVar(jmmNode.get("var")).isArray();
         } catch (Exception e) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")),
-                    "Undefined array"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Undefined array"));
             return new Type("error", false);
         }
 
         if (!isArr) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")),
-                    "Attempting to assign a value to a non-array variable"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Attempting to assign a value to a non-array variable"));
             return new Type("error", false);
         }
 
@@ -201,10 +194,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
         Type leftType = expressionVisitor.visit(left);
 
         if (!leftType.equals(new Type("int", false))) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")),
-                    "Index must be an int"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Index must be an int"));
             return new Type("error", false);
         }
 
@@ -213,10 +203,7 @@ public class StatementVisitor extends AJmmVisitor<String, Type> {
 
 
         if (!rightType.equals(new Type("int", false))) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")),
-                    Integer.parseInt(jmmNode.get("colStart")),
-                    "Attempting to assign a value that is not a int"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Attempting to assign a value that is not a int"));
             return new Type("error", false);
         }
         return null;

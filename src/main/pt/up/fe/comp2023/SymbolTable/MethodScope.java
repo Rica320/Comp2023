@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class MethodScope {
+    private final List<String> constVarList = new ArrayList<>(); // Variables that are being assigned to
     String methodName;
     List<Symbol> parameters;
     Type returnType;
@@ -111,5 +112,28 @@ public class MethodScope {
             if (vars.get(i).getName().equals(name)) return i + parameters.size() - 1;
 
         return -1;
+    }
+
+    public void addConstantVar(String varName) {
+        constVarList.add(varName);
+    }
+
+    public List<String> getConstantVars() {
+        HashMap<String, Integer> frequency = new HashMap<>();
+
+        // Count frequency of each value
+        for (String s : constVarList)
+            frequency.put(s, frequency.getOrDefault(s, 0) + 1);
+
+        // Add values with frequency of 1 to new list
+        List<String> clearList = new ArrayList<>();
+        for (HashMap.Entry<String, Integer> entry : frequency.entrySet())
+            if (entry.getValue() == 1) clearList.add(entry.getKey());
+
+        return clearList;
+    }
+
+    public void clearConstantVars() {
+        constVarList.clear();
     }
 }

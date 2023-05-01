@@ -4,34 +4,56 @@ import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.comp2023.OptimizeVisitors.ConstantFolding;
+import pt.up.fe.comp2023.OptimizeVisitors.ConstantPropagation;
+import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.Collections;
 
 public class MyOllir implements JmmOptimization {
 
     @Override
-    public JmmSemanticsResult optimize(JmmSemanticsResult semanticsResult) {
-        System.out.println("Optimizing semantics result : n = " + semanticsResult.getConfig().get("registerAllocation"));
-        return semanticsResult;
+    public JmmSemanticsResult optimize(JmmSemanticsResult analyserResult) {
+
+        var config = analyserResult.getConfig();
+        boolean isDebug = config.getOrDefault("debug", "false").equals("true");
+        boolean isOptimize = config.getOrDefault("optimize", "false").equals("true");
+
+        if (!isOptimize) return analyserResult;
+
+        MySymbolTable symbolTable = (MySymbolTable) analyserResult.getSymbolTable();
+        ConstantFolding constantFolding = new ConstantFolding();
+        ConstantPropagation constantPropagation = new ConstantPropagation(symbolTable);
+
+        do {
+            analyserResult = constantFolding.optimize(analyserResult);
+            if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
+            analyserResult = constantPropagation.optimize(analyserResult);
+            if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
+        } while (constantFolding.isChanged() || constantPropagation.isChanged());
+
+        return analyserResult;
     }
 
     @Override
     public OllirResult toOllir(JmmSemanticsResult jmmSemanticsResult) {
 
         SymbolTable symbolTable = jmmSemanticsResult.getSymbolTable();
+
+        // TODO: está aqui o valor de registos para usares ricardo
+        int regNumAlloc = Integer.parseInt(jmmSemanticsResult.getConfig().getOrDefault("registerAllocation", "0"));
+
         MyOllirVisitor myOllirVisitor = new MyOllirVisitor(symbolTable);
 
         String code = myOllirVisitor.visit(jmmSemanticsResult.getRootNode()).a;
 
         System.out.println(code);
         return new OllirResult(jmmSemanticsResult, code, Collections.emptyList());
-        //return null;
     }
 
 
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
-        System.out.println("Optimizing OLLIR code");
         return ollirResult;
     }
 

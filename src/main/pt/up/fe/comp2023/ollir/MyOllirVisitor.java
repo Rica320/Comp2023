@@ -11,6 +11,7 @@ import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 import pt.up.fe.comp2023.SymbolTable.SymbolOrigin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -282,7 +283,24 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         StringBuilder sb = new StringBuilder();
         String varName = jmmNode.get("var");
 
-        Pair<String, String> codePlace = this.visit(jmmNode.getJmmChild(0));
+        JmmNode rightSide = jmmNode.getJmmChild(0);
+
+        // if rightSide is a binary operation: a = b + c, we don't need to create a new temp
+        if (rightSide.getKind().equals("BinaryOp")) {
+            // todo: talvez haja uma maneira mais inteligente de fazer para todos os casos. Dps vê, ricardo
+            StringBuilder sb2 = new StringBuilder();
+            Pair<String, String> left = this.visit(rightSide.getJmmChild(0));
+            Pair<String, String> right = this.visit(rightSide.getJmmChild(1));
+            String op = rightSide.get("op") + ".i32";
+
+            sb2.append(left.a).append("\n");
+            sb2.append(right.a).append("\n");
+
+            String code = sb2.append(varName).append(".i32").append(" :=.i32 ").append(left.b).append(" ").append(op).append(" ").append(right.b).append(";").toString();
+            return new Pair<>(code, null);
+        }
+
+        Pair<String, String> codePlace = this.visit(rightSide);
         SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
         Type type = symbolTable.findTypeVar(varName, jmmNode);
         String ollirType = getOllirType(type.getName(), type.isArray());
