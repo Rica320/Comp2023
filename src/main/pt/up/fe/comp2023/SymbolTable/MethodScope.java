@@ -51,13 +51,6 @@ public class MethodScope {
         return null;
     }
 
-    public boolean isParameter(String parameterLabel) {
-        for (Symbol p : parameters)
-            if (p.getName().equals(parameterLabel)) return true;
-        return false;
-    }
-
-
     public List<Symbol> getLocalVariables() {
         return new ArrayList<>(localVariables.values());
     }
@@ -72,11 +65,6 @@ public class MethodScope {
         localVariables.put(var.getName(), var);
     }
 
-    public boolean assignVariable(Symbol var) {
-        if (localVariables.containsKey(var.getName())) return false; // already exists
-        localVariables.put(var.getName(), var);
-        return true;
-    }
 
     public boolean hasLocalVariable(String variableName) {
         return localVariables.containsKey(variableName);
@@ -135,5 +123,9 @@ public class MethodScope {
 
     public void clearConstantVars() {
         constVarList.clear();
+    }
+
+    public void removeLocalVar(String var) {
+        localVariables.remove(var);
     }
 }
