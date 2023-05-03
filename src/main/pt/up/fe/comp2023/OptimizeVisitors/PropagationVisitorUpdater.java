@@ -42,7 +42,6 @@ public class PropagationVisitorUpdater extends AJmmVisitor<String, String> {
     }
 
     private String dealWithAssign(JmmNode jmmNode, String s) {
-        var varAux = st.findTypeVar(jmmNode.get("var"));
 
         // If the variable is being assigned a constant, add it to the variables map
         String kind = jmmNode.getJmmChild(0).getKind();
