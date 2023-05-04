@@ -52,7 +52,8 @@ public class MyJasminBackend implements JasminBackend {
     }
 
     private String toJasminType(Type type) {
-        switch (type.toString()) {
+
+        switch (type.getTypeOfElement().toString()) {
             case "VOID" -> {
                 return "V";
             }
@@ -74,7 +75,7 @@ public class MyJasminBackend implements JasminBackend {
                 return "Ljava/lang/String;";
             }
             default -> {
-                return "TypeError(" + type + ")";
+                return "TypeError(" + type.getTypeOfElement() + ")";
             }
         }
     }
