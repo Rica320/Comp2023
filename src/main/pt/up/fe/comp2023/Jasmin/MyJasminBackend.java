@@ -572,12 +572,14 @@ public class MyJasminBackend implements JasminBackend {
 
 
     private void addSingleConditionalBranch(SingleOpCondInstruction instruction) {
-        Operand op = (Operand) instruction.getCondition().getSingleOperand();
+        Element elem = instruction.getCondition().getSingleOperand();
         String label = instruction.getLabel();
 
         if (debug) code.append("\n\t; Executing single op conditional branch\n\t");
         else code.append("\n\t");
-        loadElement(op);
+
+       loadElement(elem); // load variable
+
         code.append("ifne ").append(label).append("\n");
         updateStack(-1); // pop value used for comparison
         if (debug) code.append("\t; End single op conditional branch\n\n");
