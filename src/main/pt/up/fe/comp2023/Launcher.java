@@ -80,6 +80,9 @@ public class Launcher {
         // Generate OLLIR code
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
+        if (!config.get("registerAllocation").equals("-1"))
+            myOllir.optimize(ollirResult);
+
         // ========================= BACKEND JASMIN =========================
 
         // Instantiate MyJasminBackend
@@ -127,15 +130,15 @@ public class Launcher {
         config.put("debug", options.contains("-d") ? "true" : "false");
         config.put("optimize", options.contains("-o") ? "true" : "false");
 
-        int r = 0;
-        Pattern pattern = Pattern.compile("^-r=(\\d+)$");
-        for (String arg : options) {
-            Matcher matcher = pattern.matcher(arg);
-            if (matcher.matches())
-                r = Integer.parseInt(matcher.group(1));
-        }
+        String registerAllocation = options.stream()
+                .filter(option -> option.startsWith("-r"))
+                .findFirst()
+                .orElse("-1");
 
-        config.put("registerAllocation", String.valueOf(r));
+        Matcher matcher = Pattern.compile("-r=(\\d+)").matcher(registerAllocation);
+        String r = matcher.find() ? matcher.group(1) : "-1";
+
+        config.put("registerAllocation", r);
         return config;
     }
 }

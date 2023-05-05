@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2023.OptimizeVisitors.ConstantFolding;
 import pt.up.fe.comp2023.OptimizeVisitors.ConstantPropagation;
+import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 import pt.up.fe.comp2023.OptimizeVisitors.RemoveUnusedVars;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
@@ -58,6 +59,15 @@ public class MyOllir implements JmmOptimization {
 
     @Override
     public OllirResult optimize(OllirResult ollirResult) {
+
+        System.out.println("Optimizing OLLIR code...");
+
+        System.out.println(ollirResult.getOllirClass().getMethods().get(0).getInstructions());
+
+        RegisterAllocation registerAllocation = new RegisterAllocation(ollirResult.getOllirClass());
+
+        registerAllocation.liveliness();
+
         return ollirResult;
     }
 
