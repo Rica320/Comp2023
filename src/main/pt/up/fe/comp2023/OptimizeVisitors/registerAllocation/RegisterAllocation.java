@@ -1,7 +1,7 @@
 package pt.up.fe.comp2023.OptimizeVisitors.registerAllocation;
 
 import org.specs.comp.ollir.ClassUnit;
-import org.specs.comp.ollir.Node;
+import org.specs.comp.ollir.Element;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,39 +26,57 @@ public class RegisterAllocation {
 
             List<GraphNode> nodes = GraphNode.getFromNodes(method.getInstructions());
 
+            int i = 1;
             boolean changed;
             do {
-                changed = false;
+                changed = true;
                 for (GraphNode node : nodes) {
 
-                    Set<Integer> inL = node.getIn(); // in'
-                    Set<Integer> outL = node.getOut(); // out'
+                    Set<Element> inL = node.getIn(); // in'
+                    Set<Element> outL = node.getOut(); // out'
 
 
-                    Set<Integer> use = node.getUse();
-                    Set<Integer> def = node.getDef();
+                    Set<Element> use = node.getUse();
+                    Set<Element> def = node.getDef();
 
                     // in[n] = use[n] U (out[n] - def[n])
-                    Set<Integer> diff = new HashSet<>(node.getOut());
+                    Set<Element> diff = new HashSet<>(node.getOut());
                     diff.removeAll(def);
 
                     use.addAll(diff);
 
                     node.setIn(use);
 
-                    Set<Integer> outAux = new HashSet<>();
+                    Set<Element> outAux = new HashSet<>();
                     for (GraphNode successor : node.getSuccessors()) {
+                        System.out.println("successor: " + successor.getInstruction());
+                        System.out.println(successor.getIn());
+                        System.out.println(successor.getOut());
+                        System.out.println(successor.getUse());
+                        System.out.println(successor.getDef());
+
                         outAux.addAll(successor.getIn());
                     }
-
+                    System.out.println("outAux: " + outAux);
                     node.setOut(outAux); // ver se é necessário
 
+                    System.out.println("nr.Interations: " + i );
                     if (!inL.equals(node.getIn()) || !outL.equals(node.getOut())) {
-                        changed = true;
+                        i++;
+                        changed = false;
                     }
-
                 }
             } while (!changed);
+
+            for (GraphNode node : nodes) {
+                System.out.println(node.getInstruction());
+                System.out.println(node.getInstruction().getClass());
+                System.out.println("in: " + node.getIn());
+                System.out.println("out: " + node.getOut());
+                System.out.println("use: " + node.getUse());
+                System.out.println("def: " + node.getDef());
+                System.out.println();
+            }
 
         });
 

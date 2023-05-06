@@ -1,7 +1,6 @@
 package pt.up.fe.comp2023.OptimizeVisitors.registerAllocation;
 
-import org.specs.comp.ollir.Instruction;
-import org.specs.comp.ollir.Node;
+import org.specs.comp.ollir.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,13 +13,59 @@ public class GraphNode {
 
     private Instruction instruction;
 
-    private final Set<Integer> in = new HashSet<>();
-    private final Set<Integer> out = new HashSet<>();
-    private final Set<Integer> use = new HashSet<>();
-    private final Set<Integer> def = new HashSet<>();
+    private final Set<Element> in = new HashSet<>();
+    private final Set<Element> out = new HashSet<>();
+    private final Set<Element> use = new HashSet<>();
+    private final Set<Element> def = new HashSet<>();
 
     public GraphNode(Instruction instruction) {
         this.instruction = instruction;
+
+
+        switch (instruction.getInstType()) {
+            case CALL -> {
+            }
+            case BRANCH -> {
+
+            }
+            case RETURN -> {
+                ReturnInstruction returnInstruction = (ReturnInstruction) instruction;
+                addUse(returnInstruction.getOperand());
+            }
+            case GOTO -> {
+            }
+            case ASSIGN -> {
+                AssignInstruction assignInstruction = (AssignInstruction) instruction;
+                if (assignInstruction.getRhs().getInstType() == InstructionType.NOPER) {
+                    addUse(((SingleOpInstruction) assignInstruction.getRhs()).getSingleOperand());
+                }
+                addDef(assignInstruction.getDest());
+            }
+            case PUTFIELD -> {
+
+            }
+            case GETFIELD -> {
+
+            }
+            case UNARYOPER -> {
+
+            }
+            case BINARYOPER -> {
+
+            }
+            case NOPER -> {
+
+            }
+
+        }
+    }
+
+    public void addDef(Element var) {
+        def.add(var);
+    }
+
+    public void addUse(Element var) {
+        use.add(var);
     }
 
     public void addPredecessor(GraphNode predecessor) {
@@ -43,26 +88,40 @@ public class GraphNode {
         return instruction;
     }
 
-    public Set<Integer> getIn() {
+    public Set<Element> getIn() {
         return in;
     }
 
-    public Set<Integer> getOut() {
+    public Set<Element> getOut() {
         return out;
     }
 
-    public Set<Integer> getUse() {
+    public Set<Element> getUse() {
         return use;
     }
 
-    public Set<Integer> getDef() {
+    public Set<Element> getDef() {
         return def;
     }
 
     static List<GraphNode> getFromNodes(List<Instruction> instructions) {
         List<GraphNode> nodes = new ArrayList<>();
+        ///List<Integer> ids = new ArrayList<>();
         for (Instruction instruction : instructions) {
             nodes.add(new GraphNode(instruction));
+           // ids.add(instruction.getId());
+        }
+        for (GraphNode node : nodes) { // TODO: n é o melhor em termos de alg
+            for (Node successor : instructions) {
+                if (successor.getSuccessors().contains(node.getInstruction())) {
+                    node.addPredecessor(nodes.get(successor.getId() - 1));
+                }
+            }
+            for (Node predecessor : instructions) {
+                if (predecessor.getPredecessors().contains(node.getInstruction())) {
+                    node.addSuccessor(nodes.get(predecessor.getId() - 1));
+                }
+            }
         }
         return nodes;
     }
@@ -72,12 +131,12 @@ public class GraphNode {
         return instruction.toString();
     }
 
-    public void setOut(Set<Integer> out) {
+    public void setOut(Set<Element> out) {
         this.out.clear();
         this.out.addAll(out);
     }
 
-    public void setIn(Set<Integer> in) {
+    public void setIn(Set<Element> in) {
         this.in.clear();
         this.in.addAll(in);
     }
