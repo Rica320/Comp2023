@@ -45,8 +45,6 @@ public class MyOllir implements JmmOptimization {
 
         SymbolTable symbolTable = jmmSemanticsResult.getSymbolTable();
 
-        // TODO: está aqui o valor de registos para usares ricardo
-        int regNumAlloc = Integer.parseInt(jmmSemanticsResult.getConfig().getOrDefault("registerAllocation", "0"));
 
         MyOllirVisitor myOllirVisitor = new MyOllirVisitor(symbolTable);
 
@@ -64,9 +62,14 @@ public class MyOllir implements JmmOptimization {
 
         System.out.println(ollirResult.getOllirClass().getMethods().get(0).getInstructions());
 
-        RegisterAllocation registerAllocation = new RegisterAllocation(ollirResult.getOllirClass());
 
-        registerAllocation.liveliness();
+        int regNumAlloc = Integer.parseInt(ollirResult.getConfig()
+                .getOrDefault("registerAllocation", "-1"));
+
+        if (regNumAlloc >= 0) {
+            RegisterAllocation registerAllocation = new RegisterAllocation(ollirResult.getOllirClass());
+            registerAllocation.run();
+        }
 
         return ollirResult;
     }

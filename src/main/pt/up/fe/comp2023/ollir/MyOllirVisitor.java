@@ -556,11 +556,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         StringBuilder sb = new StringBuilder();
         for (Symbol symbol : symbols) {
             Type type = symbol.getType();
-            if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean"))) {
-                sb.append(symbol.getName()).append(".").append(getOllirType(type.getName(), type.isArray()));
-                sb.append(" :=.").append(getOllirType(type.getName(), type.isArray())).append(" 0.");
-                sb.append(getOllirType(type.getName(), type.isArray())).append(";\n");
-            }
+            // TODO: FALAR COM PROFESSOR
+            // if (!type.isArray() && (type.getName().equals("int") || type.getName().equals("boolean"))) {
+            //     sb.append(symbol.getName()).append(".").append(getOllirType(type.getName(), type.isArray()));
+            //     sb.append(" :=.").append(getOllirType(type.getName(), type.isArray())).append(" 0.");
+            //     sb.append(getOllirType(type.getName(), type.isArray())).append(";\n");
+            // }
 
         }
         return sb.toString();
