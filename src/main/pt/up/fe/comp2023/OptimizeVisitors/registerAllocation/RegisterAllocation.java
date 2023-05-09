@@ -19,7 +19,7 @@ public class RegisterAllocation {
     }
 
     public void run() {
-        classUnit.getMethods().forEach(method -> {
+        for (Method method : classUnit.getMethods()) {
             System.out.println("method: " + method.getMethodName());
             List<GraphNode> nodes = liveliness(method);
 
@@ -27,7 +27,7 @@ public class RegisterAllocation {
 
             coloring(interferenceGraph);
             System.out.println(interferenceGraph);
-        });
+        }
     }
 
     public InterferenceGraph interferenceGraph(List<GraphNode> nodes) {
@@ -76,12 +76,11 @@ public class RegisterAllocation {
     public void colorNodes(Stack<InterferenceGraph.InterNode> stack) {
         while (!stack.isEmpty()) {
             InterferenceGraph.InterNode node = stack.pop();
-            int color = node.getDegree();
+            int color = 0;
             for (InterferenceGraph.InterNode neighbor : node.edges) {
-                if (neighbor.getDegree() == color) {
+                if (neighbor.id.equals("color" + color)) {
                     color++;
                 }
-                neighbor.incrementDegree();
             }
             node.setColor(color);
         }
@@ -112,9 +111,10 @@ public class RegisterAllocation {
             node.takeFromGraph();
             stack.push(node);
         }
+
         colorNodes(stack);
 
-        // TODO : spilling
+        //TODO : spilling
 
 
         return 0;

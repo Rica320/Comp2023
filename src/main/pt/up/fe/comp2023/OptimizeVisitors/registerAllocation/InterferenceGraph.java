@@ -9,7 +9,7 @@ public class InterferenceGraph {
     Map<String, InterNode> nodes = new HashMap<>(); // TODO: aqui teve que ser com string porque o equals n estava a dar para Element
 
     public class InterNode {
-        List<InterNode> edges = new ArrayList<>();
+        public List<InterNode> edges = new ArrayList<>();
         int degree = -1;
         String id;
 
@@ -56,7 +56,7 @@ public class InterferenceGraph {
     }
      // https://gateoverflow.in/78311/how-to-draw-register-allocation-interference-graph
     public void addNode(Element element) {
-        InterNode node = nodes.get(element);
+        InterNode node = nodes.get(element.toString());
         if (node == null) {
             node = new InterNode(element.toString());
             nodes.put(element.toString(), node);
@@ -65,7 +65,7 @@ public class InterferenceGraph {
 
     public void addEdge(Element element, Element element1) {
 
-        if (! element.equals(element1)) {
+        if (! element.toString().equals(element1.toString())) {
             InterNode node = nodes.get(element.toString());
             InterNode node1 = nodes.get(element1.toString());
 
