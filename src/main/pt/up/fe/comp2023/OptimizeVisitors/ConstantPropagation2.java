@@ -94,11 +94,11 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
     }
 
     private void removeNode(JmmNode node) {
-        JmmNode parent = node.getJmmParent();
+       /* JmmNode parent = node.getJmmParent();
         if (parent == null) return;
         parent.removeJmmChild(node);
         st.getCurrentMethodScope().removeLocalVar(node.get("var")); // Remove the variable from the symbol table as well
-        this.changed = true;
+        this.changed = true;*/
     }
 
     private String dealWithVarDcl(JmmNode jmmNode, String s) {
