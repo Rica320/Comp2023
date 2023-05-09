@@ -7,6 +7,8 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MyJasminBackend implements JasminBackend {
 
@@ -193,17 +195,52 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            if (this.regNumAlloc <= 0)
+            if (this.regNumAlloc < 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1),
                         this.maxStack);
             else {
-                updateMethodLimits(this.regNumAlloc, this.maxStack);
+                if (regNumAlloc > 0)
+                    updateMethodLimits(this.regNumAlloc, this.maxStack);
+                else {
+                    int maxLocals = RegisterAllocation.nrC.values().stream().max(Integer::compareTo).get();
 
+                    updateMethodLimits(maxLocals, this.maxStack);
+                }
+                // int maxLocals = 0;
+                // Set<Integer> regs = new HashSet<>();
+                // for (Descriptor f : currVarTable.values()) {
+                //     regs.add(f.getVirtualReg());
+                // }
+                // System.out.println("regs: " + regs);
+                // maxLocals = regs.size();
+                // updateMethodLimits(maxLocals, this.maxStack);
                 //int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
                 //if (regNumAlloc != 0)
                 //    maxLocals = regNumAlloc;
                 //updateMethodLimits( maxLocals == 0? 1:maxLocals, this.maxStack);
             }
+            /*
+            if (this.regNumAlloc <= 0)
+                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1),
+                        this.maxStack);
+            else {
+                //int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
+                int maxLocals = 0;
+                if (regNumAlloc != 0)
+                    maxLocals = regNumAlloc;
+                else {
+                    Set<Integer> regs = new HashSet<>();
+                    for (Descriptor f : currVarTable.values()) {
+                        regs.add(f.getVirtualReg());
+                    }
+                    System.out.println("regs: " + regs);
+                    maxLocals = regs.size();
+                    // maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
+                }
+
+                updateMethodLimits( maxLocals, this.maxStack);
+            }
+             */
             currVarTable = null;
 
             code.append(".end method\n\n");
