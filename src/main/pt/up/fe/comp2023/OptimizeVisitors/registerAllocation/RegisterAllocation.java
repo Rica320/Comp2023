@@ -11,6 +11,7 @@ public class RegisterAllocation {
     int nr_registers;
     private ClassUnit classUnit;
     HashMap<String, Descriptor> descriptors;
+    public static Map<String, Integer> nrC = new HashMap<>();
     Method currentMethod;
 
     public RegisterAllocation(ClassUnit classUnit, int nr_registers) {
@@ -27,7 +28,8 @@ public class RegisterAllocation {
 
             InterferenceGraph interferenceGraph = interferenceGraph(nodes);
 
-            coloring(interferenceGraph);
+            int nr_colors = coloring(interferenceGraph);
+            nrC.put(method.getMethodName(), nr_colors);
             System.out.println(interferenceGraph);
         }
     }
@@ -77,17 +79,21 @@ public class RegisterAllocation {
         return nodes;
     }
 
-    public void colorNodes(Stack<InterferenceGraph.InterNode> stack) {
+    public int colorNodes(Stack<InterferenceGraph.InterNode> stack) {
+        Set<Integer> colors = new HashSet<>();
         while (!stack.isEmpty()) {
             InterferenceGraph.InterNode node = stack.pop();
-            int color = currentMethod.getParams().size() + (currentMethod.isStaticMethod() ? 0 : 1);
+            int color = 0;
             for (InterferenceGraph.InterNode neighbor : node.edges) {
                 if (neighbor.id.equals("color" + color)) {
                     color++;
                 }
             }
+            colors.add(color);
             node.setColor(color, this.descriptors);
         }
+        System.out.println("colors: " + colors);
+        return colors.size();
     }
 
     public int coloring(InterferenceGraph interferenceGraph) {
@@ -116,12 +122,12 @@ public class RegisterAllocation {
             stack.push(node);
         }
 
-        colorNodes(stack);
+        int colorsUsed = colorNodes(stack);
 
-        //TODO : spilling
+        //TODO : spilling ... should we do it ?
 
 
-        return 0;
+        return colorsUsed;
     }
 
     public List<GraphNode> liveliness(Method method) {

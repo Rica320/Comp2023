@@ -4,6 +4,7 @@ import org.specs.comp.ollir.*;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -23,7 +24,7 @@ public class MyJasminBackend implements JasminBackend {
     int currentStack = 0;
     int maxStack = 0;
 
-    int regNumAlloc = 0;
+    int regNumAlloc = -1;
 
     private void resetStack() {
         this.currentStack = 0;
@@ -193,10 +194,11 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            if (this.regNumAlloc <= 0)
+            if (this.regNumAlloc < 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             else {
-                updateMethodLimits(this.regNumAlloc, this.maxStack);
+                int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
+                updateMethodLimits( maxLocals == 0? 1:maxLocals, this.maxStack);
             }
             currVarTable = null;
 
@@ -744,7 +746,7 @@ public class MyJasminBackend implements JasminBackend {
 
         var config = ollirResult.getConfig();
         this.debug = config.getOrDefault("debug", "false").equals("true");
-        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "0"));
+        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "-1"));
 
         addHeaders();
         addFields();
