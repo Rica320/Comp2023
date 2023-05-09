@@ -196,7 +196,12 @@ public class MyJasminBackend implements JasminBackend {
             if (this.regNumAlloc < 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             else {
-                int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
+
+//                int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
+                int maxLocals = RegisterAllocation.nrC.values().stream().max(Integer::compareTo).get();
+
+                if (regNumAlloc != 0)
+                    maxLocals = regNumAlloc;
                 updateMethodLimits( maxLocals == 0? 1:maxLocals, this.maxStack);
             }
             currVarTable = null;
