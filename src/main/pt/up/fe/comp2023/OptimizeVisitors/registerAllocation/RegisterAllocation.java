@@ -83,7 +83,7 @@ public class RegisterAllocation {
         Set<Integer> colors = new HashSet<>();
         while (!stack.isEmpty()) {
             InterferenceGraph.InterNode node = stack.pop();
-            int color = 0;
+            int color = currentMethod.getParams().size() + (currentMethod.isStaticMethod() ? 0 : 1);
             for (InterferenceGraph.InterNode neighbor : node.edges) {
                 if (neighbor.id.equals("color" + color)) {
                     color++;
