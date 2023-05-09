@@ -80,6 +80,8 @@ public class Launcher {
         // Generate OLLIR code
         OllirResult ollirResult = myOllir.toOllir(analyserResult);
 
+        if(isDebug) System.out.println(ollirResult.getOllirCode());
+
         if (!config.get("registerAllocation").equals("-1"))
             myOllir.optimize(ollirResult);
 
