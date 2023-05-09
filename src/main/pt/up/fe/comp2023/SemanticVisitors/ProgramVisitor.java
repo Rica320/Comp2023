@@ -63,6 +63,11 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
                 visit(child, "");
             }
         }
+
+        // check if extended class is in import
+        if (jmmNode.hasAttribute("superName")) if (!st.getImports().contains(jmmNode.get("superName")))
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Class is extending '" + jmmNode.get("superName") + "' but it doesn't import that class"));
+
         return null;
     }
 
@@ -76,11 +81,7 @@ public class ProgramVisitor extends AJmmVisitor<String, Type> {
         Type retType = expressionVisitor.visit(jmmNode.getJmmChild(0));
 
         if (!retType.getName().equals("importCorrect") && !retType.equals(st.getCurrentMethodScope().getReturnType())) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC,
-                    Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")),
-                    "Return type does not match method return type"
-                            + "\nreturn type: " + st.getCurrentMethodScope().getReturnType().getName()
-                            + "\nmethod return type: " + retType.getName() + "\nmethod name: " + st.getCurrentMethod()));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, Integer.parseInt(jmmNode.get("lineStart")), Integer.parseInt(jmmNode.get("colStart")), "Return type does not match method return type" + "\nreturn type: " + st.getCurrentMethodScope().getReturnType().getName() + "\nmethod return type: " + retType.getName() + "\nmethod name: " + st.getCurrentMethod()));
         }
         return new Type("null", false);
     }
