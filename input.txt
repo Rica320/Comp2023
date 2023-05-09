@@ -4,24 +4,19 @@ class Simple {
 
     public static void main(String[] args) {
 
-
-
+        int b;
         int a;
 
-        a = 5;
+        a = 3;
+        b = 1 + a;
 
-        a = a + 127;
-        a = a - 127;
-        a = 127 + a;
-        a = 127 - a;
 
+        io.println(b);
 
 
 
 
-
-        /*
-
+/*
         int i;
         int a;
 
@@ -51,9 +46,7 @@ class Simple {
                    i = i - 1;
                 }
         }else{}
-        */
-
-
+       */
     }
 
 
