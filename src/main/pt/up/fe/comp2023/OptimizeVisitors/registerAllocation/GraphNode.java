@@ -55,11 +55,11 @@ public class GraphNode {
             }
             case PUTFIELD -> {
                 PutFieldInstruction putFieldInstruction = (PutFieldInstruction) instruction;
-                //this.addUseIfNotLiteral(putFieldInstruction.getOperands());
+                this.addUseIfNotLiteral(putFieldInstruction.getOperands());
             }
             case GETFIELD -> {
                 GetFieldInstruction getFieldInstruction = (GetFieldInstruction) instruction;
-                //this.addUseIfNotLiteral(getFieldInstruction.getOperands());
+                this.addUseIfNotLiteral(getFieldInstruction.getOperands());
             }
             case UNARYOPER -> {
                 UnaryOpInstruction unaryOpInstruction = (UnaryOpInstruction) instruction;
