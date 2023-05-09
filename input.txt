@@ -1,26 +1,59 @@
 import io;
 
-class Simple extends lolito {
+class Simple {
 
     public static void main(String[] args) {
+
+
+
+        int a;
+
+        a = 5;
+
+        a = a + 127;
+        a = a - 127;
+        a = 127 + a;
+        a = 127 - a;
+
+
+
+
+
+
+        /*
 
         int i;
         int a;
 
-        i= 0;
-        a = 0;
-        if (i < 10) {
-            io.println(a);
-        } else {
-            io.println(a);
-        }
+        i = 5;
+        a = 5;
 
-        while(i < 0){
+        if(a <  10){
+            while(0 < i){
 
-           io.println(i);
+                    if (i < 3) {
 
-           i = i + 1;
-        }
+                        while (0 < a ){
+                            io.println(a);
+                            a = a - 1;
+                        }
+                       a = 5;
+
+                    } else {
+
+                       while (0 < a ){
+                                io.println(a);
+                                a = a - 1;
+                            }
+                       a = 3;
+                    }
+
+                   i = i - 1;
+                }
+        }else{}
+        */
+
+
     }
 
 
