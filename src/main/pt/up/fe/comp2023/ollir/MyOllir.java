@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2023.OptimizeVisitors.ConstantFolding;
 import pt.up.fe.comp2023.OptimizeVisitors.ConstantPropagation;
+import pt.up.fe.comp2023.OptimizeVisitors.ConstantPropagation2;
 import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 import pt.up.fe.comp2023.OptimizeVisitors.RemoveUnusedVars;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
@@ -26,6 +27,7 @@ public class MyOllir implements JmmOptimization {
         MySymbolTable symbolTable = (MySymbolTable) analyserResult.getSymbolTable();
         ConstantFolding constantFolding = new ConstantFolding();
         ConstantPropagation constantPropagation = new ConstantPropagation(symbolTable);
+        ConstantPropagation2 constantPropagation2 = new ConstantPropagation2(symbolTable);
         RemoveUnusedVars removeUnusedVars = new RemoveUnusedVars(symbolTable);
 
         do {
@@ -33,7 +35,9 @@ public class MyOllir implements JmmOptimization {
             if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
             analyserResult = constantPropagation.optimize(analyserResult);
             if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
-           // analyserResult = removeUnusedVars.optimize(analyserResult);
+            analyserResult = constantPropagation2.optimize(analyserResult);
+            if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
+            analyserResult = removeUnusedVars.optimize(analyserResult);
             if (isDebug) System.out.println(analyserResult.getRootNode().toTree());
         } while (constantFolding.isChanged() || constantPropagation.isChanged() || removeUnusedVars.isChanged());
 

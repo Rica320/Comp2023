@@ -8,10 +8,12 @@ class Simple {
         int a;
 
         a = 3;
-        b = 1 + a;
 
+        io.println(a);
 
-        io.println(b);
+        a = 5;
+
+        io.println(a);
 
 
 
