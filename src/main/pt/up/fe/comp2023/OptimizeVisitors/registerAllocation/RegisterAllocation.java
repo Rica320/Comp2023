@@ -1,8 +1,6 @@
 package pt.up.fe.comp2023.OptimizeVisitors.registerAllocation;
 
-import org.specs.comp.ollir.ClassUnit;
-import org.specs.comp.ollir.Element;
-import org.specs.comp.ollir.Method;
+import org.specs.comp.ollir.*;
 
 import java.util.*;
 
@@ -12,6 +10,8 @@ public class RegisterAllocation {
 
     int nr_registers;
     private ClassUnit classUnit;
+    HashMap<String, Descriptor> descriptors;
+    Method currentMethod;
 
     public RegisterAllocation(ClassUnit classUnit, int nr_registers) {
         this.classUnit = classUnit;
@@ -21,6 +21,8 @@ public class RegisterAllocation {
     public void run() {
         for (Method method : classUnit.getMethods()) {
             System.out.println("method: " + method.getMethodName());
+            this.descriptors = method.getVarTable();
+            this.currentMethod = method;
             List<GraphNode> nodes = liveliness(method);
 
             InterferenceGraph interferenceGraph = interferenceGraph(nodes);
@@ -41,8 +43,10 @@ public class RegisterAllocation {
 
 
             for (Element defElement : def) {
+                if (defElement == null) continue;
                 interferenceGraph.addNode(defElement);
                 for (Element useElement : out) {
+                    if (useElement == null) continue;
                     interferenceGraph.addNode(useElement);
                     interferenceGraph.addEdge(defElement, useElement);
                 }
@@ -76,13 +80,13 @@ public class RegisterAllocation {
     public void colorNodes(Stack<InterferenceGraph.InterNode> stack) {
         while (!stack.isEmpty()) {
             InterferenceGraph.InterNode node = stack.pop();
-            int color = 0;
+            int color = currentMethod.getParams().size() + (currentMethod.isStaticMethod() ? 0 : 1);
             for (InterferenceGraph.InterNode neighbor : node.edges) {
                 if (neighbor.id.equals("color" + color)) {
                     color++;
                 }
             }
-            node.setColor(color);
+            node.setColor(color, this.descriptors);
         }
     }
 

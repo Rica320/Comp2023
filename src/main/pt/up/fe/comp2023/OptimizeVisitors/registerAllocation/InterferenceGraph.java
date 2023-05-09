@@ -1,6 +1,8 @@
 package pt.up.fe.comp2023.OptimizeVisitors.registerAllocation;
 
+import org.specs.comp.ollir.Descriptor;
 import org.specs.comp.ollir.Element;
+import org.specs.comp.ollir.Operand;
 
 import java.util.*;
 
@@ -12,9 +14,11 @@ public class InterferenceGraph {
         public List<InterNode> edges = new ArrayList<>();
         int degree = -1;
         String id;
+        Element element;
 
-        public InterNode(String id) {
+        public InterNode(String id, Element element) {
             this.id = id;
+            this.element = element;
         }
 
         public void addEdge(InterNode node) {
@@ -37,8 +41,14 @@ public class InterferenceGraph {
             if (degree > 0) degree--;
         }
 
-        public void setColor(int degree) {
+        public void setColor(int degree, HashMap<String, Descriptor> descriptors) {
             id = "color" + degree;
+            Operand operand = (Operand) element;
+            Descriptor descriptor = descriptors.get(operand.getName());
+            System.out.println("Descriptor: " + descriptor.getVirtualReg());
+            descriptor.setVirtualReg(degree);
+            System.out.println("Descriptor: " + descriptor.getVirtualReg());
+            //operand.setName(id);
         }
 
         public void incrementDegree() {
@@ -58,7 +68,7 @@ public class InterferenceGraph {
     public void addNode(Element element) {
         InterNode node = nodes.get(element.toString());
         if (node == null) {
-            node = new InterNode(element.toString());
+            node = new InterNode(element.toString(), element);
             nodes.put(element.toString(), node);
         }
     }

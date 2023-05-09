@@ -6,6 +6,7 @@ import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 public class MyJasminBackend implements JasminBackend {
 
@@ -194,7 +195,9 @@ public class MyJasminBackend implements JasminBackend {
 
             if (this.regNumAlloc == 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
-
+            else {
+                updateMethodLimits(this.regNumAlloc, this.maxStack);
+            }
             currVarTable = null;
 
             code.append(".end method\n\n");
