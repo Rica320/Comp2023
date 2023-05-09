@@ -193,7 +193,7 @@ public class MyJasminBackend implements JasminBackend {
                 code.append("\n");
             });
 
-            if (this.regNumAlloc == 0)
+            if (this.regNumAlloc <= 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             else {
                 updateMethodLimits(this.regNumAlloc, this.maxStack);

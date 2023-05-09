@@ -43,11 +43,10 @@ public class InterferenceGraph {
 
         public void setColor(int degree, HashMap<String, Descriptor> descriptors) {
             id = "color" + degree;
+
             Operand operand = (Operand) element;
             Descriptor descriptor = descriptors.get(operand.getName());
-            System.out.println("Descriptor: " + descriptor.getVirtualReg());
             descriptor.setVirtualReg(degree);
-            System.out.println("Descriptor: " + descriptor.getVirtualReg());
             //operand.setName(id);
         }
 

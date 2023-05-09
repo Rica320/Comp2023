@@ -1,16 +1,28 @@
-class RegAlloc {
-    public int soManyRegisters(int arg){
-       int a;
-       int b;
-       int c;
-       int d;
-       a = 0;
-       b = a;
-       c = b;
-       d = c;
-       return d;
+import io;
+
+class Simple {
+
+    public static void main(String[] args) {
+
+        int i;
+        int a;
+
+        i= 0;
+        a = 0;
+        if (i < 10) {
+            io.println(a);
+        } else {
+            io.println(a);
+        }
+
+        while(i < 10){
+
+           io.println(i);
+
+           i = i + 1;
+        }
     }
 
-	public static void main(String[] args) {
-	}
+
 }
+

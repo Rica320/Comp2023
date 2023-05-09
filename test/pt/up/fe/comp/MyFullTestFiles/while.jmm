@@ -6,6 +6,8 @@ class Simple {
 
         int i;
 
+        i = 0;
+
         while(i < 10){
 
            io.println(i);
