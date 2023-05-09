@@ -4,18 +4,18 @@ import org.specs.comp.ollir.ClassUnit;
 import org.specs.comp.ollir.Element;
 import org.specs.comp.ollir.Method;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class RegisterAllocation {
 
     // https://www.cs.purdue.edu/homes/hosking/502/notes/08-reg.pdf
 
+    int nr_registers;
     private ClassUnit classUnit;
 
-    public RegisterAllocation(ClassUnit classUnit) {
+    public RegisterAllocation(ClassUnit classUnit, int nr_registers) {
         this.classUnit = classUnit;
+        this.nr_registers = nr_registers;
     }
 
     public void run() {
@@ -24,11 +24,14 @@ public class RegisterAllocation {
             List<GraphNode> nodes = liveliness(method);
 
             InterferenceGraph interferenceGraph = interferenceGraph(nodes);
+
+            coloring(interferenceGraph);
             System.out.println(interferenceGraph);
         });
     }
 
     public InterferenceGraph interferenceGraph(List<GraphNode> nodes) {
+        // ...https://www.hcltech.com/sites/default/files/documents/resources/whitepaper/files/register_allocation_via_graph_coloring_meena_jain_-_v2.0.pdf
 
         InterferenceGraph interferenceGraph = new InterferenceGraph();
 
@@ -46,11 +49,75 @@ public class RegisterAllocation {
             }
         }
 
-        System.out.println(interferenceGraph);
-
         return interferenceGraph;
+    }
+
+    public InterferenceGraph.InterNode getLowestDegreeNode(InterferenceGraph interferenceGraph) {
+        InterferenceGraph.InterNode lowestDegreeNode = null;
+        for (InterferenceGraph.InterNode node : interferenceGraph.nodes.values()) {
+            if (node.getDegree() < nr_registers && node.getDegree() != -1) {
+                nr_registers = node.getDegree();
+                lowestDegreeNode = node;
+            }
+        }
+        return lowestDegreeNode;
+    }
+
+    public List<InterferenceGraph.InterNode> spillingNodes(InterferenceGraph interferenceGraph) {
+        List<InterferenceGraph.InterNode> nodes = new ArrayList<>();
+        for (InterferenceGraph.InterNode node : interferenceGraph.nodes.values()) {
+            if (node.getDegree() >= nr_registers) {
+                nodes.add(node);
+            }
+        }
+        return nodes;
+    }
+
+    public void colorNodes(Stack<InterferenceGraph.InterNode> stack) {
+        while (!stack.isEmpty()) {
+            InterferenceGraph.InterNode node = stack.pop();
+            int color = node.getDegree();
+            for (InterferenceGraph.InterNode neighbor : node.edges) {
+                if (neighbor.getDegree() == color) {
+                    color++;
+                }
+                neighbor.incrementDegree();
+            }
+            node.setColor(color);
+        }
+    }
+
+    public int coloring(InterferenceGraph interferenceGraph) {
+
+        Stack<InterferenceGraph.InterNode> stack = new Stack<>();
 
 
+        do {
+            InterferenceGraph.InterNode lowestDegreeNode = getLowestDegreeNode(interferenceGraph);
+            if (lowestDegreeNode == null) {
+                break;
+            }
+
+            for (InterferenceGraph.InterNode node : lowestDegreeNode.edges) {
+                node.decrementDegree();
+            }
+            lowestDegreeNode.takeFromGraph();
+            stack.push(lowestDegreeNode);
+
+        } while (true);
+
+        List<InterferenceGraph.InterNode> toSplit = spillingNodes(interferenceGraph);
+
+        for (InterferenceGraph.InterNode node : toSplit) {
+            node.takeFromGraph();
+            stack.push(node);
+        }
+        colorNodes(stack);
+
+        // TODO : spilling
+
+
+        return 0;
     }
 
     public List<GraphNode> liveliness(Method method) {
@@ -59,7 +126,6 @@ public class RegisterAllocation {
 
         List<GraphNode> nodes = GraphNode.getFromNodes(method.getInstructions());
 
-        int i = 1;
         boolean changed;
         do {
             changed = true;
@@ -84,10 +150,9 @@ public class RegisterAllocation {
                 for (GraphNode successor : node.getSuccessors()) {
                     outAux.addAll(successor.getIn());
                 }
-                node.setOut(outAux); // ver se é necessário
+                node.setOut(outAux);
 
                 if (!inL.equals(node.getIn()) || !outL.equals(node.getOut())) {
-                    i++;
                     changed = false;
                 }
             }

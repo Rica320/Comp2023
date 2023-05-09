@@ -67,7 +67,7 @@ public class MyOllir implements JmmOptimization {
                 .getOrDefault("registerAllocation", "-1"));
 
         if (regNumAlloc >= 0) {
-            RegisterAllocation registerAllocation = new RegisterAllocation(ollirResult.getOllirClass());
+            RegisterAllocation registerAllocation = new RegisterAllocation(ollirResult.getOllirClass(), regNumAlloc);
             registerAllocation.run();
         }
 

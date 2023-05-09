@@ -10,6 +10,7 @@ public class InterferenceGraph {
 
     public class InterNode {
         List<InterNode> edges = new ArrayList<>();
+        int degree = -1;
         String id;
 
         public InterNode(String id) {
@@ -17,9 +18,37 @@ public class InterferenceGraph {
         }
 
         public void addEdge(InterNode node) {
+            if (degree == -1)
+                degree = 1;
+            else
+                degree++;
             edges.add(node);
         }
 
+        public int getDegree() {
+            return degree;
+        }
+
+        public void takeFromGraph() {
+            degree = -1;
+        }
+
+        public void decrementDegree() {
+            if (degree > 0) degree--;
+        }
+
+        public void setColor(int degree) {
+            id = "color" + degree;
+        }
+
+        public void incrementDegree() {
+            degree++;
+        }
+
+        @Override
+        public String toString() {
+            return id;
+        }
     }
 
     public InterferenceGraph() {
