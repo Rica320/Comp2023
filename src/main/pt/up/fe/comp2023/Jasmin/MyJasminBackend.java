@@ -7,7 +7,6 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
-import java.util.stream.Collectors;
 
 public class MyJasminBackend implements JasminBackend {
 
@@ -281,7 +280,11 @@ public class MyJasminBackend implements JasminBackend {
             LiteralElement left = (LiteralElement) l;
             int value = Integer.parseInt(left.getLiteral());
 
-            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+            // N +- X
+
+            // iinc only supports values between -128 and 127
+            if (value > 128) return false;
+            else if (value == 128 && opSign.equals(" + ")) return false;
 
             // cases like N-X cant be done with iinc
             if (opSign.equals(" - ")) return false;
@@ -299,7 +302,11 @@ public class MyJasminBackend implements JasminBackend {
             LiteralElement right = (LiteralElement) r;
             int value = Integer.parseInt(right.getLiteral());
 
-            if (value >= 128 || value <= -129) return false; // iinc only supports values between -128 and 127
+            // X +- N
+
+            // iinc only supports values between -128 and 127
+            if (value > 128) return false;
+            else if (value == 128 && opSign.equals(" + ")) return false;
 
             // check if non literal is dest
             if (left.getName().equals(dest.getName())) {
@@ -584,7 +591,7 @@ public class MyJasminBackend implements JasminBackend {
         if (debug) code.append("\n\t; Executing single op conditional branch\n\t");
         else code.append("\n\t");
 
-       loadElement(elem); // load variable
+        loadElement(elem); // load variable
 
         code.append("ifne ").append(label).append("\n");
         updateStack(-1); // pop value used for comparison
