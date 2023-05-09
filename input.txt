@@ -2,63 +2,76 @@ import io;
 
 class Simple {
 
-    public static void main(String[] args) {
-
-        int b;
+    public int ground(){
         int a;
+        a = 3;
 
-        a = 9;
+        io.println(a); // 3
 
-        io.println(a);
+        a = 2;
 
-        a = 15;
+        io.println(a); // 2
 
-        io.println(a);
-
-        a = 11;
-
-        if (a < 10) {
-            io.println(a-1);
-        } else {
-            io.println(a+1);
-        }
-
-
-
-
-/*
-        int i;
-        int a;
-
-        i = 5;
-        a = 5;
-
-        if(a <  10){
-            while(0 < i){
-
-                    if (i < 3) {
-
-                        while (0 < a ){
-                            io.println(a);
-                            a = a - 1;
-                        }
-                       a = 5;
-
-                    } else {
-
-                       while (0 < a ){
-                                io.println(a);
-                                a = a - 1;
-                            }
-                       a = 3;
-                    }
-
-                   i = i - 1;
-                }
-        }else{}
-       */
+        return 0;
     }
 
+    public int noInner(){
+        int a;
+        a = 3;
+
+        if(0<1){
+           io.println(a); // 3
+        }else{
+           io.println(a); // 3
+        }
+
+        io.println(a); // 3
+
+        a = 2;
+
+        while(0<1){
+           io.println(a); // 2
+        }
+
+        io.println(a); // 2
+
+        return 0;
+    }
+
+    public static void main(String[] args) {
+        int a;
+        a = 3;
+
+        io.println(a); // 3
+
+        if(0<1){
+           a = 5;
+           io.println(a); // 5
+        }else{
+           io.println(a); // 3
+        }
+
+        io.println(a); // ???
+
+        a = 2;
+
+        io.println(a); // 2
+
+        while(0<1){
+            io.println(a); // 2
+
+            a = 8;
+
+            io.println(a); // 8
+        }
+
+        io.println(a); // ???
+
+        a = 7;
+
+        io.println(a); // 7
+
+    }
 
 }
 
