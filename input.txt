@@ -7,13 +7,21 @@ class Simple {
         int b;
         int a;
 
-        a = 3;
+        a = 9;
 
         io.println(a);
 
-        a = 5;
+        a = 15;
 
         io.println(a);
+
+        a = 11;
+
+        if (a < 10) {
+            io.println(a-1);
+        } else {
+            io.println(a+1);
+        }
 
 
 

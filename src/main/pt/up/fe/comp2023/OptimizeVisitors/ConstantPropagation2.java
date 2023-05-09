@@ -9,12 +9,14 @@ import pt.up.fe.comp.jmm.ast.JmmNodeImpl;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ConstantPropagation2 extends AJmmVisitor<String, String> {
 
-
     private final List<Pair<String, Triple<String, Integer, Integer>>> vars = new ArrayList<>(); // varName, varKind, varScope, varValue
+    Set<String> constantVars = new HashSet<>();
     MySymbolTable st;
     private boolean changed = false;
     private int scope = 0;
@@ -54,6 +56,7 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         addVisit("MethodDecl", this::dealWithMethod);
         addVisit("Var", this::dealWithVar);
         addVisit("Assign", this::dealWithAssign);
+        addVisit("VarDcl", this::dealWithVarDcl);
         addVisit("Scope", this::dealWithScope);
         setDefaultVisit(this::defaultVisit);
     }
@@ -75,6 +78,7 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         scope = 0;
         defaultVisit(jmmNode, s);
         vars.clear();
+        constantVars.clear();
         st.setCurrentMethod(null);
         return null;
     }
@@ -84,7 +88,24 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         scope = 0;
         defaultVisit(jmmNode, s);
         vars.clear();
+        constantVars.clear();
         st.setCurrentMethod(null);
+        return null;
+    }
+
+    private void removeNode(JmmNode node) {
+        JmmNode parent = node.getJmmParent();
+        if (parent == null) return;
+        parent.removeJmmChild(node);
+        st.getCurrentMethodScope().removeLocalVar(node.get("var")); // Remove the variable from the symbol table as well
+        this.changed = true;
+    }
+
+    private String dealWithVarDcl(JmmNode jmmNode, String s) {
+        String varName = jmmNode.get("var");
+
+        //  If the variable is not a constant, then it is safe to remove it
+        if (constantVars.contains(varName)) removeNode(jmmNode);
         return null;
     }
 
@@ -96,7 +117,7 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         // check if variable is in the list
         String varname = jmmNode.get("var");
         for (Pair<String, Triple<String, Integer, Integer>> var : vars)
-            if (var.a.equals(varname) && var.b.b == scope) {
+            if (var.a.equals(varname)) {
                 // replace node with constant
                 JmmNode newNode = new JmmNodeImpl(var.b.a); // var.b.a = varKind
                 newNode.put("val", var.b.c.toString()); // var.b.c = varValue
@@ -124,7 +145,9 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
                 }
             }
 
+            constantVars.add(varname);
             vars.add(new Pair<>(varname, new Triple<>(kind, scope, value)));
+            removeNode(jmmNode);
         }
 
         return null;
