@@ -8,11 +8,11 @@ public class RegisterAllocation {
 
     // https://www.cs.purdue.edu/homes/hosking/502/notes/08-reg.pdf
 
-    int nr_registers;
-    private ClassUnit classUnit;
-    HashMap<String, Descriptor> descriptors;
     public static Map<String, Integer> nrC = new HashMap<>();
+    int nr_registers;
+    HashMap<String, Descriptor> descriptors;
     Method currentMethod;
+    private ClassUnit classUnit;
 
     public RegisterAllocation(ClassUnit classUnit, int nr_registers) {
         this.classUnit = classUnit;
@@ -81,6 +81,23 @@ public class RegisterAllocation {
 
     public int colorNodes(Stack<InterferenceGraph.InterNode> stack) {
         Set<Integer> colors = new HashSet<>();
+        //System.out.println("VAR TABLE");
+        //System.out.println(currentMethod.getVarTable());
+       // int lastReg = 0;
+       // for (Descriptor descriptor : currentMethod.getVarTable().values()) {
+       //     if (!(descriptor.getScope() == VarScope.LOCAL)) {
+       //         continue;
+       //     }
+       // }
+        //System.out.println("lastReg: " + lastReg);
+        // Instruction inst;
+        // currentMethod.getVarTable().clear();
+        // int varID = 0;
+        // Iterator var2;
+        // for(var2 = currentMethod.getInstructions().iterator();
+        //     var2.hasNext(); varID = currentMethod.addToVartable(inst, varID)) {
+        //     inst = (Instruction)var2.next();
+        // }
         while (!stack.isEmpty()) {
             InterferenceGraph.InterNode node = stack.pop();
             int color = currentMethod.getParams().size() + (currentMethod.isStaticMethod() ? 0 : 1);
@@ -169,13 +186,17 @@ public class RegisterAllocation {
         } while (!changed);
 
         for (GraphNode node : nodes) {
-            System.out.println(node.getInstruction());
-            System.out.println(node.getInstruction().getClass());
-            System.out.println("in: " + node.getIn());
-            System.out.println("out: " + node.getOut());
-            System.out.println("use: " + node.getUse());
-            System.out.println("def: " + node.getDef());
-            System.out.println();
+            try {
+                System.out.println(node.getInstruction());
+                System.out.println(node.getInstruction().getClass());
+                System.out.println("in: " + node.getIn());
+                System.out.println("out: " + node.getOut());
+                System.out.println("use: " + node.getUse());
+                System.out.println("def: " + node.getDef());
+                System.out.println();
+            } catch (Exception ignored) {
+
+            }
         }
 
 
