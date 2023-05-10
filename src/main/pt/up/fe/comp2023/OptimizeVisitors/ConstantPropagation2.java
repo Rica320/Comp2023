@@ -1,6 +1,5 @@
 package pt.up.fe.comp2023.OptimizeVisitors;
 
-import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.ast.AJmmVisitor;
@@ -8,13 +7,12 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ast.JmmNodeImpl;
 import pt.up.fe.comp2023.SymbolTable.MySymbolTable;
 
-import java.util.*;
+import java.util.HashMap;
 
 public class ConstantPropagation2 extends AJmmVisitor<String, String> {
 
-    private final HashMap<String, Triple<String, Integer, Integer>> vars = new HashMap<>();  // varName : varKind, varScope, varValue
-    Set<String> scopedAssignedVars = new HashSet<>();
     MySymbolTable st;
+    private HashMap<String, Triple<String, Integer, Integer>> vars = new HashMap<>();  // varName : varKind, varScope, varValue
     private boolean changed = false;
     private int scope = 0;
 
@@ -31,7 +29,6 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
     }
 
     private void replaceNode(JmmNode oldNode, JmmNode newNode) {
-        // System.out.println("Replacing " + oldNode + " with " + newNode);
         JmmNode parent = oldNode.getJmmParent();
         if (parent == null) return;
         int index = parent.getChildren().indexOf(oldNode);
@@ -54,23 +51,56 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         addVisit("MethodDecl", this::dealWithMethod);
         addVisit("Var", this::dealWithVar);
         addVisit("Assign", this::dealWithAssign);
-        addVisit("VarDcl", this::dealWithVarDcl);
-        addVisit("Scope", this::dealWithScope);
+        addVisit("IfClause", this::dealWithIfClause);
+        addVisit("While", this::dealWithWhile);
         setDefaultVisit(this::defaultVisit);
     }
 
+    private String dealWithWhile(JmmNode jmmNode, String s) {
+        // 'while' '(' expression ')' while_block #While
+        visit(jmmNode.getJmmChild(0), s);
 
-    private String dealWithScope(JmmNode jmmNode, String s) {
         scope++;
-        defaultVisit(jmmNode, s);
+        visit(jmmNode.getJmmChild(1), s);
         scope--;
 
+        var whileScope = jmmNode.getJmmChild(1);
+
         // remove tainted variables
-        for (JmmNode child : jmmNode.getChildren())
+        for (JmmNode child : whileScope.getJmmChild(0).getChildren())
             if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
 
         return null;
     }
+
+    private String dealWithIfClause(JmmNode jmmNode, String s) {
+
+        visit(jmmNode.getJmmChild(0), s);
+
+        var vars_copy = new HashMap<>(vars);
+
+        var ifScope = jmmNode.getJmmChild(1);
+        scope++;
+        visit(ifScope, s);
+        scope--;
+
+        vars = vars_copy;
+
+        var elseScope = jmmNode.getJmmChild(2);
+        scope++;
+        visit(elseScope, s);
+        scope--;
+
+        // remove tainted variables
+        for (JmmNode child : ifScope.getJmmChild(0).getChildren())
+            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
+
+        for (JmmNode child : elseScope.getJmmChild(0).getChildren())
+            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
+
+        return null;
+    }
+
 
     private String defaultVisit(JmmNode jmmNode, String s) {
         for (JmmNode child : jmmNode.getChildren()) visit(child, s);
@@ -82,7 +112,6 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         scope = 0;
         defaultVisit(jmmNode, s);
         vars.clear();
-        scopedAssignedVars.clear();
         st.setCurrentMethod(null);
         return null;
     }
@@ -92,22 +121,8 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         scope = 0;
         defaultVisit(jmmNode, s);
         vars.clear();
-        scopedAssignedVars.clear();
         st.setCurrentMethod(null);
         return null;
-    }
-
-/*    private void removeNode(JmmNode node) {
-        JmmNode parent = node.getJmmParent();
-        if (parent == null) return;
-        parent.removeJmmChild(node);
-        st.getCurrentMethodScope().removeLocalVar(node.get("var"));
-        this.changed = true;
-    }*/
-
-    private String dealWithVarDcl(JmmNode jmmNode, String s) {
-        String varName = jmmNode.get("var");
-        return null; // TODO: REMOVER MÉTODO
     }
 
     private String dealWithVar(JmmNode jmmNode, String s) {
@@ -116,24 +131,10 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         String varname = jmmNode.get("var");
 
         if (vars.containsKey(varname)) {
-            if (vars.get(varname).b == 0) { // scope == 0
-
-                System.out.println("SCOPE0: " + scopedAssignedVars);
-                //if (!scopedAssignedVars.contains(varname)) {
-                Triple<String, Integer, Integer> var = vars.get(varname);
-                JmmNode newNode = new JmmNodeImpl(var.a, jmmNode);
-                newNode.put("val", var.c.toString());
-                replaceNode(jmmNode, newNode);
-             /*   } else {
-                    // nothing
-                }*/
-
-            } else { // scope > 0
-                Triple<String, Integer, Integer> var = vars.get(varname);
-                JmmNode newNode = new JmmNodeImpl(var.a, jmmNode);
-                newNode.put("val", var.c.toString());
-                replaceNode(jmmNode, newNode);
-            }
+            Triple<String, Integer, Integer> var = vars.get(varname);
+            JmmNode newNode = new JmmNodeImpl(var.a, jmmNode);
+            newNode.put("val", var.c.toString());
+            replaceNode(jmmNode, newNode);
         }
 
         return null;
@@ -143,19 +144,15 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
 
         // Add all variables assigned to a constant to the list
         String kind = jmmNode.getJmmChild(0).getKind();
-        if (kind.equals("Int") || kind.equals("Boolean")) {
-            String varname = jmmNode.get("var");
-            int value = Integer.parseInt(jmmNode.getJmmChild(0).get("val"));
+        String varname = jmmNode.get("var");
 
-            if (scope == 0) {
-                vars.put(varname, new Triple<>(kind, scope, value));
-                scopedAssignedVars.remove(varname);
-            } else { // scope > 0
-                scopedAssignedVars.add(varname);
-                System.out.println("SCOPE > 0: " + varname + " = " + value);
-                vars.put(varname, new Triple<>(kind, scope, value));
-            }
-        }
+        visit(jmmNode.getJmmChild(0), s);
+
+        if (kind.equals("Int") || kind.equals("Boolean")) {
+            int value = Integer.parseInt(jmmNode.getJmmChild(0).get("val"));
+            vars.put(varname, new Triple<>(kind, scope, value));
+        } else vars.remove(varname);
+
 
         return null;
     }
