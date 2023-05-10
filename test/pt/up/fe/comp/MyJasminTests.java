@@ -18,6 +18,7 @@ public class MyJasminTests {
         OllirResult ollirResult = new OllirResult(ollirCode, new HashMap<>());
         var jasminResult = new MyJasminBackend().toJasmin(ollirResult);
         var jasminCode = jasminResult.getJasminCode();
+        System.out.println(jasminCode);
         var output = TestUtils.runJasmin(jasminCode);
 
         //assertEquals("120", SpecsStrings.normalizeFileContents(output).trim());

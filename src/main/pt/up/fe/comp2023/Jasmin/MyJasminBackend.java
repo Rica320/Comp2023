@@ -577,12 +577,14 @@ public class MyJasminBackend implements JasminBackend {
             Element leftOperand = opType.getOperands().get(0);
             Element rightOperand = opType.getOperands().get(1);
 
-            // Load operands needed to execute binary operation
+            addLTHOp(leftOperand, rightOperand);
+
+         /*   // Load operands needed to execute binary operation
             loadElement(leftOperand); // stack + 1
             loadElement(rightOperand); // stack + 2
 
             code.append("if_icmplt ").append(label).append("\n");
-            updateStack(-2); // pop 2 values used for comparison
+            updateStack(-2); // pop 2 values used for comparison*/
         }
 
         if (debug) code.append("\t; End of Conditional branch");
