@@ -5,6 +5,7 @@ class AssignInnerScope {
     public static void main(String[] args) {
         int a;
         int b;
+        boolean bor;
 
         b = 1;
         a = 3;
@@ -24,21 +25,14 @@ class AssignInnerScope {
 
         io.println(a); // 2
 
-        while(0<b){
-            io.println(a); // 2
+        bor = 0 < b;
 
-            a = 8;
+        while(bor){
 
-            io.println(a); // 8
-
-            b = b - 1;
         }
 
+
         io.println(a); // ???
-
-        a = 7;
-
-        io.println(a); // 7
 
     }
 }

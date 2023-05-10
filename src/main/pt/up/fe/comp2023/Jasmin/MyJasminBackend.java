@@ -7,8 +7,6 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 public class MyJasminBackend implements JasminBackend {
 
@@ -192,9 +190,11 @@ public class MyJasminBackend implements JasminBackend {
             // add instructions
             method.getInstructions().forEach(instruction -> {
                 addInstruction(instruction);
+                System.out.println("STACK 3: " + maxStack + "\t" + currentStack + "\t" + instruction);
                 code.append("\n");
             });
 
+            // update method limits
             if (this.regNumAlloc < 0)
                 updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1),
                         this.maxStack);
@@ -203,46 +203,11 @@ public class MyJasminBackend implements JasminBackend {
                     updateMethodLimits(this.regNumAlloc, this.maxStack);
                 else {
                     int maxLocals = RegisterAllocation.nrC.values().stream().max(Integer::compareTo).get();
-
                     updateMethodLimits(maxLocals, this.maxStack);
                 }
-                // int maxLocals = 0;
-                // Set<Integer> regs = new HashSet<>();
-                // for (Descriptor f : currVarTable.values()) {
-                //     regs.add(f.getVirtualReg());
-                // }
-                // System.out.println("regs: " + regs);
-                // maxLocals = regs.size();
-                // updateMethodLimits(maxLocals, this.maxStack);
-                //int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
-                //if (regNumAlloc != 0)
-                //    maxLocals = regNumAlloc;
-                //updateMethodLimits( maxLocals == 0? 1:maxLocals, this.maxStack);
             }
-            /*
-            if (this.regNumAlloc <= 0)
-                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1),
-                        this.maxStack);
-            else {
-                //int maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
-                int maxLocals = 0;
-                if (regNumAlloc != 0)
-                    maxLocals = regNumAlloc;
-                else {
-                    Set<Integer> regs = new HashSet<>();
-                    for (Descriptor f : currVarTable.values()) {
-                        regs.add(f.getVirtualReg());
-                    }
-                    System.out.println("regs: " + regs);
-                    maxLocals = regs.size();
-                    // maxLocals = RegisterAllocation.nrC.get(currentMethod.getMethodName());
-                }
 
-                updateMethodLimits( maxLocals, this.maxStack);
-            }
-             */
             currVarTable = null;
-
             code.append(".end method\n\n");
         });
     }
@@ -393,7 +358,7 @@ public class MyJasminBackend implements JasminBackend {
 
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            code.append("iconst_1");
+            code.append("iconst_1\n");
             updateStack(1); // push 1
             code.append("\n\tixor\n");
             updateStack(-1); // ixor pops 2 values and pushes 1
@@ -712,8 +677,11 @@ public class MyJasminBackend implements JasminBackend {
 
         String name = ((Operand) inst.getFirstArg()).getName();
 
-        for (Element arg : inst.getListOfOperands())
+        for (Element arg : inst.getListOfOperands()){
+            System.out.println("LOADING static ARGUMENT "+ arg + "stack "+ currentStack);
             loadElement(arg); // load arguments
+            System.out.println("LOADED static ARGUMENT "+ arg + " stack "+ currentStack);
+        }
 
         code.append("invokestatic ").append(name); // invoke method
 
@@ -732,7 +700,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append(")").append(toJasminType(inst.getReturnType()));
 
         // update stack
-        updateStack(-1); // pop obj reference
+        // updateStack(-1); // pop obj reference --> not needed because it is a static method
         updateStack(-inst.getListOfOperands().size()); // pop arguments
 
         if (!inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
