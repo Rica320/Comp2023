@@ -3,36 +3,32 @@ import io;
 class AssignInnerScope {
 
     public static void main(String[] args) {
-        int a;
         int b;
-        boolean bor;
+        int a;
+        a = 5;
+        b = 0-3;
 
-        b = 1;
-        a = 3;
+        if(b < 0){
+            while(b < 0){
+                        io.println(b);
 
-        io.println(a); // 3
+                        if(0-2 < b){
+                            io.println(6);
 
-        if(0<1){
-           a = 5;
-           io.println(a); // 5
+                            while(0 < a){
+                                io.println(a);
+                                a = a - 1;
+                            }
+
+                        }else{
+                            io.println(7);
+                        }
+
+                        b = b + 1;
+                    }
         }else{
-           io.println(a); // 3
+            io.println(8);
         }
-
-        io.println(a); // ???
-
-        a = 2;
-
-        io.println(a); // 2
-
-        bor = 0 < b;
-
-        while(bor){
-
-        }
-
-
-        io.println(a); // ???
 
     }
 }
