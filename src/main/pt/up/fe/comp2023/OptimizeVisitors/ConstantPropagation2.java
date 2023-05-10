@@ -18,6 +18,7 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
     private boolean changed = false;
     private int scope = 0;
 
+
     public ConstantPropagation2(MySymbolTable st) {
         this.st = st;
     }
@@ -30,7 +31,7 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
     }
 
     private void replaceNode(JmmNode oldNode, JmmNode newNode) {
-        System.out.println("Replacing " + oldNode + " with " + newNode);
+        // System.out.println("Replacing " + oldNode + " with " + newNode);
         JmmNode parent = oldNode.getJmmParent();
         if (parent == null) return;
         int index = parent.getChildren().indexOf(oldNode);
@@ -58,10 +59,16 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         setDefaultVisit(this::defaultVisit);
     }
 
+
     private String dealWithScope(JmmNode jmmNode, String s) {
         scope++;
         defaultVisit(jmmNode, s);
         scope--;
+
+        // remove tainted variables
+        for (JmmNode child : jmmNode.getChildren())
+            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
+
         return null;
     }
 
@@ -109,13 +116,23 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         String varname = jmmNode.get("var");
 
         if (vars.containsKey(varname)) {
-            if (vars.get(varname).b == 0 && !scopedAssignedVars.contains(varname)) { // scope == 0
+            if (vars.get(varname).b == 0) { // scope == 0
+
+                System.out.println("SCOPE0: " + scopedAssignedVars);
+                //if (!scopedAssignedVars.contains(varname)) {
                 Triple<String, Integer, Integer> var = vars.get(varname);
                 JmmNode newNode = new JmmNodeImpl(var.a, jmmNode);
                 newNode.put("val", var.c.toString());
                 replaceNode(jmmNode, newNode);
-            } else {
+             /*   } else {
+                    // nothing
+                }*/
 
+            } else { // scope > 0
+                Triple<String, Integer, Integer> var = vars.get(varname);
+                JmmNode newNode = new JmmNodeImpl(var.a, jmmNode);
+                newNode.put("val", var.c.toString());
+                replaceNode(jmmNode, newNode);
             }
         }
 
@@ -132,8 +149,11 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
 
             if (scope == 0) {
                 vars.put(varname, new Triple<>(kind, scope, value));
+                scopedAssignedVars.remove(varname);
             } else { // scope > 0
-
+                scopedAssignedVars.add(varname);
+                System.out.println("SCOPE > 0: " + varname + " = " + value);
+                vars.put(varname, new Triple<>(kind, scope, value));
             }
         }
 
