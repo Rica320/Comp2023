@@ -1,23 +1,20 @@
-import io;
-
-AssignInnerScope {
-
-.construct AssignInnerScope().V {
-invokespecial(this, "<init>").V;
-}
+Simple {
 
 .method public static main(args.array.String).V {
+            a.i32 :=.i32 5.i32;
 
-                a.i32 :=.i32 5.i32;
+     BODY_0:
+            if (!.bool a.bool) goto ENDLOOP_1;
 
-                if (a.i32 <.bool 0.i32) goto THEN;
+            invokestatic(io, "println", a.i32).V;
 
-                invokestatic(io, "println", 2.i32).V;
-                goto END;
-          THEN:
-                invokestatic(io, "println", 1.i32).V;
-          END:
-                ret.V;
+            a.i32 :=.i32 a.i32 -.i32 1.i32;
+
+            goto BODY_0;
+
+     ENDLOOP_1:
+            ret.V;
     }
 
 }
+

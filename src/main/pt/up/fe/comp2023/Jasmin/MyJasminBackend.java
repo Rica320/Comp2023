@@ -355,10 +355,7 @@ public class MyJasminBackend implements JasminBackend {
 
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            code.append("iconst_1");
-            updateStack(1); // push 1
-            code.append("\n\tixor\n");
-            updateStack(-1); // ixor pops 2 values and pushes 1
+            addConditionalJump("ifne");
         } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
 
         if (debug) code.append("\t; End unary operation\n\n");
