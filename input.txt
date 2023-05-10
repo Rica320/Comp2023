@@ -6,8 +6,8 @@ class AssignInnerScope {
         int a;
         int b;
 
-        a = 3;
         b = 1;
+        a = 3;
 
         io.println(a); // 3
 
@@ -24,7 +24,7 @@ class AssignInnerScope {
 
         io.println(a); // 2
 
-        while(0<1){
+        while(0<b){
             io.println(a); // 2
 
             a = 8;
@@ -32,8 +32,6 @@ class AssignInnerScope {
             io.println(a); // 8
 
             b = b - 1;
-
-            io.println(b); // 0 ?
         }
 
         io.println(a); // ???
@@ -41,35 +39,6 @@ class AssignInnerScope {
         a = 7;
 
         io.println(a); // 7
-
-         while(0<1){
-            io.println(a); // 7
-
-            a = 8;
-
-            io.println(a); // 8
-
-            if (a < 8) {
-                io.println(a); // 8
-
-                io.println(a); // 9
-
-            } else {
-
-                io.println(a); // 8
-
-                b = a + 12;
-
-                io.println(b); // ?
-            }
-
-            io.println(a); // 10
-
-            io.println(b); // ?
-
-         }
-
-
 
     }
 }
