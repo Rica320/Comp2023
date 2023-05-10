@@ -1,10 +1,10 @@
 Simple {
 
 .method public static main(args.array.String).V {
-            a.i32 :=.i32 5.i32;
+            a.i32 :=.i32 0.i32;
 
      BODY_0:
-            if (!.bool a.bool) goto ENDLOOP_1;
+            if (a.bool) goto ENDLOOP_1;
 
             invokestatic(io, "println", a.i32).V;
 

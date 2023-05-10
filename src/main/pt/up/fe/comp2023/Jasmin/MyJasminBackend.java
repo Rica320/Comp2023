@@ -563,7 +563,7 @@ public class MyJasminBackend implements JasminBackend {
 
         if (opType.getOperands().size() != 2) {
 
-            addUnaryOperation((UnaryOpInstruction) opType);
+            opType.getOperands().forEach(this::loadElement);
             code.append("ifeq ").append(label).append("\n");
             updateStack(-1); // pop value used for comparison
 
