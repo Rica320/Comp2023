@@ -190,7 +190,6 @@ public class MyJasminBackend implements JasminBackend {
             // add instructions
             method.getInstructions().forEach(instruction -> {
                 addInstruction(instruction);
-                System.out.println("STACK 3: " + maxStack + "\t" + currentStack + "\t" + instruction);
                 code.append("\n");
             });
 
@@ -358,7 +357,7 @@ public class MyJasminBackend implements JasminBackend {
 
         // Execute unary operation
         if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            code.append("iconst_1\n");
+            code.append("iconst_1");
             updateStack(1); // push 1
             code.append("\n\tixor\n");
             updateStack(-1); // ixor pops 2 values and pushes 1
@@ -677,11 +676,8 @@ public class MyJasminBackend implements JasminBackend {
 
         String name = ((Operand) inst.getFirstArg()).getName();
 
-        for (Element arg : inst.getListOfOperands()){
-            System.out.println("LOADING static ARGUMENT "+ arg + "stack "+ currentStack);
+        for (Element arg : inst.getListOfOperands())
             loadElement(arg); // load arguments
-            System.out.println("LOADED static ARGUMENT "+ arg + " stack "+ currentStack);
-        }
 
         code.append("invokestatic ").append(name); // invoke method
 
@@ -700,7 +696,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append(")").append(toJasminType(inst.getReturnType()));
 
         // update stack
-        updateStack(-1); // pop obj reference --> not needed because it is a static method
+        // updateStack(-1); // pop obj reference --> not needed because it is a static method
         updateStack(-inst.getListOfOperands().size()); // pop arguments
 
         if (!inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
