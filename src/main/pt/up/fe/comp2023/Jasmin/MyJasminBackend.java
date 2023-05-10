@@ -700,7 +700,7 @@ public class MyJasminBackend implements JasminBackend {
         code.append(")").append(toJasminType(inst.getReturnType()));
 
         // update stack
-        // updateStack(-1); // pop obj reference --> not needed because it is a static method
+        updateStack(-1); // pop obj reference --> not needed because it is a static method
         updateStack(-inst.getListOfOperands().size()); // pop arguments
 
         if (!inst.getReturnType().getTypeOfElement().equals(ElementType.VOID)) {
