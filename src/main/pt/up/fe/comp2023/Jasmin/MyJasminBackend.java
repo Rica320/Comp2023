@@ -195,11 +195,9 @@ public class MyJasminBackend implements JasminBackend {
 
             // update method limits
             if (this.regNumAlloc < 0)
-                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1),
-                        this.maxStack);
+                updateMethodLimits(currVarTable.size() + (currVarTable.containsKey("this") ? 0 : 1), this.maxStack);
             else {
-                if (regNumAlloc > 0)
-                    updateMethodLimits(this.regNumAlloc, this.maxStack);
+                if (regNumAlloc > 0) updateMethodLimits(this.regNumAlloc, this.maxStack);
                 else {
                     int maxLocals = RegisterAllocation.nrC.values().stream().max(Integer::compareTo).get();
                     updateMethodLimits(maxLocals, this.maxStack);
@@ -467,13 +465,12 @@ public class MyJasminBackend implements JasminBackend {
         if (debug) code.append("; Conditional Jump\n\t");
         else code.append("\n\t");
         code.append(jumpCondition).append(" ").append(trueL).append("\n");
-        updateStack(-2); // pop 2 values used for comparison
+        updateStack(jumpCondition.equals("if_icmplt") ? -2 : -1); // pop values used for comparison
         code.append("\ticonst_0\n"); // false scope
-        updateStack(1); // push false
         code.append("\tgoto ").append(endL).append("\n");
         code.append(trueL).append(":\n");
         code.append("\ticonst_1\n"); // true scope
-        updateStack(1); // push true
+        updateStack(1); // push one of these : true or false
         code.append(endL).append(":\n");
         if (debug) code.append("; End of Conditional Jump\n");
         else code.append("\n");
@@ -574,17 +571,43 @@ public class MyJasminBackend implements JasminBackend {
             updateStack(-1); // pop value used for comparison
 
         } else {
-            Element leftOperand = opType.getOperands().get(0);
-            Element rightOperand = opType.getOperands().get(1);
+            Element left = opType.getOperands().get(0);
+            Element right = opType.getOperands().get(1);
 
-            addLTHOp(leftOperand, rightOperand);
+            // case 0 < A
+            if (left.isLiteral()) {
+                int value = Integer.parseInt(((LiteralElement) left).getLiteral());
+                if (value == 0) {
+                    loadElement(right);
+                    code.append("ifgt ").append(label).append("\n");
+                    updateStack(-1); // pop value used for comparison
 
-         /*   // Load operands needed to execute binary operation
-            loadElement(leftOperand); // stack + 1
-            loadElement(rightOperand); // stack + 2
+                    if (debug) code.append("\t; End of Conditional branch");
+                    else code.append("\n");
+                    return;
+                }
+            }
+
+            // case A < 0
+            if (right.isLiteral()) {
+                int value = Integer.parseInt(((LiteralElement) right).getLiteral());
+                if (value == 0) {
+                    loadElement(left);
+                    code.append("iflt ").append(label).append("\n");
+                    updateStack(-1); // pop value used for comparison
+
+                    if (debug) code.append("\t; End of Conditional branch");
+                    else code.append("\n");
+                    return;
+                }
+            }
+
+            // case A < B
+            loadElement(left);
+            loadElement(right);
 
             code.append("if_icmplt ").append(label).append("\n");
-            updateStack(-2); // pop 2 values used for comparison*/
+            updateStack(-2); // pop 2 values used for comparison
         }
 
         if (debug) code.append("\t; End of Conditional branch");
