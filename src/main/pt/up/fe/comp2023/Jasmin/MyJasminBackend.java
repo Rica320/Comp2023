@@ -8,8 +8,6 @@ import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
 
-import static org.specs.comp.ollir.OperationType.NOT;
-
 public class MyJasminBackend implements JasminBackend {
 
     boolean debug = false;
@@ -26,6 +24,32 @@ public class MyJasminBackend implements JasminBackend {
     int maxStack = 0;
 
     int regNumAlloc = -1;
+
+    // ============================================== MAIN METHOD ==============================================
+
+    @Override
+    public JasminResult toJasmin(OllirResult ollirResult) {
+
+        this.classe = ollirResult.getOllirClass();
+
+        var config = ollirResult.getConfig();
+        this.debug = config.getOrDefault("debug", "false").equals("true");
+        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "-1"));
+
+        addHeaders();
+        addFields();
+        addConstructor();
+        addMethods();
+
+        if (debug) {
+            System.out.println("\n======================JASMIN CODE======================\n");
+            System.out.println(code.toString());
+            System.out.println("======================================================");
+        }
+        return new JasminResult(code.toString());
+    }
+
+    // ============================================== AUXILIAR FUNCS ==============================================
 
     private void resetStack() {
         this.currentStack = 0;
@@ -83,63 +107,7 @@ public class MyJasminBackend implements JasminBackend {
         }
     }
 
-
-    private void loadElement(Element element) {
-        boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
-        boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
-
-        if (element instanceof ArrayOperand) {
-            arrayAccess(element);
-            return;
-        }
-
-        if (isNumber || isBoolean) {
-            if (element.isLiteral()) {
-                LiteralElement literal = (LiteralElement) element;
-                int value = Integer.parseInt(literal.getLiteral());
-                if (value < 6 && value >= 0) code.append("iconst_");  // more efficient than bipush
-                else if (value < 128 && value >= 0) code.append("bipush ");
-                else if (value < 32768 && value >= 0) code.append("sipush ");
-                else code.append("ldc ");
-                code.append(value);
-            } else {
-
-                Operand variable = (Operand) element;
-                String name = variable.getName();
-
-                // Check if it is "true" or "false"
-                if (isBoolean && name.equals("true")) code.append("iconst_1");
-                else if (isBoolean && name.equals("false")) code.append("iconst_0");
-                else {// it is a variable
-                    int reg = Integer.parseInt(getRegister(name));
-                    if (reg < 4) code.append("iload_").append(reg);
-                    else code.append("iload ").append(reg);
-                    if (debug) code.append(" ; ").append(name);
-                }
-
-            }
-            updateStack(1); // push int
-            code.append("\n\t");
-            return;
-        } else if (element.isLiteral()) { // string
-            code.append("ldc ").append(((LiteralElement) element).getLiteral());
-            code.append("\n\t");
-            updateStack(1); // push string
-            return;
-        }
-
-        // array or object reference
-        Operand variable = (Operand) element;
-        String name = variable.getName();
-
-        int reg = Integer.parseInt(getRegister(name));
-        if (reg < 4) code.append("aload_").append(reg);
-        else code.append("aload ").append(reg);
-
-        if (debug) code.append(" ; ").append(name);
-        code.append("\n\t");
-        updateStack(1); // push reference
-    }
+    // ============================================== BUILD METHODS ==============================================
 
     private void addHeaders() {
         code.append(".class public ").append(this.classe.getClassName()).append("\n");
@@ -211,6 +179,31 @@ public class MyJasminBackend implements JasminBackend {
         });
     }
 
+    // ============================================== GENERIC INSTRUCTIONS ==============================================
+
+    private void addInstruction(Instruction instruction) {
+
+        String instType = instruction.getInstType().toString();
+
+        // add label to instruction if needed
+        var labels = currentMethod.getLabels(instruction);
+
+        for (String label : labels)
+            code.append(label).append(":\n");
+
+        switch (instType) {
+            case "ASSIGN" -> addInstructionAssign((AssignInstruction) instruction);
+            case "CALL" -> addCallInstruction(((CallInstruction) instruction), false);
+            case "GETFIELD", "PUTFIELD" -> addGetPutField(instruction);
+            case "UNARYOPER" -> addUnaryOperation((UnaryOpInstruction) instruction);
+            case "BINARYOPER" -> addBinaryOperation((BinaryOpInstruction) instruction);
+            case "GOTO" -> code.append("\n\tgoto ").append(((GotoInstruction) instruction).getLabel()).append("\n");
+            case "RETURN" -> addReturnInstruction((ReturnInstruction) instruction);
+            case "BRANCH" -> addBranchInstruction(instruction);
+            default -> System.out.println("Error in instruction: " + instType);
+        }
+    }
+
     private void addInstructionAssign(AssignInstruction instruction) {
         if (debug) code.append("\n\t; Assign Instruction\n");
         else code.append("\n");
@@ -243,7 +236,8 @@ public class MyJasminBackend implements JasminBackend {
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand() instanceof ArrayOperand) arrayAccess(op.getSingleOperand());
+            if (op.getSingleOperand() instanceof ArrayOperand)
+                arrayAccess(op.getSingleOperand());
             else {
                 code.append("\t");
                 loadElement(op.getSingleOperand());
@@ -326,201 +320,6 @@ public class MyJasminBackend implements JasminBackend {
         return false; // cant add iinc
     }
 
-    private void arrayLoad(Operand elem) {
-        String name = elem.getName();
-        int reg = Integer.parseInt(getRegister(name));
-        // load array
-        if (reg < 4) code.append("aload_").append(reg);
-        else code.append("aload ").append(reg);
-        if (debug) code.append(" ; ").append(name);
-        code.append("\n\t");
-        updateStack(1); // push array
-        loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
-    }
-
-    public void arrayAccess(Element elem) {
-        if (debug) code.append("\t; Start Array access\n\t");
-        else code.append("\t");
-        arrayLoad((Operand) elem);
-        code.append("iaload\n\t");
-        updateStack(-1); // pop array, index and push value in stack
-        if (debug) code.append("; End Array access\n\t");
-        else code.append("\n\t");
-    }
-
-    private void addUnaryOperation(UnaryOpInstruction op) {
-        if (debug) code.append("\n\t; Executing unary operation\n\t");
-        else code.append("\n\t");
-
-        // Load operand if needed to execute unary operation
-        loadElement(op.getOperand());
-
-        // Execute unary operation
-        if (op.getOperation().getOpType().equals(OperationType.NOTB)) {
-            addConditionalJump("ifne");
-        } else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
-
-        if (debug) code.append("\t; End unary operation\n\n");
-        else code.append("\n");
-    }
-
-    private void storeElement(Element dest) {
-
-        Operand operand = (Operand) dest;
-        boolean isInt = operand.getType().getTypeOfElement().equals(ElementType.INT32);
-        boolean isBool = operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
-        if (isInt || isBool) code.append("i"); // Number
-        else code.append("a"); // Generic Object
-
-        String name = ((Operand) dest).getName();
-        int reg = Integer.parseInt(getRegister(name));
-
-        if (reg < 4) code.append("store_").append(reg);
-        else code.append("store ").append(reg);
-        updateStack(-1); // pop value from stack and store it
-
-        if (debug) code.append(" ; ").append(name);
-    }
-
-    private void addBinaryOperation(BinaryOpInstruction opInstruction) {
-
-        OperationType opType = opInstruction.getOperation().getOpType();
-
-        if (debug) code.append("\n\t; Executing binary operation\n\t");
-        else code.append("\n\t");
-
-        Element left = opInstruction.getLeftOperand();
-        Element right = opInstruction.getRightOperand();
-
-        if (opType.name().equals("LTH")) addLTHOp(left, right);
-        else {
-            loadElement(left);
-            loadElement(right);
-            BinaryOpInstAux(opType); // execute operation
-        }
-
-        if (debug) code.append("\t; End binary operation\n\n ");
-        else code.append("\n");
-    }
-
-
-    private void BinaryOpInstAux(OperationType opType) {
-        // binary ops pop 2 values and push 1 to stack
-        switch (opType) {
-            case ADD -> {
-                code.append("iadd\n");
-                updateStack(-1);
-            }
-            case SUB -> {
-                code.append("isub\n");
-                updateStack(-1);
-            }
-            case MUL -> {
-                code.append("imul\n");
-                updateStack(-1);
-            }
-            case DIV -> {
-                code.append("idiv\n");
-                updateStack(-1);
-            }
-            case AND -> {
-                code.append("iand\n");
-                updateStack(-1);
-            }
-            default -> System.out.println("Binary op error");
-        }
-    }
-
-    private void addLTHOp(Element left, Element right) {
-
-        // case 0 < A
-        if (left.isLiteral()) {
-            int value = Integer.parseInt(((LiteralElement) left).getLiteral());
-            if (value == 0) {
-                loadElement(right);
-                addConditionalJump("ifgt");
-                return;
-            }
-        }
-
-        // case A < 0
-        if (right.isLiteral()) {
-            int value = Integer.parseInt(((LiteralElement) right).getLiteral());
-            if (value == 0) {
-                loadElement(left);
-                addConditionalJump("iflt");
-                return;
-            }
-        }
-
-        // case A < B
-        loadElement(left);
-        loadElement(right);
-        addConditionalJump("if_icmplt");
-    }
-
-    private void addConditionalJump(String jumpCondition) {
-        String trueL = getNewLabel(), endL = getNewLabel();
-        if (debug) code.append("; Conditional Jump\n\t");
-        else code.append("\n\t");
-        code.append(jumpCondition).append(" ").append(trueL).append("\n");
-        updateStack(jumpCondition.equals("if_icmplt") ? -2 : -1); // pop values used for comparison
-        code.append("\ticonst_0\n"); // false scope
-        code.append("\tgoto ").append(endL).append("\n");
-        code.append(trueL).append(":\n");
-        code.append("\ticonst_1\n"); // true scope
-        updateStack(1); // push one of these : true or false
-        code.append(endL).append(":\n");
-        if (debug) code.append("; End of Conditional Jump\n");
-        else code.append("\n");
-    }
-
-    private void addInstruction(Instruction instruction) {
-
-        String instType = instruction.getInstType().toString();
-
-        // add label to instruction if needed
-        var labels = currentMethod.getLabels(instruction);
-
-        for (String label : labels)
-            code.append(label).append(":\n");
-
-        switch (instType) {
-            case "ASSIGN" -> addInstructionAssign((AssignInstruction) instruction);
-            case "CALL" -> addCallInstruction(((CallInstruction) instruction), false);
-            case "GETFIELD", "PUTFIELD" -> addGetPutField(instruction);
-            case "UNARYOPER" -> addUnaryOperation((UnaryOpInstruction) instruction);
-            case "BINARYOPER" -> addBinaryOperation((BinaryOpInstruction) instruction);
-            case "GOTO" -> code.append("\n\tgoto ").append(((GotoInstruction) instruction).getLabel()).append("\n");
-            case "RETURN" -> addReturnInstruction((ReturnInstruction) instruction);
-            case "BRANCH" -> addBranchInstruction(instruction);
-            default -> System.out.println("Error in instruction: " + instType);
-        }
-    }
-
-    private void addBranchInstruction(Instruction instruction) {
-        if (instruction instanceof OpCondInstruction inst) addConditionalBranch(inst);
-        else if (instruction instanceof SingleOpCondInstruction inst) addSingleConditionalBranch(inst);
-        else System.out.println("Error in branch instruction");
-    }
-
-    private void addReturnInstruction(ReturnInstruction inst) {
-        code.append("\t");
-
-        if (inst.getReturnType().toString().equals("VOID")) {
-            code.append("return");
-            return;
-        }
-
-        loadElement(inst.getOperand()); // load return value
-
-        switch (inst.getReturnType().toString()) {
-            case "INT32", "BOOLEAN" -> code.append("ireturn");
-            default -> code.append("areturn"); // ARRAYREF or OBJECTREF
-        }
-    }
-
-
     private void addGetPutField(Instruction instruction) {
 
         Operand op1, op2;
@@ -556,85 +355,108 @@ public class MyJasminBackend implements JasminBackend {
         code.append("\n\t");
     }
 
-    private void addConditionalBranch(OpCondInstruction instruction) {
-        OpInstruction opType = instruction.getCondition();
-        String label = instruction.getLabel();
+    // ============================================== LOAD/STORE INSTRUCTIONS ==============================================
 
-        if (debug) code.append("\n\t; Executing Conditional branch\n\t");
-        else code.append("\n\t");
+    private void loadElement(Element element) {
+        boolean isNumber = element.getType().getTypeOfElement().equals(ElementType.INT32);
+        boolean isBoolean = element.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
 
-        if (opType.getOperands().size() != 2) {
-
-            opType.getOperands().forEach(this::loadElement);
-
-            // TODO :MARCO VE ISTO AQUI ... acho que faz sentido
-            if (opType.getOperation().getOpType().equals(NOT))
-                code.append("ifne ").append(label).append("\n");
-            else
-                code.append("ifeq ").append(label).append("\n");
-//
-            updateStack(-1); // pop value used for comparison
-
-        } else {
-            Element left = opType.getOperands().get(0);
-            Element right = opType.getOperands().get(1);
-
-            // case 0 < A
-            if (left.isLiteral()) {
-                int value = Integer.parseInt(((LiteralElement) left).getLiteral());
-                if (value == 0) {
-                    loadElement(right);
-                    code.append("ifgt ").append(label).append("\n");
-                    updateStack(-1); // pop value used for comparison
-
-                    if (debug) code.append("\t; End of Conditional branch");
-                    else code.append("\n");
-                    return;
-                }
-            }
-
-            // case A < 0
-            if (right.isLiteral()) {
-                int value = Integer.parseInt(((LiteralElement) right).getLiteral());
-                if (value == 0) {
-                    loadElement(left);
-                    code.append("iflt ").append(label).append("\n");
-                    updateStack(-1); // pop value used for comparison
-
-                    if (debug) code.append("\t; End of Conditional branch");
-                    else code.append("\n");
-                    return;
-                }
-            }
-
-            // case A < B
-            loadElement(left);
-            loadElement(right);
-
-            code.append("if_icmplt ").append(label).append("\n");
-            updateStack(-2); // pop 2 values used for comparison
+        if (element instanceof ArrayOperand) {
+            arrayAccess(element);
+            return;
         }
 
-        if (debug) code.append("\t; End of Conditional branch");
-        else code.append("\n");
+        if (isNumber || isBoolean) {
+            if (element.isLiteral()) {
+                LiteralElement literal = (LiteralElement) element;
+                int value = Integer.parseInt(literal.getLiteral());
+                if (value < 6 && value >= 0) code.append("iconst_");  // more efficient than bipush
+                else if (value < 128 && value >= 0) code.append("bipush ");
+                else if (value < 32768 && value >= 0) code.append("sipush ");
+                else code.append("ldc ");
+                code.append(value);
+            } else {
+
+                Operand variable = (Operand) element;
+                String name = variable.getName();
+
+                // Check if it is "true" or "false"
+                if (isBoolean && name.equals("true")) code.append("iconst_1");
+                else if (isBoolean && name.equals("false")) code.append("iconst_0");
+                else {// it is a variable
+                    int reg = Integer.parseInt(getRegister(name));
+                    if (reg < 4) code.append("iload_").append(reg);
+                    else code.append("iload ").append(reg);
+                    if (debug) code.append(" ; ").append(name);
+                }
+
+            }
+            updateStack(1); // push int
+            code.append("\n\t");
+            return;
+        } else if (element.isLiteral()) { // string
+            code.append("ldc ").append(((LiteralElement) element).getLiteral());
+            code.append("\n\t");
+            updateStack(1); // push string
+            return;
+        }
+
+        // array or object reference
+        Operand variable = (Operand) element;
+        String name = variable.getName();
+
+        int reg = Integer.parseInt(getRegister(name));
+        if (reg < 4) code.append("aload_").append(reg);
+        else code.append("aload ").append(reg);
+
+        if (debug) code.append(" ; ").append(name);
+        code.append("\n\t");
+        updateStack(1); // push reference
     }
 
+    private void storeElement(Element dest) {
 
-    private void addSingleConditionalBranch(SingleOpCondInstruction instruction) {
-        Element elem = instruction.getCondition().getSingleOperand();
-        String label = instruction.getLabel();
+        Operand operand = (Operand) dest;
+        boolean isInt = operand.getType().getTypeOfElement().equals(ElementType.INT32);
+        boolean isBool = operand.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+        if (isInt || isBool) code.append("i"); // Number
+        else code.append("a"); // Generic Object
 
-        if (debug) code.append("\n\t; Executing single op conditional branch\n\t");
+        String name = ((Operand) dest).getName();
+        int reg = Integer.parseInt(getRegister(name));
+
+        if (reg < 4) code.append("store_").append(reg);
+        else code.append("store ").append(reg);
+        updateStack(-1); // pop value from stack and store it
+
+        if (debug) code.append(" ; ").append(name);
+    }
+
+    // ============================================== ARRAY INSTRUCTIONS ==============================================
+
+    private void arrayLoad(Operand elem) {
+        String name = elem.getName();
+        int reg = Integer.parseInt(getRegister(name));
+        // load array
+        if (reg < 4) code.append("aload_").append(reg);
+        else code.append("aload ").append(reg);
+        if (debug) code.append(" ; ").append(name);
+        code.append("\n\t");
+        updateStack(1); // push array
+        loadElement(((ArrayOperand) elem).getIndexOperands().get(0)); // load index
+    }
+
+    public void arrayAccess(Element elem) {
+        if (debug) code.append("\t; Start Array access\n\t");
+        else code.append("\t");
+        arrayLoad((Operand) elem);
+        code.append("iaload\n\t");
+        updateStack(-1); // pop array, index and push value in stack
+        if (debug) code.append("; End Array access\n\t");
         else code.append("\n\t");
-
-        loadElement(elem); // load variable
-
-        code.append("ifne ").append(label).append("\n");
-        updateStack(-1); // pop value used for comparison
-        if (debug) code.append("\t; End single op conditional branch\n\n");
-        else code.append("\n");
     }
 
+    // ============================================== CALL/RETURN INSTRUCTIONS ==============================================
 
     private void addCallInstruction(CallInstruction inst, boolean isAssignment) {
 
@@ -782,26 +604,207 @@ public class MyJasminBackend implements JasminBackend {
         }
     }
 
-    @Override
-    public JasminResult toJasmin(OllirResult ollirResult) {
+    private void addReturnInstruction(ReturnInstruction inst) {
+        code.append("\t");
 
-        this.classe = ollirResult.getOllirClass();
-
-        var config = ollirResult.getConfig();
-        this.debug = config.getOrDefault("debug", "false").equals("true");
-        this.regNumAlloc = Integer.parseInt(config.getOrDefault("registerAllocation", "-1"));
-
-        addHeaders();
-        addFields();
-        addConstructor();
-        addMethods();
-
-        if (debug) {
-            System.out.println("\n======================JASMIN CODE======================\n");
-            System.out.println(code.toString());
-            System.out.println("======================================================");
+        if (inst.getReturnType().toString().equals("VOID")) {
+            code.append("return");
+            return;
         }
-        return new JasminResult(code.toString());
+
+        loadElement(inst.getOperand()); // load return value
+
+        switch (inst.getReturnType().toString()) {
+            case "INT32", "BOOLEAN" -> code.append("ireturn");
+            default -> code.append("areturn"); // ARRAYREF or OBJECTREF
+        }
     }
+
+    // ============================================== BINARY/UNARY INSTRUCTIONS ==============================================
+    private void addBinaryOperation(BinaryOpInstruction opInstruction) {
+
+        OperationType opType = opInstruction.getOperation().getOpType();
+
+        if (debug) code.append("\n\t; Executing binary operation\n\t");
+        else code.append("\n\t");
+
+        Element left = opInstruction.getLeftOperand();
+        Element right = opInstruction.getRightOperand();
+
+        if (opType.name().equals("LTH")) addLTHOp(left, right);
+        else {
+            loadElement(left);
+            loadElement(right);
+
+            // execute operation
+            // binary ops pop 2 values and push 1 to stack
+            switch (opType) {
+                case ADD -> {
+                    code.append("iadd\n");
+                    updateStack(-1);
+                }
+                case SUB -> {
+                    code.append("isub\n");
+                    updateStack(-1);
+                }
+                case MUL -> {
+                    code.append("imul\n");
+                    updateStack(-1);
+                }
+                case DIV -> {
+                    code.append("idiv\n");
+                    updateStack(-1);
+                }
+                case AND -> {
+                    code.append("iand\n");
+                    updateStack(-1);
+                }
+                default -> System.out.println("Binary op error");
+            }
+        }
+
+        if (debug) code.append("\t; End binary operation\n\n ");
+        else code.append("\n");
+    }
+
+    private void addUnaryOperation(UnaryOpInstruction op) {
+        if (debug) code.append("\n\t; Executing unary operation\n\t");
+        else code.append("\n\t");
+
+        // Load operand if needed to execute unary operation
+        loadElement(op.getOperand());
+
+        // Execute unary operation
+        if (op.getOperation().getOpType().equals(OperationType.NOTB))
+            addConditionalJump("ifne");
+        else if (op.getOperation().getOpType().equals(OperationType.SUB))
+            code.append("ineg\n");
+
+        if (debug) code.append("\t; End unary operation\n\n");
+        else code.append("\n");
+    }
+
+    // ============================================== CONDITIONAL INSTRUCTIONS ==============================================
+
+    private void addLTHOp(Element left, Element right) {
+
+        // case 0 < A
+        if (left.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) left).getLiteral());
+            if (value == 0) {
+                loadElement(right);
+                addConditionalJump("ifgt");
+                return;
+            }
+        }
+
+        // case A < 0
+        if (right.isLiteral()) {
+            int value = Integer.parseInt(((LiteralElement) right).getLiteral());
+            if (value == 0) {
+                loadElement(left);
+                addConditionalJump("iflt");
+                return;
+            }
+        }
+
+        // case A < B
+        loadElement(left);
+        loadElement(right);
+        addConditionalJump("if_icmplt");
+    }
+
+    private void addConditionalJump(String jumpCondition) {
+        String trueL = getNewLabel(), endL = getNewLabel();
+        if (debug) code.append("; Conditional Jump\n\t");
+        else code.append("\n\t");
+        code.append(jumpCondition).append(" ").append(trueL).append("\n");
+        updateStack(jumpCondition.equals("if_icmplt") ? -2 : -1); // pop values used for comparison
+        code.append("\ticonst_0\n"); // false scope
+        code.append("\tgoto ").append(endL).append("\n");
+        code.append(trueL).append(":\n");
+        code.append("\ticonst_1\n"); // true scope
+        updateStack(1); // push one of these : true or false
+        code.append(endL).append(":\n");
+        if (debug) code.append("; End of Conditional Jump\n");
+        else code.append("\n");
+    }
+
+    private void addBranchInstruction(Instruction instruction) {
+        if (instruction instanceof OpCondInstruction inst) addConditionalBranch(inst);
+        else if (instruction instanceof SingleOpCondInstruction inst) addSingleConditionalBranch(inst);
+        else System.out.println("Error in branch instruction");
+    }
+
+    private void addConditionalBranch(OpCondInstruction instruction) {
+        OpInstruction opType = instruction.getCondition();
+        String label = instruction.getLabel();
+
+        if (debug) code.append("\n\t; Executing Conditional branch\n\t");
+        else code.append("\n\t");
+
+        if (opType.getOperands().size() != 2) {
+
+            addUnaryOperation((UnaryOpInstruction) opType);
+
+        } else {
+            Element left = opType.getOperands().get(0);
+            Element right = opType.getOperands().get(1);
+
+            // case 0 < A
+            if (left.isLiteral()) {
+                int value = Integer.parseInt(((LiteralElement) left).getLiteral());
+                if (value == 0) {
+                    loadElement(right);
+                    code.append("ifgt ").append(label).append("\n");
+                    updateStack(-1); // pop value used for comparison
+
+                    if (debug) code.append("\t; End of Conditional branch");
+                    else code.append("\n");
+                    return;
+                }
+            }
+
+            // case A < 0
+            if (right.isLiteral()) {
+                int value = Integer.parseInt(((LiteralElement) right).getLiteral());
+                if (value == 0) {
+                    loadElement(left);
+                    code.append("iflt ").append(label).append("\n");
+                    updateStack(-1); // pop value used for comparison
+
+                    if (debug) code.append("\t; End of Conditional branch");
+                    else code.append("\n");
+                    return;
+                }
+            }
+
+            // case A < B
+            loadElement(left);
+            loadElement(right);
+
+            code.append("if_icmplt ").append(label).append("\n");
+            updateStack(-2); // pop 2 values used for comparison
+        }
+
+        if (debug) code.append("\t; End of Conditional branch");
+        else code.append("\n");
+    }
+
+    private void addSingleConditionalBranch(SingleOpCondInstruction instruction) {
+        Element elem = instruction.getCondition().getSingleOperand();
+        String label = instruction.getLabel();
+
+        if (debug) code.append("\n\t; Executing single op conditional branch\n\t");
+        else code.append("\n\t");
+
+        loadElement(elem); // load variable
+
+        code.append("ifne ").append(label).append("\n");
+        updateStack(-1); // pop value used for comparison
+        if (debug) code.append("\t; End single op conditional branch\n\n");
+        else code.append("\n");
+    }
+
 }
 
