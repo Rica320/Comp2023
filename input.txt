@@ -5,9 +5,12 @@ class AssignInnerScope {
     public static void main(String[] args) {
 
         int a;
+        boolean b;
+        b = false;
         a = 6;
+        b = !b && true;
 
-        while(!(a < 0)){
+        while(0 < a && b){
             io.println(a);
             a = a - 1;
         }

@@ -654,11 +654,11 @@ public class MyJasminBackend implements JasminBackend {
                     code.append("idiv\n");
                     updateStack(-1);
                 }
-                case AND -> {
+                case ANDB -> {
                     code.append("iand\n");
                     updateStack(-1);
                 }
-                default -> System.out.println("Binary op error");
+                default -> System.out.println("Binary op error + " + opType + " not implemented");
             }
         }
 
