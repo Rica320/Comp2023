@@ -748,7 +748,7 @@ public class MyJasminBackend implements JasminBackend {
         if (opType instanceof BinaryOpInstruction condInstruction) addBinaryOperation(condInstruction);
         else if (opType instanceof UnaryOpInstruction condInstruction) addUnaryOperation(condInstruction);
 
-        code.append("\n\t").append("ifne ").append(label).append("\n");
+        code.append("\n\t").append("ifeq ").append(label).append("\n");
 
         if (debug) code.append("\t; End of Conditional branch");
         else code.append("\n");
@@ -764,7 +764,7 @@ public class MyJasminBackend implements JasminBackend {
 
         loadElement(elem); // load variable
 
-        code.append("ifne ").append(label).append("\n");
+        code.append("ifeq ").append(label).append("\n");
         updateStack(-1); // pop value used for comparison
         if (debug) code.append("\t; End single op conditional branch\n\n");
         else code.append("\n");
