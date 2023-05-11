@@ -8,6 +8,8 @@ import pt.up.fe.comp2023.OptimizeVisitors.registerAllocation.RegisterAllocation;
 
 import java.util.HashMap;
 
+import static org.specs.comp.ollir.OperationType.NOT;
+
 public class MyJasminBackend implements JasminBackend {
 
     boolean debug = false;
@@ -564,7 +566,13 @@ public class MyJasminBackend implements JasminBackend {
         if (opType.getOperands().size() != 2) {
 
             opType.getOperands().forEach(this::loadElement);
-            code.append("ifeq ").append(label).append("\n");
+
+            // TODO :MARCO VE ISTO AQUI ... acho que faz sentido
+            if (opType.getOperation().getOpType().equals(NOT))
+                code.append("ifne ").append(label).append("\n");
+            else
+                code.append("ifeq ").append(label).append("\n");
+//
             updateStack(-1); // pop value used for comparison
 
         } else {

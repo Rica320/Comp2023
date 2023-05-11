@@ -127,11 +127,11 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     }
 
     private Pair<String, String> arrLookup(String arrayName, Pair<String, String> index, SymbolOrigin origin, StringBuilder code, StringBuilder sb) {
-        if (isConstant(index.b)) {
-            String tempName = "t" + newTemp() + ".i32";
-            code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
-            index = new Pair<>("", tempName);
-        }
+        // if (isConstant(index.b)) {
+        //     String tempName = "t" + newTemp() + ".i32";
+        //     code.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
+        //     index = new Pair<>("", tempName);
+        // }
         // check case arr[arr[3]]
         if (index.b.contains("[")) {
             String tempName = "t" + newTemp() + ".i32";
@@ -173,6 +173,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Pair<String, String> la = arrLookup(varName, index, origin, sb, new StringBuilder());
 
         String olliType = getOllirType(type.getName(), false);
+
+        System.out.println("ArrayAssign: " + la.b + " :=." + olliType + " " + value.b + ";");
+        System.out.println("ArrayAssign: " + index.a);
+        System.out.println("ArrayAssign: " + value.a);
 
         sb.append(index.a).append("\n");
         sb.append(value.a).append("\n");
