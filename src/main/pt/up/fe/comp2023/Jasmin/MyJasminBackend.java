@@ -764,7 +764,7 @@ public class MyJasminBackend implements JasminBackend {
 
         loadElement(elem); // load variable
 
-        code.append("ifne ").append(label).append("\n");
+        code.append("ifeq ").append(label).append("\n");
         updateStack(-1); // pop value used for comparison
         if (debug) code.append("\t; End single op conditional branch\n\n");
         else code.append("\n");
