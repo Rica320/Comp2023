@@ -236,8 +236,7 @@ public class MyJasminBackend implements JasminBackend {
         } else if (instType.equals(InstructionType.NOPER)) {
             SingleOpInstruction op = (SingleOpInstruction) rhs;
 
-            if (op.getSingleOperand() instanceof ArrayOperand)
-                arrayAccess(op.getSingleOperand());
+            if (op.getSingleOperand() instanceof ArrayOperand) arrayAccess(op.getSingleOperand());
             else {
                 code.append("\t");
                 loadElement(op.getSingleOperand());
@@ -667,25 +666,6 @@ public class MyJasminBackend implements JasminBackend {
         else code.append("\n");
     }
 
-    private void addUnaryOperation(UnaryOpInstruction op) {
-        if (debug) code.append("\n\t; Executing unary operation\n\t");
-        else code.append("\n\t");
-
-        // Load operand if needed to execute unary operation
-        loadElement(op.getOperand());
-
-        // Execute unary operation
-        if (op.getOperation().getOpType().equals(OperationType.NOTB))
-            addConditionalJump("ifne");
-        else if (op.getOperation().getOpType().equals(OperationType.SUB))
-            code.append("ineg\n");
-
-        if (debug) code.append("\t; End unary operation\n\n");
-        else code.append("\n");
-    }
-
-    // ============================================== CONDITIONAL INSTRUCTIONS ==============================================
-
     private void addLTHOp(Element left, Element right) {
 
         // case 0 < A
@@ -693,7 +673,7 @@ public class MyJasminBackend implements JasminBackend {
             int value = Integer.parseInt(((LiteralElement) left).getLiteral());
             if (value == 0) {
                 loadElement(right);
-                addConditionalJump("ifgt");
+                addBooleanTrueResult("ifgt");
                 return;
             }
         }
@@ -703,7 +683,7 @@ public class MyJasminBackend implements JasminBackend {
             int value = Integer.parseInt(((LiteralElement) right).getLiteral());
             if (value == 0) {
                 loadElement(left);
-                addConditionalJump("iflt");
+                addBooleanTrueResult("iflt");
                 return;
             }
         }
@@ -711,22 +691,44 @@ public class MyJasminBackend implements JasminBackend {
         // case A < B
         loadElement(left);
         loadElement(right);
-        addConditionalJump("if_icmplt");
+        addBooleanTrueResult("if_icmplt");
     }
 
-    private void addConditionalJump(String jumpCondition) {
-        String trueL = getNewLabel(), endL = getNewLabel();
-        if (debug) code.append("; Conditional Jump\n\t");
+    private void addUnaryOperation(UnaryOpInstruction op) {
+        if (debug) code.append("\n\t; Executing unary operation\n\t");
         else code.append("\n\t");
+
+        // Load operand needed to execute unary operation
+        loadElement(op.getOperand());
+
+        // Execute unary operation
+        if (op.getOperation().getOpType().equals(OperationType.NOTB)) addBooleanTrueResult("ifeq");
+        else if (op.getOperation().getOpType().equals(OperationType.SUB)) code.append("ineg\n");
+        else System.out.println("Unary op error");
+
+        if (debug) code.append("\t; End unary operation\n\n");
+        else code.append("\n");
+    }
+
+    // ============================================== CONDITIONAL INSTRUCTIONS ==============================================
+
+    private void addBooleanTrueResult(String jumpCondition) {
+        if (debug) code.append("; Boolean Calculation\n\t");
+        else code.append("\n\t");
+
+        String trueL = getNewLabel(), endL = getNewLabel();
+
         code.append(jumpCondition).append(" ").append(trueL).append("\n");
         updateStack(jumpCondition.equals("if_icmplt") ? -2 : -1); // pop values used for comparison
-        code.append("\ticonst_0\n"); // false scope
+
+        code.append("\ticonst_0\n"); // false value
         code.append("\tgoto ").append(endL).append("\n");
         code.append(trueL).append(":\n");
-        code.append("\ticonst_1\n"); // true scope
+        code.append("\ticonst_1\n"); // true value
         updateStack(1); // push one of these : true or false
         code.append(endL).append(":\n");
-        if (debug) code.append("; End of Conditional Jump\n");
+
+        if (debug) code.append("; End of Boolean Calculation\n");
         else code.append("\n");
     }
 
@@ -743,53 +745,15 @@ public class MyJasminBackend implements JasminBackend {
         if (debug) code.append("\n\t; Executing Conditional branch\n\t");
         else code.append("\n\t");
 
-        if (opType.getOperands().size() != 2) {
+        if (opType instanceof BinaryOpInstruction condInstruction) addBinaryOperation(condInstruction);
+        else if (opType instanceof UnaryOpInstruction condInstruction) addUnaryOperation(condInstruction);
 
-            addUnaryOperation((UnaryOpInstruction) opType);
-
-        } else {
-            Element left = opType.getOperands().get(0);
-            Element right = opType.getOperands().get(1);
-
-            // case 0 < A
-            if (left.isLiteral()) {
-                int value = Integer.parseInt(((LiteralElement) left).getLiteral());
-                if (value == 0) {
-                    loadElement(right);
-                    code.append("ifgt ").append(label).append("\n");
-                    updateStack(-1); // pop value used for comparison
-
-                    if (debug) code.append("\t; End of Conditional branch");
-                    else code.append("\n");
-                    return;
-                }
-            }
-
-            // case A < 0
-            if (right.isLiteral()) {
-                int value = Integer.parseInt(((LiteralElement) right).getLiteral());
-                if (value == 0) {
-                    loadElement(left);
-                    code.append("iflt ").append(label).append("\n");
-                    updateStack(-1); // pop value used for comparison
-
-                    if (debug) code.append("\t; End of Conditional branch");
-                    else code.append("\n");
-                    return;
-                }
-            }
-
-            // case A < B
-            loadElement(left);
-            loadElement(right);
-
-            code.append("if_icmplt ").append(label).append("\n");
-            updateStack(-2); // pop 2 values used for comparison
-        }
+        code.append("\n\t").append("ifne ").append(label).append("\n");
 
         if (debug) code.append("\t; End of Conditional branch");
         else code.append("\n");
     }
+
 
     private void addSingleConditionalBranch(SingleOpCondInstruction instruction) {
         Element elem = instruction.getCondition().getSingleOperand();
