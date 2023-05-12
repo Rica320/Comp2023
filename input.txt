@@ -2,19 +2,25 @@ import io;
 
 class AssignInnerScope {
 
+int[] b;
+
+    int[] retint(int[] d) {
+
+                b= new int[10];
+                b[d[0]] = 1;
+
+        return b;
+    }
+
     public static void main(String[] args) {
 
-        int a;
-        boolean b;
-        b = false;
-        a = 6;
-        b = !b && true;
+        int[] a;
+        a= new int[10];
+        a[0] = 0;
 
-        while(0 < a && b){
-            io.println(a);
-            a = a - 1;
-        }
 
+        io.println(new AssignInnerScope().retint(a)[0]);
+        io.println(a.length);
 
     }
 }
