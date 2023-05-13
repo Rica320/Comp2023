@@ -658,7 +658,10 @@ public class MyJasminBackend implements JasminBackend {
                     code.append("iand\n");
                     updateStack(-1);
                 }
-                default -> System.out.println("Binary op error + " + opType + " not implemented");
+                case GTE -> {
+                    addBooleanTrueResult("if_icmpge");
+                }
+                default -> code.append("\nBinary op error + ").append(opType).append(" not implemented\n");
             }
         }
 
@@ -719,7 +722,7 @@ public class MyJasminBackend implements JasminBackend {
         String trueL = getNewLabel(), endL = getNewLabel();
 
         code.append(jumpCondition).append(" ").append(trueL).append("\n");
-        updateStack(jumpCondition.equals("if_icmplt") ? -2 : -1); // pop values used for comparison
+        updateStack(jumpCondition.equals("if_icmplt") || jumpCondition.equals("if_icmpge") ? -2 : -1); // pop values used for comparison
 
         code.append("\ticonst_0\n"); // false value
         code.append("\tgoto ").append(endL).append("\n");
