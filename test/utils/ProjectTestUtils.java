@@ -1,14 +1,7 @@
 package utils;
 
-import org.specs.comp.ollir.*;
-import pt.up.fe.comp.jmm.jasmin.JasminResult;
-import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.specs.util.SpecsIo;
-import pt.up.fe.specs.util.SpecsStrings;
-import pt.up.fe.specs.util.SpecsSystem;
-import pt.up.fe.specs.util.exceptions.NotImplementedException;
-import pt.up.fe.specs.util.system.ProcessOutputAsString;
-import pt.up.fe.specs.util.utilities.LineStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -18,8 +11,28 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.specs.comp.ollir.ArrayType;
+import org.specs.comp.ollir.AssignInstruction;
+import org.specs.comp.ollir.CallInstruction;
+import org.specs.comp.ollir.CallType;
+import org.specs.comp.ollir.ClassType;
+import org.specs.comp.ollir.ClassUnit;
+import org.specs.comp.ollir.Element;
+import org.specs.comp.ollir.ElementType;
+import org.specs.comp.ollir.LiteralElement;
+import org.specs.comp.ollir.Method;
+import org.specs.comp.ollir.Node;
+import org.specs.comp.ollir.Operand;
+import org.specs.comp.ollir.Type;
+
+import pt.up.fe.comp.jmm.jasmin.JasminResult;
+import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.specs.util.SpecsIo;
+import pt.up.fe.specs.util.SpecsStrings;
+import pt.up.fe.specs.util.SpecsSystem;
+import pt.up.fe.specs.util.exceptions.NotImplementedException;
+import pt.up.fe.specs.util.system.ProcessOutputAsString;
+import pt.up.fe.specs.util.utilities.LineStream;
 
 public class ProjectTestUtils {
 
@@ -90,7 +103,8 @@ public class ProjectTestUtils {
             throw new RuntimeException("Instruction not found");
 
         } catch (Exception e) {
-            throw new RuntimeException("Exception while looking for instruction " + bytecodeInstruction + " in code:\n\n" + jasminCode);
+            throw new RuntimeException(
+                    "Exception while looking for instruction " + bytecodeInstruction + " in code:\n\n" + jasminCode);
         }
     }
 
@@ -116,7 +130,8 @@ public class ProjectTestUtils {
             throw new RuntimeException("Instruction not found");
 
         } catch (Exception e) {
-            throw new RuntimeException("Exception while looking for instruction " + instructionPrefix + " in code:\n\n" + jasminCode);
+            throw new RuntimeException(
+                    "Exception while looking for instruction " + instructionPrefix + " in code:\n\n" + jasminCode);
         }
     }
 
@@ -169,11 +184,13 @@ public class ProjectTestUtils {
                 return objectRef.getName();
             case ARRAYREF:
                 var arrayType = (ArrayType) ollirType;
-                return arrayType.getTypeOfElement().toString() + SpecsStrings.buildLine("[]", arrayType.getNumDimensions());
+                return toString(arrayType.getElementType())
+                        + SpecsStrings.buildLine("[]", arrayType.getNumDimensions());
             default:
                 throw new NotImplementedException(elementType);
         }
     }
+
 
 
     public static Method getLastMethod(ClassUnit classUnit) {
@@ -243,10 +260,10 @@ public class ProjectTestUtils {
         // OLD METHOD
         /*
         try {
-        
+
             // Get class with main
             Class<?> analysisClass = Class.forName(mainClass);
-        
+
             Method[] methods = analysisClass.getMethods();
             for (Method m : methods) {
                 if ("main".equals(m.getName())) {
@@ -293,7 +310,8 @@ public class ProjectTestUtils {
             throw new RuntimeException("Exception while extracting main file from Gradle file", e);
         }
 
-        throw new RuntimeException("Could not find main class in Gradle build file '" + gradleFile.getAbsolutePath() + "'");
+        throw new RuntimeException(
+                "Could not find main class in Gradle build file '" + gradleFile.getAbsolutePath() + "'");
     }
 
     /**
@@ -315,11 +333,13 @@ public class ProjectTestUtils {
         var output = SpecsStrings.normalizeFileContents(jasminResult.run(), true);
 
         // No expected output, just run test
-        if (expected == null) {
+        if(expected == null) {
             return;
         }
 
-        assertEquals("Jasmin execution, expected '" + expected + "', got '" + output + "':\n" + jasminResult.getJasminCode(), expected, output);
+        assertEquals(
+                "Jasmin execution, expected '" + expected + "', got '" + output + "':\n" + jasminResult.getJasminCode(),
+                expected, output);
     }
 
     public static List<Node> getOllirNodes(ClassUnit classUnit, Predicate<Node> filter) {
@@ -356,28 +376,34 @@ public class ProjectTestUtils {
         }
 
         // Special cases
-        if (currentNode instanceof AssignInstruction assign) {
+        if (currentNode instanceof AssignInstruction) {
+            var assign = (AssignInstruction) currentNode;
             getOllirNodes(assign.getRhs(), filter, filteredNodes);
         }
     }
 
     public static void findInvoke(OllirResult ollirResult, CallType invokeType) {
-        var nodes = getOllirNodes(ollirResult.getOllirClass(), inst -> inst instanceof CallInstruction && ((CallInstruction) inst).getInvocationType() == invokeType);
+        var nodes = getOllirNodes(ollirResult.getOllirClass(),
+                inst -> inst instanceof CallInstruction &&
+                        ((CallInstruction) inst).getInvocationType() == invokeType);
 
-        assertEquals("Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n" + ollirResult.getOllirCode(), 1, nodes.size());
+        assertTrue(
+                "Expected to find one " + invokeType + ", instead found " + nodes.size() + ":\n"
+                        + ollirResult.getOllirCode(),
+                nodes.size() == 1);
     }
 
     /*
     public static void checkOllirNodes(OllirResult ollirResult, Predicate<Node> filter, Predicate<Node> checker,
             String messageIfEmpty, String messageIf) {
-    
+
         var nodes = getOllirNodes(ollirResult, filter, messageIfEmpty);
-    
+
         checkOllirNodes(ollirResult, nodes, checker);
     }
-    
+
     public static void checkOllirNodes(OllirResult ollirResult, List<Node> nodes, Predicate<Node> checker) {
-    
+
         for (var node : nodes) {
             // checker.accept(node);
             if (!checker.test(node)) {

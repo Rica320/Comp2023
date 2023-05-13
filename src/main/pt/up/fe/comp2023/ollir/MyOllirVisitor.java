@@ -158,11 +158,11 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithArrayAssign(JmmNode jmmNode, String s) {
         StringBuilder sb = new StringBuilder();
         Pair<String, String> index = this.visit(jmmNode.getJmmChild(0));
-        if (index.b.split("\\.")[0].matches("\\d+")) { // is a number
-            String tempName = "t" + temp++ + ".i32";
-            sb.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
-            index = new Pair<>(index.a, tempName);
-        }
+        // if (index.b.split("\\.")[0].matches("\\d+")) { // is a number
+        //     String tempName = "t" + temp++ + ".i32";
+        //     sb.append(tempName).append(" :=.i32 ").append(index.b).append(";\n");
+        //     index = new Pair<>(index.a, tempName);
+        // }
         Pair<String, String> value = this.visit(jmmNode.getJmmChild(1));
 
         String varName = jmmNode.get("var");
@@ -173,10 +173,6 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         Pair<String, String> la = arrLookup(varName, index, origin, sb, new StringBuilder());
 
         String olliType = getOllirType(type.getName(), false);
-
-        System.out.println("ArrayAssign: " + la.b + " :=." + olliType + " " + value.b + ";");
-        System.out.println("ArrayAssign: " + index.a);
-        System.out.println("ArrayAssign: " + value.a);
 
         sb.append(index.a).append("\n");
         sb.append(value.a).append("\n");
