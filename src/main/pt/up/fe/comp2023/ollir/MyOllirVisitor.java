@@ -148,6 +148,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
                 sb.append("$").append(symbolTable.getParameterIndex(arrayName)).append(".").append(arrayName).append("[").append(index.b).append("].i32");
                 return new Pair<>(code.toString(), sb.toString());
             case IMPORT:
+                throw new RuntimeException("ArrayLookup: IMPORT");
             case LOCAL:
             default:
                 return new Pair<>(code.toString(), sb.append(arrayName).append("[").append(index.b).append("].i32").toString());
@@ -283,10 +284,12 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
         String varName = jmmNode.get("var");
 
         JmmNode rightSide = jmmNode.getJmmChild(0);
+        SymbolOrigin symbolOrigin = symbolTable.getSymbolOrigin(varName);
+
 
         // if rightSide is a binary operation: a = b + c, we don't need to create a new temp
-        if (rightSide.getKind().equals("BinaryOp")) {
-            // todo: talvez haja uma maneira mais inteligente de fazer para todos os casos. Dps vê, ricardo
+        if (rightSide.getKind().equals("BinaryOp") && symbolOrigin.equals(SymbolOrigin.LOCAL)) {
+
             StringBuilder sb2 = new StringBuilder();
             Pair<String, String> left = this.visit(rightSide.getJmmChild(0));
             Pair<String, String> right = this.visit(rightSide.getJmmChild(1));
@@ -295,18 +298,18 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
             sb2.append(left.a).append("\n");
             sb2.append(right.a).append("\n");
 
-            String code = sb2.append(varName).append(".i32").append(" :=.i32 ").append(left.b).append(" ").append(op).append(" ").append(right.b).append(";").toString();
+            String code = sb2.append(varName).append(".i32").append(" :=.i32 ").append(left.b)
+                    .append(" ").append(op).append(" ").append(right.b).append(";").toString();
             return new Pair<>(code, null);
         }
 
         Pair<String, String> codePlace = this.visit(rightSide);
-        SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
         Type type = symbolTable.findTypeVar(varName, jmmNode);
         String ollirType = getOllirType(type.getName(), type.isArray());
 
         sb.append(codePlace.a).append("\n");
 
-        switch (symbolOrign) {
+        switch (symbolOrigin) {
             case PARAMETER -> {
                 // already checks STATIC
                 sb.append("$").append(symbolTable.getParameterIndex(varName)).append(".");
@@ -318,7 +321,7 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
                 sb.append("putfield(this,").append(varName).append(".").append(ollirType).append(", ").append(codePlace.b).append(").").append("V;\n");
                 return new Pair<>(sb.toString(), null);
             }
-            default -> throw new IllegalStateException("Unexpected value: " + symbolOrign);
+            default -> throw new IllegalStateException("Unexpected value: " + symbolOrigin);
         }
 
         return new Pair<>(sb.append(";\n").toString(), null);
