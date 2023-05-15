@@ -148,7 +148,6 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
                 sb.append("$").append(symbolTable.getParameterIndex(arrayName)).append(".").append(arrayName).append("[").append(index.b).append("].i32");
                 return new Pair<>(code.toString(), sb.toString());
             case IMPORT:
-                throw new RuntimeException("ArrayLookup: IMPORT");
             case LOCAL:
             default:
                 return new Pair<>(code.toString(), sb.append(arrayName).append("[").append(index.b).append("].i32").toString());
