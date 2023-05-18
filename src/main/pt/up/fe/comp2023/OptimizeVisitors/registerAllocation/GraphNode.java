@@ -88,28 +88,26 @@ public class GraphNode {
 
     static List<GraphNode> getFromNodes(List<Instruction> instructions) {
         List<GraphNode> nodes = new ArrayList<>();
-        ///List<Integer> ids = new ArrayList<>();
+        List<Integer> ids = new ArrayList<>();
         for (Instruction instruction : instructions) {
             nodes.add(new GraphNode(instruction));
-            // ids.add(instruction.getId());
+            ids.add(instruction.getId());
         }
-        for (GraphNode node : nodes) { // TODO: n é o melhor em termos de alg
-            // for (Node successor : instructions) {
-            //     if (successor.getSuccessors().contains(node.getInstruction())) {
-            //         node.addPredecessor(nodes.get(successor.getId() - 1));
-            //     }
-            // }
-            // for (Node predecessor : instructions) {
-            //     if (predecessor.getPredecessors().contains(node.getInstruction())) {
-            //         node.addSuccessor(nodes.get(predecessor.getId() - 1));
-            //     }
-            // } ... qual das duas ?
-            for (GraphNode successor : nodes) {
-                if (successor.getInstruction().getId() < node.getInstruction().getId()) {
-                    node.addPredecessor(successor);
-                } else if (successor.getInstruction().getId() > node.getInstruction().getId()) {
-                    node.addSuccessor(successor);
-                }
+        for (GraphNode node : nodes) {
+            List<Node> succ = node.getInstruction().getSuccessors();
+
+            for (Node n: succ) {
+                int index = ids.indexOf(n.getId());
+                if (index == -1) continue;
+                node.addSuccessor(nodes.get(index));
+            }
+
+            List<Node> pred = node.getInstruction().getPredecessors();
+
+            for (Node n : pred) {
+                int index = ids.indexOf(n);
+                if (index == -1) continue;
+                node.addPredecessor(nodes.get(index));
             }
         }
         return nodes;

@@ -60,8 +60,9 @@ public class RegisterAllocation {
 
     public InterferenceGraph.InterNode getLowestDegreeNode(InterferenceGraph interferenceGraph) {
         InterferenceGraph.InterNode lowestDegreeNode = null;
+        if (nr_registers == 0) nr_registers = Integer.MAX_VALUE;
         for (InterferenceGraph.InterNode node : interferenceGraph.nodes.values()) {
-            if (node.getDegree() < nr_registers && node.getDegree() != -1) {
+            if (node.getDegree() < nr_registers ) /* && node.getDegree() != -1) */{
                 nr_registers = node.getDegree();
                 lowestDegreeNode = node;
             }
@@ -120,6 +121,7 @@ public class RegisterAllocation {
 
         do {
             InterferenceGraph.InterNode lowestDegreeNode = getLowestDegreeNode(interferenceGraph);
+            System.out.println("lowestDegreeNode: " + lowestDegreeNode);
             if (lowestDegreeNode == null) {
                 break;
             }
@@ -128,6 +130,7 @@ public class RegisterAllocation {
                 node.decrementDegree();
             }
             lowestDegreeNode.takeFromGraph();
+            System.out.println("Pushing: " + lowestDegreeNode);
             stack.push(lowestDegreeNode);
 
         } while (true);
@@ -138,6 +141,8 @@ public class RegisterAllocation {
             node.takeFromGraph();
             stack.push(node);
         }
+        System.out.println("stack: " + stack);
+        System.out.println("interferenceGraph: " + interferenceGraph);
 
         int colorsUsed = colorNodes(stack);
 
@@ -153,21 +158,38 @@ public class RegisterAllocation {
 
         List<GraphNode> nodes = GraphNode.getFromNodes(method.getInstructions());
 
-        boolean changed;
+        // Collections.reverse(nodes);
+
+        boolean end;
         do {
-            changed = true;
+            end = true;
             for (GraphNode node : nodes) {
 
                 Set<Element> inL = new HashSet<>(node.getIn()); // in'
                 Set<Element> outL = new HashSet<>(node.getOut()); // out'
 
 
-                Set<Element> use = node.getUse();
-                Set<Element> def = node.getDef();
+                Set<Element> use = new HashSet<>(node.getUse());
+                Set<Element> def = new HashSet<>(node.getDef());
 
                 // in[n] = use[n] U (out[n] - def[n])
                 Set<Element> diff = new HashSet<>(node.getOut());
-                diff.removeAll(def);
+
+                System.out.println("======================\n");
+                System.out.println("diff: " + diff);
+                System.out.println("def: " + def);
+                //diff.removeAll(def);
+                for (Element element : def) {
+                    for (Element element1 : diff) {
+                        if (element1.toString().equals(element.toString())) {
+                            diff.remove(element1);
+                            break;
+                        }
+                    }
+                }
+                System.out.println("Result: " + diff);
+                System.out.println("======================\n");
+
 
                 use.addAll(diff);
 
@@ -179,11 +201,12 @@ public class RegisterAllocation {
                 }
                 node.setOut(outAux);
 
-                if (!inL.equals(node.getIn()) || !outL.equals(node.getOut())) {
-                    changed = false;
+               if (!(inL.equals(node.getIn()) && outL.equals(node.getOut()))) {
+                    end = false;
                 }
             }
-        } while (!changed);
+
+        } while (!end);
 
         for (GraphNode node : nodes) {
             try {

@@ -330,10 +330,10 @@ public class MyOllirVisitor extends AJmmVisitor<String, Pair<String, String>> { 
     private Pair<String, String> dealWithVar(JmmNode jmmNode, String s) {
         String varName = jmmNode.get("var");
 
-        SymbolOrigin symbolOrign = symbolTable.getSymbolOrigin(varName);
+        SymbolOrigin symbolOrigin = symbolTable.getSymbolOrigin(varName);
         Type type = symbolTable.findTypeVar(varName, jmmNode);
 
-        switch (symbolOrign) {
+        switch (symbolOrigin) {
             case PARAMETER -> { // already checks STATIC
                 return new Pair<>("", "$" + symbolTable.getParameterIndex(varName) + "." + varName + "." + getOllirType(type.getName(), type.isArray()));
             }
