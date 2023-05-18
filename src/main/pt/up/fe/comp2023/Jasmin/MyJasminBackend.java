@@ -169,8 +169,11 @@ public class MyJasminBackend implements JasminBackend {
             else {
                 if (regNumAlloc > 0) updateMethodLimits(this.regNumAlloc, this.maxStack);
                 else {
-                    int maxLocals = RegisterAllocation.nrC.values().stream().max(Integer::compareTo).get();
-                    updateMethodLimits(maxLocals, this.maxStack);
+                    updateMethodLimits(RegisterAllocation.nrC.get(method.getMethodName())
+                            + currentMethod.getParams().size()
+                            +(currentMethod.getMethodName().equals("main") ? 0 : 1) , this.maxStack);
+
+
                 }
             }
 
