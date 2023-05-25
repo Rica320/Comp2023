@@ -1,14 +1,17 @@
 class RegAlloc {
 
 	public static void main(String[] args) {
+        int a;
+        int b;
 
-	    boolean a;
+        a = 2;
 
-	    boolean b;
+        while(1<0){
+            b = a;
+            a = 8;
+            b = a;
+        }
 
-	    b = false;
-
-
-	    a = (0<1) && (1<0);
+        b = a+3;
 	}
 }

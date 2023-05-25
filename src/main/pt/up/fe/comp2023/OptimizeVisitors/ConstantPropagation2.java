@@ -45,6 +45,14 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         return super.visit(jmmNode, data);
     }
 
+    public void removeTaintedScopeVars(JmmNode node) {
+        for (JmmNode child : node.getChildren()) {
+            if (child.getKind().equals("Assign"))
+                vars.remove(child.get("var"));
+            removeTaintedScopeVars(child);
+        }
+    }
+
     @Override
     protected void buildVisitor() {
         addVisit("MainMethod", this::dealWithMain);
@@ -61,16 +69,29 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         visit(jmmNode.getJmmChild(0), s);
 
         scope++;
+        // we need to check if a var is assigned inside the while block and remove it from the vars map
+        checkWhileAssignments(jmmNode.getJmmChild(1), s);
         visit(jmmNode.getJmmChild(1), s);
         scope--;
 
         var whileScope = jmmNode.getJmmChild(1);
 
-        // remove tainted variables
-        for (JmmNode child : whileScope.getJmmChild(0).getChildren())
-            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
+        removeTaintedScopeVars(whileScope.getJmmChild(0));
 
         return null;
+    }
+
+    private void checkWhileAssignments(JmmNode jmmChild, String s) {
+        for (JmmNode child : jmmChild.getChildren()) {
+            if (child.getKind().equals("Assign")) {
+                String varname = child.get("var");
+                if (vars.containsKey(varname)) {
+                    Triple<String, Integer, Integer> var = vars.get(varname);
+                    if (var.b < scope) vars.remove(varname);
+                }
+            }
+            checkWhileAssignments(child, s);
+        }
     }
 
     private String dealWithIfClause(JmmNode jmmNode, String s) {
@@ -91,12 +112,8 @@ public class ConstantPropagation2 extends AJmmVisitor<String, String> {
         visit(elseScope, s);
         scope--;
 
-        // remove tainted variables
-        for (JmmNode child : ifScope.getJmmChild(0).getChildren())
-            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
-
-        for (JmmNode child : elseScope.getJmmChild(0).getChildren())
-            if (child.getKind().equals("Assign")) vars.remove(child.get("var"));
+        removeTaintedScopeVars(ifScope.getJmmChild(0));
+        removeTaintedScopeVars(elseScope.getJmmChild(0));
 
         return null;
     }
