@@ -656,12 +656,7 @@ public class MyJasminBackend implements JasminBackend {
                     code.append("idiv\n");
                     updateStack(-1);
                 }
-                case GTE -> {
-                    addBooleanTrueResult("if_icmpge");
-                }
-                case LTH -> {
-                    addBooleanTrueResult("if_icmplt");
-                }
+                case GTE -> addBooleanTrueResult("if_icmpge");
                 default -> code.append("\nBinary op error + ").append(opType).append(" not implemented\n");
             }
         }

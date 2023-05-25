@@ -22,6 +22,6 @@ Otherwise, the compiler will use the number of registers specified and give erro
 
 ## Authors
 
-- [Lia Vieira](<up202005042@up.pt>)
-- [Marco André](<up202004891@up.pt>)
-- [Ricardo Matos](<up202007962@up.pt>)
+- Lia Vieira <up202005042@up.pt>
+- Marco André <up202004891@up.pt>
+- Ricardo Matos <up202007962@up.pt>
