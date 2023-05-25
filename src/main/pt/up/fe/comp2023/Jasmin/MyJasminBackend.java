@@ -169,9 +169,7 @@ public class MyJasminBackend implements JasminBackend {
             else {
                 if (regNumAlloc > 0) updateMethodLimits(this.regNumAlloc, this.maxStack);
                 else {
-                    updateMethodLimits(RegisterAllocation.nrC.get(method.getMethodName())
-                            + currentMethod.getParams().size()
-                            +(currentMethod.getMethodName().equals("main") ? 0 : 1) , this.maxStack);
+                    updateMethodLimits(RegisterAllocation.nrC.get(method.getMethodName()) + currentMethod.getParams().size() + (currentMethod.getMethodName().equals("main") ? 0 : 1), this.maxStack);
 
 
                 }
@@ -383,8 +381,8 @@ public class MyJasminBackend implements JasminBackend {
                 String name = variable.getName();
 
                 // Check if it is "true" or "false"
-                if (isBoolean && name.equals("true")) code.append("iconst_1");
-                else if (isBoolean && name.equals("false")) code.append("iconst_0");
+                if (isBoolean && name.equals("1")) code.append("iconst_1");
+                else if (isBoolean && name.equals("0")) code.append("iconst_0");
                 else {// it is a variable
                     int reg = Integer.parseInt(getRegister(name));
                     if (reg < 4) code.append("iload_").append(reg);
@@ -634,6 +632,7 @@ public class MyJasminBackend implements JasminBackend {
         Element right = opInstruction.getRightOperand();
 
         if (opType.name().equals("LTH")) addLTHOp(left, right);
+        else if (opType.name().equals("ANDB")) addANDBOp(left, right);
         else {
             loadElement(left);
             loadElement(right);
@@ -657,12 +656,11 @@ public class MyJasminBackend implements JasminBackend {
                     code.append("idiv\n");
                     updateStack(-1);
                 }
-                case ANDB -> {
-                    code.append("iand\n");
-                    updateStack(-1);
-                }
                 case GTE -> {
                     addBooleanTrueResult("if_icmpge");
+                }
+                case LTH -> {
+                    addBooleanTrueResult("if_icmplt");
                 }
                 default -> code.append("\nBinary op error + ").append(opType).append(" not implemented\n");
             }
@@ -670,6 +668,33 @@ public class MyJasminBackend implements JasminBackend {
 
         if (debug) code.append("\t; End binary operation\n\n ");
         else code.append("\n");
+    }
+
+    private void addANDBOp(Element left, Element right) {
+
+        boolean isBooleanLeft = left.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+        boolean isBooleanRight = right.getType().getTypeOfElement().equals(ElementType.BOOLEAN);
+
+        if (!isBooleanLeft || !isBooleanRight) {
+            System.out.println("Error: AND operation can only be applied to boolean values");
+        }
+
+        if (left.isLiteral() && right.isLiteral()) {
+            LiteralElement leftLiteral = (LiteralElement) left;
+            if (leftLiteral.getLiteral().equals("0")) {
+                code.append("iconst_0\n");
+            } else {
+                LiteralElement rightLiteral = (LiteralElement) right;
+                if (rightLiteral.getLiteral().equals("0")) code.append("iconst_0\n");
+                else code.append("iconst_1\n");
+            }
+            updateStack(1);
+        } else { // not literal
+            loadElement(left);
+            loadElement(right);
+            code.append("iand\n");
+            updateStack(-1);
+        }
     }
 
     private void addLTHOp(Element left, Element right) {
