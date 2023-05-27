@@ -142,6 +142,8 @@ public class Launcher {
         Matcher matcher = Pattern.compile("-r=(\\d+)").matcher(registerAllocation);
         String r = matcher.find() ? matcher.group(1) : "-1";
 
+        System.out.println("Register Allocation: " + r);
+
         config.put("registerAllocation", r);
         return config;
     }

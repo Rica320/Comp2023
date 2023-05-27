@@ -1,17 +1,21 @@
+import io;
+
 class RegAlloc {
 
 	public static void main(String[] args) {
         int a;
         int b;
-
+        int c;
         a = 2;
 
-        while(1<0){
-            b = a;
-            a = 8;
-            b = a;
-        }
+       // while(1<0){
+       //     b = a;
+       //     a = 8;
+       //     b = a;
+       // }
+
 
         b = a+3;
+        c = a + b;
 	}
 }

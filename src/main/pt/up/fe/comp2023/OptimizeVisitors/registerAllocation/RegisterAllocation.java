@@ -60,9 +60,9 @@ public class RegisterAllocation {
 
     public InterferenceGraph.InterNode getLowestDegreeNode(InterferenceGraph interferenceGraph) {
         InterferenceGraph.InterNode lowestDegreeNode = null;
-        if (nr_registers == 0) nr_registers = Integer.MAX_VALUE;
+        if (nr_registers == 0) nr_registers = -1;
         for (InterferenceGraph.InterNode node : interferenceGraph.nodes.values()) {
-            if (node.getDegree() < nr_registers ) /* && node.getDegree() != -1) */{
+            if (node.getDegree() < nr_registers && node.getDegree() != -1) {
                 nr_registers = node.getDegree();
                 lowestDegreeNode = node;
             }
@@ -118,6 +118,7 @@ public class RegisterAllocation {
 
         Stack<InterferenceGraph.InterNode> stack = new Stack<>();
 
+        int wantedColors = nr_registers;
 
         do {
             InterferenceGraph.InterNode lowestDegreeNode = getLowestDegreeNode(interferenceGraph);
@@ -135,9 +136,9 @@ public class RegisterAllocation {
 
         } while (true);
 
-        List<InterferenceGraph.InterNode> toSplit = spillingNodes(interferenceGraph);
+        List<InterferenceGraph.InterNode> toSpill = spillingNodes(interferenceGraph);
 
-        for (InterferenceGraph.InterNode node : toSplit) {
+        for (InterferenceGraph.InterNode node : toSpill) {
             node.takeFromGraph();
             stack.push(node);
         }
@@ -146,7 +147,11 @@ public class RegisterAllocation {
 
         int colorsUsed = colorNodes(stack);
 
-        //TODO : spilling ... should we do it ?
+        if (wantedColors > 0 && colorsUsed > wantedColors) {
+            throw new RuntimeException("Impossible to color with " + wantedColors + " registers. Need " + colorsUsed + " registers.");
+        }
+
+        //TODO : spilling
 
 
         return colorsUsed;
