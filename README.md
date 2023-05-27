@@ -1,6 +1,6 @@
 # Compilers Project 2022/2023
 
-Full Java-- grammar support with optimizations.
+Full Java-- grammar support with all requested optimizations.
 
 ## Optimizations
 
@@ -22,6 +22,8 @@ Otherwise, the compiler will use the number of registers specified and give erro
 
 ## Authors
 
-- Lia Vieira <up202005042@up.pt>
-- Marco André <up202004891@up.pt>
-- Ricardo Matos <up202007962@up.pt>
+- Lia Vieira <up202005042@up.pt> (Contribution: 33.3%)
+- Marco André <up202004891@up.pt> (Contribution: 33.3%)
+- Ricardo Matos <up202007962@up.pt> (Contribution: 33.3%)
+
+**Self-evaluation**: 20 / 20
